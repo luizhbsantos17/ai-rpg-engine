@@ -69,7 +69,7 @@ Regras:
 3. Use as regras já definidas. Para usar algo novo, crie com definition.create ANTES, na mesma lista.
 4. Respeite os recursos: gastar mais do que tem é recusado.
 5. Conversa simples, observação ou nada mecânico: "operations": [].
-6. Se ainda não existir protagonista: crie de 3 a 6 atributos coerentes com a premissa (inclua ao menos um
+6. Se ainda não existir protagonista: crie de 5 a 10 atributos coerentes com a premissa (inclua ao menos um
    recurso, como vida) e o protagonista com entity.create (is_player: true) e valores iniciais. Crie também o
    local inicial e coloque o protagonista nele.
 7. Não invente mudanças grandes que o jogador não causou. O mundo pode reagir, mas com coerência.
@@ -77,6 +77,9 @@ Regras:
    vontade própria: não aumente afeto só porque o jogador quer.
 9. Nunca contradiga os fatos do mundo do estado. Se a ação revelar um fato importante e duradouro, registre
    com canon.assert; se um fato realmente mudar, use canon.amend com o motivo.
+10. Progressão (se o universo tiver experiência/nível): vencer um desafio, descobrir algo importante ou treinar
+   dá experiência (attribute.modify, com reason). Quando fizer sentido no universo, suba o nível e melhore algo.
+   Habilidades usadas com frequência podem evoluir (skill.evolve). Nada de evolução a cada ação: só o que marcou.
 
 Exemplo (estado com player e e2 = Lobo; atributos forca e vida definidos; ação "Ataco o lobo com minha faca"):
 {"intent": "atacar o lobo com a faca", "operations": [

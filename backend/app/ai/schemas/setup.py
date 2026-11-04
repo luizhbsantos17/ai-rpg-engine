@@ -44,6 +44,28 @@ class SetupCompanion(BaseModel):
     attributes: dict[str, int | float | str] = Field(default_factory=dict, description="nome do atributo -> valor")
 
 
+class SetupSkill(BaseModel):
+    """Habilidade com que o protagonista começa (vira definição + skill.grant)."""
+
+    model_config = ConfigDict(extra="ignore")
+    name: str = Field(min_length=1, max_length=100)
+    description: str = Field(default="", max_length=500)
+    category: str = Field(default="", max_length=60)
+    level: int = Field(default=1, ge=0, le=1000)
+
+
+class SetupItem(BaseModel):
+    """Item inicial do protagonista (vira definição + item.create; equipado se tiver espaço)."""
+
+    model_config = ConfigDict(extra="ignore")
+    name: str = Field(min_length=1, max_length=100)
+    description: str = Field(default="", max_length=500)
+    quantity: int = Field(default=1, ge=1, le=1000)
+    slot: str = Field(default="", max_length=40, description='espaço onde equipa ("mao", "corpo"...); "" = não equipa')
+    bonus: dict[str, int | float] = Field(default_factory=dict, description="atributo -> bônus quando equipado")
+    equipped: bool = False
+
+
 class SetupDeathRule(BaseModel):
     model_config = ConfigDict(extra="ignore")
     mode: Literal["permanent", "unconscious", "resurrection", "reincarnation", "narrative"] = "narrative"
@@ -61,6 +83,8 @@ class CampaignSetup(BaseModel):
                                    description="fatos importantes do mundo, incluindo como funciona a morte")
     companions: list[SetupCompanion] = Field(default_factory=list, max_length=8)
     death_rule: SetupDeathRule | None = None
+    starting_skills: list[SetupSkill] = Field(default_factory=list, max_length=6)
+    starting_items: list[SetupItem] = Field(default_factory=list, max_length=8)
 
     def to_operations(self) -> list[dict[str, Any]]:
         operations: list[dict[str, Any]] = []
@@ -87,7 +111,45 @@ class CampaignSetup(BaseModel):
         operations.append({"op": "entity.create", "ref": "protagonista", "kind": self.protagonist.kind or "character",
                            "name": self.protagonist.name, "is_player": True, "location": "local_inicial",
                            "data": self._protagonist_data(), "attributes": values})
+        operations += self._skill_operations()
+        operations += self._item_operations(set(values))
         operations += self._companion_operations(set(values))
+        return operations
+
+    def _skill_operations(self) -> list[dict[str, Any]]:
+        operations: list[dict[str, Any]] = []
+        for skill in _unique_by_name(self.starting_skills):
+            key = slugify(skill.name)
+            data = {k: v for k, v in {"name": skill.name, "description": skill.description,
+                                      "category": skill.category}.items() if v}
+            operations.append({"op": "definition.create", "kind": "skill", "key": key, "data": data,
+                               "reason": "habilidade inicial do protagonista"})
+            operations.append({"op": "skill.grant", "entity": "protagonista", "key": key, "level": skill.level})
+        return operations
+
+    def _item_operations(self, attribute_keys: set[str]) -> list[dict[str, Any]]:
+        operations: list[dict[str, Any]] = []
+        used_slots: set[str] = set()
+        for index, item in enumerate(_unique_by_name(self.starting_items), start=1):
+            key = slugify(item.name)
+            slot = slugify(item.slot) if item.slot.strip() else None
+            # Bônus só em atributos numéricos que existem no sistema da campanha.
+            bonus = {slugify(name): value for name, value in item.bonus.items() if slugify(name) in attribute_keys}
+            data: dict[str, Any] = {"name": item.name, "stackable": slot is None}
+            if item.description:
+                data["description"] = item.description
+            if slot:
+                data["slot"] = slot
+            if bonus:
+                data["bonus"] = bonus
+            ref = f"item_inicial_{index}"
+            operations.append({"op": "definition.create", "kind": "item", "key": key, "data": data,
+                               "reason": "item inicial do protagonista"})
+            operations.append({"op": "item.create", "ref": ref, "key": key, "owner": "protagonista",
+                               "quantity": item.quantity if slot is None else 1})
+            if slot and item.equipped and slot not in used_slots:
+                used_slots.add(slot)
+                operations.append({"op": "item.equip", "item": ref, "slot": slot})
         return operations
 
     def _protagonist_data(self) -> dict[str, Any]:
@@ -148,6 +210,17 @@ def _without_repeats(attributes: list[SetupAttribute]) -> list[SetupAttribute]:
         if key not in seen:
             seen.add(key)
             unique.append(attribute)
+    return unique
+
+
+def _unique_by_name(entries: list) -> list:
+    seen: set[str] = set()
+    unique = []
+    for entry in entries:
+        key = slugify(entry.name)
+        if key not in seen:
+            seen.add(key)
+            unique.append(entry)
     return unique
 
 

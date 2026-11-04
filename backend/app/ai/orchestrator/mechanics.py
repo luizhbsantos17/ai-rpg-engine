@@ -41,7 +41,7 @@ INTERPRETER_TEMPERATURE = 0.3  # regras pedem consistência, não criatividade
 # Limites próprios de tamanho: JSON de operações é curto. Sem isso, modelos pequenos às vezes
 # "disparam" até o limite da narração e o JSON sai cortado (medido com qwen2.5:1.5b em 2026-11-04).
 INTERPRETER_MAX_TOKENS = 512
-SETUP_MAX_TOKENS = 800
+SETUP_MAX_TOKENS = 1400  # atributos, habilidades, itens e companheiros
 
 
 @dataclass
@@ -107,9 +107,10 @@ class MechanicsPhase:
         outcomes: list[OperationOutcome] = []
 
         if self._needs_setup(campaign_id):
-            setup = request_structured(self.provider, build_setup_messages(mechanics.brief), setup_options,
-                                       CampaignSetup, settings.ai_json_attempts)
-            self._record_attempts(campaign_id, turn_id, "setup", setup, build_setup_messages(mechanics.brief))
+            setup_messages = build_setup_messages(mechanics.brief, mechanics.system_window)
+            setup = request_structured(self.provider, setup_messages, setup_options, CampaignSetup,
+                                       settings.ai_json_attempts)
+            self._record_attempts(campaign_id, turn_id, "setup", setup, setup_messages)
             if setup.ok:
                 outcomes += self._apply(campaign_id, turn_id, mechanics, setup.value.to_operations(), {})
                 summary["setup"] = "applied"
