@@ -30,6 +30,24 @@ export const getKnown = (campaignId) =>
 // { map: {current, places}, diary: [...], bonds: [...] } — tudo do ponto de vista do protagonista
 export const getJournal = (campaignId) => request('GET', `/api/campaigns/${campaignId}/journal`)
 
+// --- modo administrador (comandos nunca passam pela IA) ---
+export const adminLogin = (password) => request('POST', '/api/admin/login', { password }).then((r) => r.token)
+
+export async function runAdminCommand(campaignId, token, command) {
+  let response
+  try {
+    response = await fetch(`/api/campaigns/${campaignId}/admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token ?? '' },
+      body: JSON.stringify({ command }),
+    })
+  } catch {
+    throw new ApiError(NETWORK_ERROR, 0)
+  }
+  if (!response.ok) throw await readError(response)
+  return response.json()
+}
+
 export const getSettings = (campaignId) => request('GET', `/api/campaigns/${campaignId}/settings`)
 
 // { experience?, content? } -> nova versão; volta a visão atualizada + "warnings"

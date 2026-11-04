@@ -10,11 +10,22 @@ import NarrationBlock from '../components/NarrationBlock.vue'
 import PlayerAction from '../components/PlayerAction.vue'
 import SystemNotice from '../components/SystemNotice.vue'
 import TurnInput from '../components/TurnInput.vue'
+import AdminConsole from '../components/AdminConsole.vue'
+import { isAdminCommand, useAdminStore } from '../stores/admin.js'
 import { usePlayStore } from '../stores/play.js'
 import { parseNotice } from '../utils/notices.js'
 
 const props = defineProps({ id: { type: String, required: true } })
 const play = usePlayStore()
+const admin = useAdminStore()
+
+// Texto que começa com /admin ou /debug vai para o console, nunca para a história nem para a IA.
+function submit(text) {
+  if (isAdminCommand(text)) {
+    return admin.run(props.id, text, () => window.prompt('Senha de administrador (ADMIN_PASSWORD do .env):'))
+  }
+  return play.send(text)
+}
 const bottom = ref(null)
 const sheetOpen = ref(false) // em telas pequenas a ficha abre por botão
 const tab = ref('status')
@@ -102,6 +113,7 @@ watch(
           </div>
         </SystemNotice>
         <SystemNotice v-if="play.notice" tone="alert" tag="AVISO">{{ play.notice }}</SystemNotice>
+        <AdminConsole :log="admin.log" @clear="admin.clear()" />
         <div ref="bottom"></div>
       </div>
       <div class="sheet-panel" :class="{ open: sheetOpen }">
@@ -125,7 +137,7 @@ watch(
       </div>
 
       <div class="input-bar">
-        <TurnInput :disabled="play.streaming" @submit="play.send" />
+        <TurnInput :disabled="play.streaming || admin.busy" @submit="submit" />
       </div>
     </template>
   </section>
