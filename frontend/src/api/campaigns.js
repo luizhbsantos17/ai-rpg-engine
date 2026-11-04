@@ -18,6 +18,11 @@ export const updateDraft = (campaignId, changes) =>
 export const startCampaign = (campaignId) =>
   request('POST', `/api/campaigns/${campaignId}/start`).then((r) => r.campaign)
 
+export const exportUrl = (campaignId) => `/api/campaigns/${campaignId}/export`
+
+export const importCampaign = (snapshot) =>
+  request('POST', '/api/campaigns/import', snapshot).then((r) => r.campaign)
+
 export const getHistory = (campaignId) => request('GET', `/api/campaigns/${campaignId}/history`)
 
 // { character: {...} | null, world_time?: "dia 1, 08:00" }

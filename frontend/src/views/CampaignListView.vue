@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import SystemNotice from '../components/SystemNotice.vue'
+import { exportUrl } from '../api/campaigns.js'
 import { useCampaignsStore } from '../stores/campaigns.js'
 
 const store = useCampaignsStore()
@@ -11,9 +12,21 @@ onMounted(() => store.fetch())
 const formatDate = (iso) =>
   new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 
+async function importChosen(event) {
+  const [file] = event.target.files ?? []
+  event.target.value = ''
+  if (!file) return
+  try {
+    await store.importFile(file)
+  } catch (err) {
+    window.alert(err.message)
+  }
+}
+
 async function remove(campaign) {
   const typed = window.prompt(
-    `Excluir "${campaign.title}" apaga a campanha e todo o histórico, sem volta.\n` +
+    `Excluir "${campaign.title}" tira a campanha da lista com todo o histórico.\n` +
+      '(Uma cópia de segurança fica em data/backups e pode ser importada depois.)\n' +
       'Para confirmar, digite o título exato:',
   )
   if (typed === null) return
@@ -29,7 +42,13 @@ async function remove(campaign) {
   <section>
     <div class="heading">
       <h1>Suas campanhas</h1>
-      <RouterLink to="/nova" class="btn btn-primary">+ Nova campanha</RouterLink>
+      <div class="heading-actions">
+        <label class="btn">
+          Importar
+          <input type="file" accept="application/json,.json" class="sr-only" @change="importChosen" />
+        </label>
+        <RouterLink to="/nova" class="btn btn-primary">+ Nova campanha</RouterLink>
+      </div>
     </div>
 
     <p v-if="store.loading" class="muted">Carregando…</p>
@@ -55,6 +74,7 @@ async function remove(campaign) {
             Continuar criação
           </RouterLink>
           <RouterLink v-else :to="`/campanha/${campaign.id}`" class="btn btn-primary">Continuar</RouterLink>
+          <a class="btn" :href="exportUrl(campaign.id)" download>Exportar</a>
           <button type="button" class="btn btn-danger" @click="remove(campaign)">Excluir</button>
         </div>
       </li>
@@ -74,6 +94,11 @@ async function remove(campaign) {
 
 .heading h1 {
   margin: 0;
+}
+
+.heading-actions {
+  display: flex;
+  gap: var(--space-2);
 }
 
 .empty {
