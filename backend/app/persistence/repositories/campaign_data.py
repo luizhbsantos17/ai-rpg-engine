@@ -21,6 +21,7 @@ from app.persistence.repositories.world import (
     DisguiseRepository,
     EffectRepository,
     EntityRepository,
+    ImageRepository,
     ItemRepository,
     KnowledgeRepository,
     NpcMemoryRepository,
@@ -56,6 +57,7 @@ class CampaignData:
         self.disguises = DisguiseRepository(session, campaign_id)
         self.settings = SettingsRepository(session, campaign_id)
         self.admin_audit = AdminAuditRepository(session, campaign_id)
+        self.images = ImageRepository(session, campaign_id)
         self.memories = NpcMemoryRepository(session, campaign_id)
         self.quests = QuestRepository(session, campaign_id)
         self.summaries = SummaryRepository(session, campaign_id)

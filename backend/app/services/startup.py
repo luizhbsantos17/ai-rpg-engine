@@ -19,6 +19,8 @@ from app.providers.registry import build_provider
 from app.services.campaign_settings import CampaignSettingsService
 from app.services.campaigns import CampaignService
 from app.services.generation import CampaignGenerationService
+from app.images.providers import build_image_provider
+from app.services.images import ImageService
 from app.services.journal import JournalService
 from app.services.known import KnownCharactersService
 from app.services.sheet import CharacterSheetService
@@ -45,6 +47,7 @@ class Services:
         self.campaign_settings = CampaignSettingsService(db, provider, settings)
         self.admin_sessions = AdminSessions(settings.admin_password)
         self.admin = AdminInterpreter(db, self.admin_sessions, settings.data_dir)
+        self.images = ImageService(db, build_image_provider(settings), settings.data_dir)
         self.summaries = SummaryService(db, provider, settings)
         self.generation = CampaignGenerationService(db, provider, settings)
         self.turns = TurnOrchestrator(db, provider, settings, on_turn_completed=self.summaries.schedule)

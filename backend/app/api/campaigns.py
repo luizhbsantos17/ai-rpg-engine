@@ -1,12 +1,13 @@
 """Rotas de campanhas: /api/campaigns."""
 
-from flask import Blueprint, request
+from flask import Blueprint, request, send_file
 
 from app.api.request_body import parse_body
 from app.api.schemas import (
     CreateCampaignRequest,
     DeleteCampaignRequest,
     GenerateCampaignRequest,
+    GenerateImageRequest,
     UpdateDraftRequest,
     UpdateSettingsRequest,
 )
@@ -98,6 +99,26 @@ def update_campaign_settings(campaign_id: str):
     services = get_services()
     body = parse_body(UpdateSettingsRequest)
     return services.campaign_settings.update(services.local_user_id, campaign_id, body.experience, body.content)
+
+
+@bp.get("/images/status")
+def images_status():
+    return get_services().images.status()
+
+
+@bp.post("/campaigns/<campaign_id>/images")
+def generate_image(campaign_id: str):
+    """Gera (ou reaproveita) a imagem de uma entidade. Sem provedor: 503 "desligado"."""
+    services = get_services()
+    body = parse_body(GenerateImageRequest)
+    return services.images.generate_for_entity(services.local_user_id, campaign_id, body.entity_id), 201
+
+
+@bp.get("/campaigns/<campaign_id>/images/<image_id>")
+def image_file(campaign_id: str, image_id: str):
+    services = get_services()
+    path, mime_type = services.images.file_for(services.local_user_id, campaign_id, image_id)
+    return send_file(path, mimetype=mime_type)
 
 
 @bp.get("/campaigns/<campaign_id>/export")

@@ -17,6 +17,7 @@ from app.persistence.models import (
     Entity,
     EntityAttribute,
     EntitySkill,
+    GeneratedImageRecord,
     ItemInstance,
     Knowledge,
     NpcMemory,
@@ -129,6 +130,17 @@ class RelationshipRepository(CampaignScopedRepository[Relationship]):
             RelationshipEvent.campaign_id == self.campaign_id, RelationshipEvent.relationship_id == relationship_id
         )
         return list(self.session.scalars(query.order_by(RelationshipEvent.created_at)))
+
+
+class ImageRepository(CampaignScopedRepository[GeneratedImageRecord]):
+    model = GeneratedImageRecord
+
+    def by_hash(self, prompt_hash: str) -> GeneratedImageRecord | None:
+        return self.session.scalars(self._select().where(GeneratedImageRecord.prompt_hash == prompt_hash)).first()
+
+    def for_entity(self, entity_id: str) -> list[GeneratedImageRecord]:
+        query = self._select().where(GeneratedImageRecord.entity_id == entity_id)
+        return list(self.session.scalars(query.order_by(GeneratedImageRecord.created_at)))
 
 
 class AdminAuditRepository(CampaignScopedRepository[AdminAudit]):

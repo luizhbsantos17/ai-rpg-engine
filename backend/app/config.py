@@ -88,6 +88,12 @@ def load_settings(
     if ai_provider == "fake" and app_env != "test":
         raise ConfigError("AI_PROVIDER=fake só pode ser usado nos testes automatizados (APP_ENV=test).")
 
+    image_provider = get("IMAGE_PROVIDER", "none")
+    if image_provider not in ("none", "fake"):
+        raise ConfigError(f"IMAGE_PROVIDER={image_provider!r} inválido. Por enquanto só existe 'none' (desligado).")
+    if image_provider == "fake" and app_env != "test":
+        raise ConfigError("IMAGE_PROVIDER=fake só pode ser usado nos testes automatizados (APP_ENV=test).")
+
     secret_key = get("APP_SECRET_KEY")
     admin_password = get("ADMIN_PASSWORD")
     if app_env == "production":
@@ -112,7 +118,7 @@ def load_settings(
         ai_simulation_minutes=_parse_number("AI_SIMULATION_MINUTES", get("AI_SIMULATION_MINUTES", "360"), int,
                                             0, 10_000_000),
         ai_spend_limit_per_session=_parse_spend_limit(get("AI_SPEND_LIMIT_PER_SESSION", "0")),
-        image_provider=get("IMAGE_PROVIDER", "none"),
+        image_provider=image_provider,
         secret_key=secret_key or DEV_SECRET_KEY,
         admin_password=admin_password,
         openai_compat_api_key=get("OPENAI_COMPAT_API_KEY"),

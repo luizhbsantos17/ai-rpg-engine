@@ -3,6 +3,7 @@
 from app.persistence.models.audit import AdminAudit, AiRequest, DiceRollRecord
 from app.persistence.models.base import Base
 from app.persistence.models.canon import CanonFact
+from app.persistence.models.images import GeneratedImageRecord
 from app.persistence.models.knowledge import Disguise, Knowledge, NpcMemory
 from app.persistence.models.memory import FTS_TABLE, Summary
 from app.persistence.models.narrative import Event, Message, Turn
@@ -17,5 +18,5 @@ from app.persistence.models.world import Effect, Entity, EntityAttribute, Entity
 __all__ = [
     "AdminAudit", "AiRequest", "Base", "Campaign", "CampaignIntro", "CampaignSetting", "CanonFact", "Definition", "DiceRollRecord", "Disguise", "Effect",
     "Entity", "EntityAttribute", "EntitySkill", "Event", "ItemInstance", "Knowledge", "Message", "NpcMemory", "Quest", "Relationship", "RelationshipEvent", "ScheduledEvent", "Summary", "Turn", "User",
-    "FTS_TABLE",
+    "FTS_TABLE", "GeneratedImageRecord",
 ]

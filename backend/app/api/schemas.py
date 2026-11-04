@@ -40,6 +40,10 @@ class UpdateSettingsRequest(StrictModel):
     content: dict | None = None
 
 
+class GenerateImageRequest(StrictModel):
+    entity_id: str = Field(min_length=1, max_length=36)
+
+
 class AdminLoginRequest(StrictModel):
     password: str = Field(min_length=1, max_length=500)
 
