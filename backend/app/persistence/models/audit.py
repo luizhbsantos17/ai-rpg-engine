@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import JSON, BigInteger, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, BigInteger, Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.persistence.models.base import Base, CampaignScopedMixin, CreatedAtMixin, IdMixin
@@ -29,6 +29,18 @@ class AiRequest(IdMixin, CampaignScopedMixin, CreatedAtMixin, Base):
     error: Mapped[str | None] = mapped_column(Text)
     # Mensagens enviadas à IA (para /debug show_context).
     request_messages: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
+
+
+class AdminAudit(IdMixin, CampaignScopedMixin, CreatedAtMixin, Base):
+    """Todo comando administrativo executado (SPEC 16.3), com o que é preciso para desfazer."""
+
+    __tablename__ = "admin_audit"
+
+    command: Mapped[str] = mapped_column(Text, nullable=False)
+    result: Mapped[str] = mapped_column(Text, nullable=False)
+    changed_state: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    undo_operations: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON(none_as_null=True))  # operações inversas
+    undone: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
 class DiceRollRecord(IdMixin, CampaignScopedMixin, CreatedAtMixin, Base):

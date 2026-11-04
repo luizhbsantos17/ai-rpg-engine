@@ -6,6 +6,8 @@ import logging
 
 from flask import Flask, current_app
 
+from app.admin.interpreter import AdminInterpreter
+from app.admin.sessions import AdminSessions
 from app.ai.orchestrator.turns import TurnOrchestrator
 from app.auth.local_user import ensure_local_user
 from app.config import Settings
@@ -41,6 +43,8 @@ class Services:
         self.known = KnownCharactersService(db)
         self.journal = JournalService(db)
         self.campaign_settings = CampaignSettingsService(db, provider, settings)
+        self.admin_sessions = AdminSessions(settings.admin_password)
+        self.admin = AdminInterpreter(db, self.admin_sessions)
         self.summaries = SummaryService(db, provider, settings)
         self.generation = CampaignGenerationService(db, provider, settings)
         self.turns = TurnOrchestrator(db, provider, settings, on_turn_completed=self.summaries.schedule)

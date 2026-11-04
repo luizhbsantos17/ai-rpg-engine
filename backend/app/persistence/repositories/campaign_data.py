@@ -13,6 +13,7 @@ from app.persistence.repositories.narrative import (
 from app.persistence.models import Campaign
 from app.persistence.repositories.memory import MemorySearchRepository, SummaryRepository
 from app.persistence.repositories.world import (
+    AdminAuditRepository,
     AttributeRepository,
     CanonRepository,
     DefinitionRepository,
@@ -54,6 +55,7 @@ class CampaignData:
         self.knowledge = KnowledgeRepository(session, campaign_id)
         self.disguises = DisguiseRepository(session, campaign_id)
         self.settings = SettingsRepository(session, campaign_id)
+        self.admin_audit = AdminAuditRepository(session, campaign_id)
         self.memories = NpcMemoryRepository(session, campaign_id)
         self.quests = QuestRepository(session, campaign_id)
         self.summaries = SummaryRepository(session, campaign_id)

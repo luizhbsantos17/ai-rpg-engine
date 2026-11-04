@@ -22,6 +22,7 @@ from typing import Any
 
 from sqlalchemy.exc import IntegrityError
 
+from app.admin import is_admin_command
 from app.ai.context.narration import HistoryItem, build_narration_context
 from app.ai.orchestrator.events import (
     MechanicsApplied,
@@ -177,6 +178,9 @@ class TurnOrchestrator:
             raise InvalidInputError("turn_id precisa ser um UUID.") from None
         if not player_input:
             raise InvalidInputError("Escreva o que seu personagem faz ou diz.")
+        if is_admin_command(player_input):
+            # Comandos nunca viram fala do jogador nem vão para a IA (regra inviolável do projeto).
+            raise InvalidInputError("Comandos /admin e /debug vão pelo modo administrador, não pela história.")
         if len(player_input) > MAX_INPUT_CHARS:
             raise InvalidInputError(f"Texto longo demais (máximo {MAX_INPUT_CHARS} caracteres).")
 

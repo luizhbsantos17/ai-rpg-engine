@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy import or_, select
 
 from app.persistence.models import (
+    AdminAudit,
     CampaignSetting,
     CanonFact,
     Definition,
@@ -128,6 +129,21 @@ class RelationshipRepository(CampaignScopedRepository[Relationship]):
             RelationshipEvent.campaign_id == self.campaign_id, RelationshipEvent.relationship_id == relationship_id
         )
         return list(self.session.scalars(query.order_by(RelationshipEvent.created_at)))
+
+
+class AdminAuditRepository(CampaignScopedRepository[AdminAudit]):
+    model = AdminAudit
+
+    def last_undoable(self) -> AdminAudit | None:
+        """O comando mais recente que ainda pode ser desfeito.
+
+        Filtrado em Python: um JSON vazio pode estar gravado como `null` (JSON), que o SQL não vê como NULL.
+        """
+        query = self._select().where(AdminAudit.undone.is_(False)).order_by(AdminAudit.created_at.desc()).limit(50)
+        return next((row for row in self.session.scalars(query) if row.undo_operations), None)
+
+    def latest(self, limit: int = 20) -> list[AdminAudit]:
+        return list(self.session.scalars(self._select().order_by(AdminAudit.created_at.desc()).limit(limit)))
 
 
 class SettingsRepository(CampaignScopedRepository[CampaignSetting]):

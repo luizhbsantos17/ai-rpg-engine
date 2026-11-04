@@ -40,6 +40,14 @@ class UpdateSettingsRequest(StrictModel):
     content: dict | None = None
 
 
+class AdminLoginRequest(StrictModel):
+    password: str = Field(min_length=1, max_length=500)
+
+
+class AdminCommandRequest(StrictModel):
+    command: str = Field(min_length=1, max_length=2000)
+
+
 class DeleteCampaignRequest(StrictModel):
     confirm_title: str
 
