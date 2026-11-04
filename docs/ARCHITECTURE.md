@@ -416,3 +416,5 @@ Antes de usar um serviço pago, o sistema avisa e respeita o limite de gasto con
 Já na primeira versão: tabela `users` (com um usuário local), `campaigns.owner_id`,
 `player_id` nos personagens controlados por jogador, e todo acesso verificando permissão.
 Não há implementação de multiplayer, só ausência de bloqueios para ele.
+Modo de hospedagem (Etapa 7.5, D-051): o backend pode servir o frontend compilado (`FRONTEND_DIST`) e há um
+`Dockerfile` opcional; detalhes e cuidados em `docs/HOSTING.md`.

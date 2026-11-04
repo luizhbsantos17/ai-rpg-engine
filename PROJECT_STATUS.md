@@ -5,17 +5,22 @@
 ## Resumo
 | Etapa | Status |
 |---|---|
-| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-050) |
+| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-051) |
 | 1 — Fundação | **concluída** e verificada com Ollama real |
 | 2 — Motor de RPG | **concluída** e verificada com Ollama real |
 | 3 — Narrativa e mundo | **concluída** (teste de campanha simulada com reinício) |
 | 4 — Sistemas avançados | **concluída** (`tests/e2e/test_different_rule_systems.py`) |
 | 5 — Interface completa | **concluída** (testes de componentes; falta o dono olhar a tela) |
 | 6 — Imagens e administração | **concluída** (imagens: só a estrutura, desligada; gerador real pendente) |
-| 7 — Qualidade e expansão | **em andamento**: 7.1 a 7.4 e 7.6 concluídas; falta 7.5 |
+| 7 — Qualidade e expansão | **concluída** (Dockerfile escrito, não testado: sem Docker nesta máquina) |
 
 ## Última tarefa concluída
-Etapa 7.6: snapshots e exportações de versões anteriores do programa voltam a ser restauráveis (D-050):
+Etapa 7.5: documentação final e preparação para hospedagem (D-051): README atualizado, guia do jogador
+(`docs/GUIA_DO_JOGADOR.md`), guia de hospedagem (`docs/HOSTING.md`), `FRONTEND_DIST` (backend serve o
+frontend compilado; testado com `npm run build` real em modo produção na porta 5001), `Dockerfile` e
+`.dockerignore` (**não testados**: o Docker não está instalado). Com isso a Etapa 7 está concluída.
+
+Antes, Etapa 7.6: snapshots e exportações de versões anteriores do programa voltam a ser restauráveis (D-050):
 o arquivo é convertido num banco temporário pelas próprias migrações. Testado com um arquivo da versão da
 Etapa 2 (sem cânone, sem mecânicas no turno): importação pela API e restauração pelo `/admin`.
 
@@ -27,10 +32,14 @@ Antes, Etapa 7.4: desempenho com campanha grande (D-049). Medição com `scripts
 - abrir histórico ~50–70 ms; ficha ~5–9 ms; mapa/diário ~80 ms; exportar snapshot ~0,9–1,5 s (agora em segundo plano).
 Antes: 7.1 (segurança, D-047), 7.2 (teste real ponta a ponta com Ollama), 7.3 (snapshot automático, D-048).
 
-## Próxima tarefa: Etapa 7.5 — Documentação final e preparação para hospedagem
-Critério (SPEC Parte 23): o projeto funciona de maneira consistente, com testes demonstrando os principais fluxos.
-Faltam:
-5. Documentação final (README, guia do jogador) e preparação para hospedagem (Dockerfile opcional, D-009).
+## Próxima tarefa
+As 7 etapas da SPEC (Parte 23) estão concluídas. O que vem agora depende do dono (ver "Decisões pendentes"):
+1. **Testar a interface com os próprios olhos** (passo a passo em "Como testar") e anotar o que estranhar.
+2. Escolher um **modelo de IA maior**: é o que mais melhora a qualidade (decisão pendente 1).
+3. Melhorias técnicas que posso fazer sem decisão do dono, por prioridade:
+   a. ordem de iniciativa no combate; b. espaços de equipamento (mão, armadura...);
+   c. adaptador para APIs compatíveis com OpenAI (só código e testes com provedor falso; usar de verdade
+      depende de autorização por ter custo); d. contas de usuário para hospedagem.
 
 
 ## Arquivos modificados nesta sessão (Etapa 7)
@@ -41,6 +50,9 @@ summaries.py, journal.py}`, `backend/app/persistence/repositories/narrative.py`,
 `backend/app/admin/commands.py`, `backend/alembic/versions/...db33890eefb9_indice_memorias_npc.py`,
 `backend/scripts/benchmark_large_campaign.py`, `backend/app/persistence/snapshot_upgrade.py`,
 `backend/app/services/campaigns.py`, `backend/tests/integration/test_snapshot_upgrade.py`,
+`backend/app/{web.py, __init__.py, config.py}`, `backend/pyproject.toml`,
+`backend/tests/integration/test_frontend_serving.py`, `Dockerfile`, `.dockerignore`, `README.md`,
+`docs/{GUIA_DO_JOGADOR.md, HOSTING.md, ARCHITECTURE.md}`,
 `backend/tests/{integration/test_security.py, integration/test_auto_backup.py,
 integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
 `docs/{AI_PROVIDERS.md, DECISIONS.md, DATABASE.md}`, `CLAUDE.md`, `PROJECT_STATUS.md`, `CHANGELOG.md`.
@@ -79,7 +91,7 @@ integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **330 passed**, 1 deselected (externo) |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **335 passed**, 1 deselected (externo) |
 | 2026-11-04 | frontend `npm test` (Vitest) | **43 passed** |
 | 2026-11-04 | frontend `npm run build` | ok |
 | 2026-11-04 | `pytest -m external` com Ollama real | **1 passed** |
@@ -87,6 +99,8 @@ integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
 | 2026-11-04 | Etapa 2 com IA real (motor ligado) | ok: preparação, teste 1d20 rolado pelo motor, operação persistida; turno ~21 s |
 | 2026-11-04 | Etapa 3: campanha simulada (FakeProvider) com NPC, relação, missão, cânone, agendamento, tempo e reinício | ok (`tests/e2e/test_living_campaign.py`) |
 | 2026-11-04 | Geração de campanha com IA real | ok: 7–9 s; ingredientes usados; segredos só no banco |
+| 2026-11-04 | Etapa 7.5: modo produção com `FRONTEND_DIST` e build real do frontend | ok: página, rotas do Vue, arquivos e erro JSON da API numa porta só |
+| 2026-11-04 | Etapa 7.5: `Dockerfile` | **não testado** (Docker não instalado) |
 | 2026-11-04 | Etapa 7.4: `scripts/benchmark_large_campaign.py 2000 1000` | ok: contexto da IA ~1.900 tokens (fixo); turno sem IA ~69 ms |
 | 2026-11-04 | Etapa 7.2: fluxo completo pela API com IA real + reinício | ok: geração 14,6 s; 1º turno 86 s; depois 27–34 s; histórico, ficha e snapshot intactos após religar; `validate_world` sem inconsistências |
 

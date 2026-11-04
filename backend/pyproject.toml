@@ -25,6 +25,10 @@ dependencies = [
 dev = [
     "pytest>=8",
 ]
+# Servidor para hospedagem em Linux (usado pelo Dockerfile). Em casa não é preciso.
+hosting = [
+    "gunicorn>=23",
+]
 
 [tool.setuptools.packages.find]
 include = ["app*"]

@@ -3,15 +3,23 @@
 Plataforma de RPG narrativo com inteligência artificial: a IA cria mundos, narra e interpreta
 personagens, enquanto um motor de jogo valida as regras e guarda tudo de forma persistente.
 
-> **Status: Etapa 1 (Fundação).** Já funciona: criar campanhas, jogar com a IA narrando em tempo real,
-> fechar o programa e continuar exatamente de onde parou. Ainda não há motor de regras (atributos,
-> dados, habilidades): isso é a Etapa 2. Detalhes em [`PROJECT_STATUS.md`](PROJECT_STATUS.md).
+> **Status: as 7 etapas da especificação estão concluídas** (Dockerfile ainda não testado). Detalhes, testes e pendências
+> em [`PROJECT_STATUS.md`](PROJECT_STATUS.md). Como jogar: [Guia do jogador](docs/GUIA_DO_JOGADOR.md).
 
-## Funcionalidades planejadas
-Campanhas independentes e geradas aleatoriamente · sistemas de regras próprios por universo ·
-atributos e habilidades dinâmicos · NPCs autônomos com memória individual · avaliação,
-ocultação e falsificação de informações · combate híbrido · mundo vivo · modo administrador ·
-imagens opcionais · IA local ou externa.
+## O que já funciona
+- Campanhas independentes, criadas à mão ou **geradas aleatoriamente** (com segredos que só a IA conhece).
+- **Motor de regras próprio de cada universo**: atributos, recursos, habilidades com custo e recarga, itens,
+  testes com dados (rolados pelo motor, com semente registrada), efeitos com duração, regras de morte.
+- **Mundo persistente**: fatos canônicos, relógio do mundo, acontecimentos agendados, missões,
+  relacionamentos, o que cada personagem sabe (com disfarces e informações falsas), memória individual de NPCs,
+  NPCs que agem longe do jogador quando o tempo passa, resumos automáticos da história.
+- Interface com narração em tempo real, ficha, missões, conhecidos, mapa, diário e laços.
+- **Modo administrador** (`/admin`, `/debug`) separado da história, com senha, confirmação, auditoria e desfazer.
+- **Cópias de segurança**: snapshots por campanha (automáticos e manuais), exportar e importar.
+- IA local e gratuita (Ollama). Imagens: estrutura pronta, desligada (sem gerador escolhido).
+
+Ainda não: contas de usuário/multiplayer, provedores de IA externos, gerador de imagens, ordem de iniciativa
+no combate, espaços de equipamento.
 
 ## Tecnologias
 Python 3.12+ (desenvolvido com 3.13), Flask, SQLAlchemy, Alembic, Pydantic, SQLite ·
@@ -53,6 +61,9 @@ O modelo comentado é o [`.env.example`](.env.example). Os mais usados:
 | `AI_CONTEXT_WINDOW` | quanto histórico o modelo considera (mais = mais RAM) | 8192 |
 | `AI_TIMEOUT_SECONDS` | espera máxima por uma resposta | 600 |
 | `DATA_DIR` | pasta do banco de dados e backups | `./data` |
+| `AI_MECHANICS` | motor de regras nos turnos (`false` = só narração, mais rápido) | true |
+| `AUTO_SNAPSHOT_EVERY` | cópia automática a cada N jogadas (0 = nunca) | 20 |
+| `ADMIN_PASSWORD` | senha do modo administrador (vazio = desligado) | — |
 
 Depois de mudar o `.env`, feche e abra o jogo de novo.
 
@@ -69,12 +80,17 @@ cd backend; .\.venv\Scripts\python.exe -m pytest -m external -s
 $env:Path = "F:\Tools\node-v24.22.2-win-x64;" + $env:Path
 cd frontend; npm test; npm run build
 
+# Medir desempenho com uma campanha grande (IA falsa; pasta temporária)
+cd backend; .\.venv\Scripts\python.exe scripts\benchmark_large_campaign.py 500 300
+
 # Servidores separados, para desenvolvimento
 cd backend; .\.venv\Scripts\flask.exe --app app run --debug    # http://127.0.0.1:5000/api/health
 cd frontend; npm run dev                                         # http://127.0.0.1:5173
 ```
 
 ## Documentação
+- [Guia do jogador](docs/GUIA_DO_JOGADOR.md)
+- [Hospedagem (opcional)](docs/HOSTING.md)
 - [Comece aqui (como usar o Claude Code neste projeto)](COMECE_AQUI.md)
 - [Status do projeto](PROJECT_STATUS.md)
 - [Arquitetura](docs/ARCHITECTURE.md)

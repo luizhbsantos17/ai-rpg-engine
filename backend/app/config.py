@@ -52,6 +52,7 @@ class Settings:
     auto_snapshot_every: int  # snapshot automático da campanha a cada N turnos concluídos (0 = nunca)
     ai_spend_limit_per_session: Decimal
     image_provider: str
+    frontend_dist: Path | None  # pasta do frontend compilado servida pelo backend (hospedagem); None = desligado
     # Segredos: repr=False impede que apareçam em logs ou mensagens de erro.
     secret_key: str = field(repr=False)
     admin_password: str | None = field(repr=False)
@@ -95,6 +96,10 @@ def load_settings(
     if image_provider == "fake" and app_env != "test":
         raise ConfigError("IMAGE_PROVIDER=fake só pode ser usado nos testes automatizados (APP_ENV=test).")
 
+    frontend_dist = _resolve_path(get("FRONTEND_DIST")) if get("FRONTEND_DIST") else None
+    if frontend_dist is not None and not (frontend_dist / "index.html").is_file():
+        raise ConfigError(f"FRONTEND_DIST={frontend_dist} não tem index.html. Rode 'npm run build' no frontend.")
+
     secret_key = get("APP_SECRET_KEY")
     admin_password = get("ADMIN_PASSWORD")
     if app_env == "production":
@@ -121,6 +126,7 @@ def load_settings(
         auto_snapshot_every=_parse_number("AUTO_SNAPSHOT_EVERY", get("AUTO_SNAPSHOT_EVERY", "20"), int, 0, 10_000),
         ai_spend_limit_per_session=_parse_spend_limit(get("AI_SPEND_LIMIT_PER_SESSION", "0")),
         image_provider=image_provider,
+        frontend_dist=frontend_dist,
         secret_key=secret_key or DEV_SECRET_KEY,
         admin_password=admin_password,
         openai_compat_api_key=get("OPENAI_COMPAT_API_KEY"),

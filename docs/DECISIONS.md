@@ -271,3 +271,13 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
   novo) tornava todos os snapshots antigos inúteis. Reaproveitar as migrações garante que mudanças de dados
   futuras também sejam aplicadas aos arquivos antigos, sem código de conversão duplicado.
 - Complementa D-045.
+
+### D-051 — Hospedagem: um processo, backend serve o frontend, gunicorn com 1 worker
+- Decisão: `FRONTEND_DIST` (desligado por padrão) faz o backend servir o frontend compilado, com volta ao
+  `index.html` para as rotas do Vue e `/api/...` inexistente respondendo erro JSON. `Dockerfile` em duas
+  etapas (compila o frontend com Node 24; roda em Python 3.13 com `gunicorn --workers 1 --threads 8`, usuário
+  sem privilégios, dados no volume `/data`). Um worker só porque sessões do admin e travas ficam na memória
+  e o SQLite tem um escritor por vez. Sem contas de usuário ainda: hospedar só em rede privada ou atrás de
+  proxy com login (docs/HOSTING.md).
+- Motivo: D-009 (Docker opcional) e SPEC 18 (arquitetura pronta para hospedagem futura).
+- Limite: o Dockerfile não foi testado (Docker não instalado nesta máquina); o modo de servir o frontend foi.

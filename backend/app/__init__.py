@@ -28,7 +28,11 @@ def create_app(settings: Settings | None = None) -> Flask:
 
     initialize_services(flask_app, settings)
 
-    from app.api import register_api
+    from app.api import API_PREFIX, register_api
 
     register_api(flask_app)
+    if settings.frontend_dist is not None:
+        from app.web import register_frontend
+
+        register_frontend(flask_app, settings.frontend_dist, API_PREFIX)
     return flask_app

@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## [0.7.0] — Etapa 7 (em andamento)
+## [0.7.0] — Etapa 7 (concluída)
 - Segurança: limite de 50 MB por pedido, bloqueio de 60 s após 5 senhas de administrador erradas.
 - Snapshot automático a cada `AUTO_SNAPSHOT_EVERY` jogadas (padrão 20), mantendo os 5 automáticos mais recentes.
 - Teste real de ponta a ponta com o Ollama, incluindo reinício do backend (tempos em AI_PROVIDERS.md).
@@ -8,6 +8,8 @@
 - Desempenho em campanhas longas: contagens pelo banco, índice das lembranças de NPC, missões limitadas no
   contexto da IA, snapshot automático em segundo plano; script de medição `scripts/benchmark_large_campaign.py`.
 - Snapshots e exportações de versões anteriores do programa são convertidos automaticamente ao restaurar/importar.
+- Hospedagem: `FRONTEND_DIST` (backend serve o frontend compilado), `Dockerfile` opcional (não testado),
+  guia `docs/HOSTING.md`. Documentação final: README e `docs/GUIA_DO_JOGADOR.md`.
 
 ## [0.6.0] — Etapa 6 (concluída)
 - Modo administrador e debug: interpretador próprio, sessão por senha, confirmação de destrutivos,
