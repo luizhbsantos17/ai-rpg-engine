@@ -1,0 +1,36 @@
+/* Identidade visual: janela de "sistema" de light novel sobre um fundo noturno.
+   Todas as cores e medidas vêm daqui; os componentes só usam as variáveis. */
+:root {
+  --bg: #0b0e17;
+  --bg-raised: #121726;
+  --panel: rgba(20, 27, 45, 0.82);
+  --panel-strong: #182036;
+  --line: rgba(120, 160, 220, 0.18);
+  --line-strong: rgba(120, 190, 255, 0.45);
+
+  --text: #e6e9f2;
+  --text-muted: #9aa3b8;
+  --text-faint: #6b7489;
+
+  --accent: #6cc7ff;          /* azul "janela de sistema" */
+  --accent-glow: rgba(108, 199, 255, 0.45);
+  --gold: #e0b866;            /* títulos, conquistas */
+  --danger: #ff7a7a;
+  --danger-bg: rgba(255, 90, 90, 0.08);
+  --success: #7fe0a8;
+
+  --font-display: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  --font-narration: Georgia, "Times New Roman", serif;
+  --font-ui: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font-mono: Consolas, "Cascadia Mono", ui-monospace, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 36px;
+
+  --radius: 6px;
+  --shadow-panel: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
