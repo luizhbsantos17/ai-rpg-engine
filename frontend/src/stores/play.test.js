@@ -7,6 +7,7 @@ import { STREAM_CUT_MESSAGE, usePlayStore } from './play.js'
 
 vi.mock('../api/campaigns.js', () => ({
   getHistory: vi.fn(),
+  getSheet: vi.fn(),
   playTurn: vi.fn(),
 }))
 
@@ -14,8 +15,9 @@ const campaign = { id: 'c1', title: 'Teste', premise: null }
 const turn = (id, status, extra = {}) => ({ id, number: 1, status, error: null, player_input: 'Ajo.', ...extra })
 const msg = (id, seq, role, content, turnId = 't1') => ({ id, seq, role, content, turn_id: turnId })
 
-async function loadedStore(history = {}) {
+async function loadedStore(history = {}, character = null) {
   api.getHistory.mockResolvedValue({ campaign, turns: [], messages: [], ...history })
+  api.getSheet.mockResolvedValue(character)
   const store = usePlayStore()
   await store.load('c1')
   return store
@@ -103,6 +105,21 @@ describe('usePlayStore', () => {
     await store.send('Algo.')
     expect(store.notice).toBe('Já existe uma jogada em andamento.')
     expect(store.failure).toBeNull()
+  })
+
+  it('avisos do motor entram no chat em ordem e a ficha é atualizada', async () => {
+    const store = await loadedStore()
+    const sheet = { name: 'Kael', attributes: [], skills: [], items: [] }
+    api.getSheet.mockResolvedValue(sheet)
+    api.playTurn.mockImplementation(async (cid, turnId, input, h) => {
+      h.onTurn({ turn: turn(turnId, 'processing'), player_message: msg('m1', 1, 'player', input, turnId) })
+      h.onMechanics({ messages: [msg('m2', 2, 'system', '[SISTEMA] Personagem criado: Kael.', turnId)] })
+      h.onDone({ turn: turn(turnId, 'completed'), narration_message: msg('m3', 3, 'narration', 'Era uma vez.', turnId) })
+    })
+    await store.send('Começo.')
+    await Promise.resolve()
+    expect(store.messages.map((m) => m.role)).toEqual(['player', 'system', 'narration'])
+    expect(store.character).toEqual(sheet)
   })
 
   it('não inicia duas jogadas ao mesmo tempo', async () => {

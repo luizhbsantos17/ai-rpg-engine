@@ -7,10 +7,13 @@ export const createCampaign = (data) => request('POST', '/api/campaigns', data).
 
 export const getHistory = (campaignId) => request('GET', `/api/campaigns/${campaignId}/history`)
 
+export const getSheet = (campaignId) =>
+  request('GET', `/api/campaigns/${campaignId}/sheet`).then((r) => r.character)
+
 export const deleteCampaign = (campaignId, confirmTitle) =>
   request('DELETE', `/api/campaigns/${campaignId}`, { confirm_title: confirmTitle })
 
-// Joga um turno. `handlers` recebe: onTurn, onDelta, onDone, onError (eventos do servidor).
+// Joga um turno. `handlers` recebe: onTurn, onMechanics, onDelta, onDone, onError (eventos do servidor).
 // Erros antes do stream (campanha inexistente, texto vazio...) são lançados como ApiError.
 export async function playTurn(campaignId, turnId, input, handlers) {
   let response
@@ -27,6 +30,7 @@ export async function playTurn(campaignId, turnId, input, handlers) {
 
   const routes = {
     turn: handlers.onTurn,
+    mechanics: handlers.onMechanics,
     delta: handlers.onDelta,
     done: handlers.onDone,
     error: handlers.onError,

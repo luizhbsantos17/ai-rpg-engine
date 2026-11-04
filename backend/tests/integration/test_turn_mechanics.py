@@ -180,6 +180,30 @@ def test_replay_of_completed_turn_resends_notices_without_calling_ai(services, f
     assert "".join(e.text for e in again if isinstance(e, NarrationDelta)) == "Começo."
 
 
+def test_character_sheet_shows_only_the_protagonist(app_with_mechanics, fake_ai, campaign):
+    client = app_with_mechanics.test_client()
+    assert client.get(f"/api/campaigns/{campaign['id']}/sheet").get_json() == {"character": None}
+    fake_ai.queue(SETUP, interpretation(
+        {"op": "definition.create", "kind": "skill", "key": "leitura_de_ventos", "data": {"name": "Leitura de Ventos"}},
+        {"op": "skill.grant", "entity": "player", "key": "leitura_de_ventos", "level": 2},
+        {"op": "definition.create", "kind": "item", "key": "bussola", "data": {"name": "Bússola"}},
+        {"op": "item.create", "key": "bussola", "owner": "player"},
+        {"op": "entity.create", "kind": "character", "name": "Oren", "attributes": {"forca": 9}},
+    ), "Começo.")
+    response = client.post(f"/api/campaigns/{campaign['id']}/turns", json={"turn_id": str(uuid.uuid4()), "input": "Começo."})
+    response.get_data()  # o turno roda enquanto o stream é lido
+
+    sheet = client.get(f"/api/campaigns/{campaign['id']}/sheet").get_json()["character"]
+    assert sheet["name"] == "Kael" and sheet["location"] == "Vila Costeira"
+    assert {(a["name"], a["value"], a["max"], a["resource"]) for a in sheet["attributes"]} == {
+        ("Vida", "20", "20", True), ("Força", "5", None, False),
+    }
+    assert [(s["name"], s["level"]) for s in sheet["skills"]] == [("Leitura de Ventos", 2)]
+    assert [(i["name"], i["quantity"]) for i in sheet["items"]] == [("Bússola", 1)]
+    assert "Oren" not in json.dumps(sheet)
+    assert client.get(f"/api/campaigns/{uuid.uuid4()}/sheet").status_code == 404
+
+
 def test_sse_stream_contains_mechanics_event(app_with_mechanics, fake_ai, campaign):
     fake_ai.queue(SETUP, interpretation(), "Começo.")
     response = app_with_mechanics.test_client().post(

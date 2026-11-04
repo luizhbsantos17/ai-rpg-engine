@@ -12,6 +12,7 @@ function newTurnId() {
 export const usePlayStore = defineStore('play', {
   state: () => ({
     campaign: null,
+    character: null, // ficha do protagonista (null até a campanha ser preparada)
     messages: [],
     turns: {},
     loading: false,
@@ -29,8 +30,9 @@ export const usePlayStore = defineStore('play', {
       this.$reset()
       this.loading = true
       try {
-        const history = await api.getHistory(campaignId)
+        const [history, character] = await Promise.all([api.getHistory(campaignId), api.getSheet(campaignId)])
         this.campaign = history.campaign
+        this.character = character
         this.messages = history.messages
         this.turns = Object.fromEntries(history.turns.map((t) => [t.id, t]))
         // Ao reabrir, se a última jogada falhou, oferece repetir (D-012).
@@ -54,6 +56,15 @@ export const usePlayStore = defineStore('play', {
       return this.runTurn(this.failure.turnId, this.failure.input)
     },
 
+    async refreshSheet() {
+      if (!this.campaign) return
+      try {
+        this.character = await api.getSheet(this.campaign.id)
+      } catch {
+        // a ficha é complementar: se falhar, a história continua
+      }
+    },
+
     addMessage(message) {
       if (message && !this.messages.some((m) => m.id === message.id)) {
         this.messages.push(message)
@@ -73,6 +84,10 @@ export const usePlayStore = defineStore('play', {
           onTurn: (data) => {
             this.turns[data.turn.id] = data.turn
             this.addMessage(data.player_message)
+          },
+          onMechanics: (data) => {
+            for (const message of data.messages) this.addMessage(message)
+            this.refreshSheet()
           },
           onDelta: (data) => {
             this.streamingText += data.text

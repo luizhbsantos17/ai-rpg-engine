@@ -15,6 +15,7 @@ from app.persistence.repositories.narrative import fail_interrupted_turns
 from app.providers import AIProvider
 from app.providers.registry import build_provider
 from app.services.campaigns import CampaignService
+from app.services.sheet import CharacterSheetService
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ class Services:
         self.provider = provider
         self.local_user_id = local_user_id
         self.campaigns = CampaignService(db)
+        self.sheets = CharacterSheetService(db)
         self.turns = TurnOrchestrator(db, provider, settings)
 
 

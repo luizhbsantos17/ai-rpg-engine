@@ -36,6 +36,12 @@ def campaign_history(campaign_id: str):
     return services.campaigns.history(services.local_user_id, campaign_id, after_seq=after_seq)
 
 
+@bp.get("/campaigns/<campaign_id>/sheet")
+def character_sheet(campaign_id: str):
+    services = get_services()
+    return services.sheets.sheet(services.local_user_id, campaign_id)
+
+
 @bp.delete("/campaigns/<campaign_id>")
 def delete_campaign(campaign_id: str):
     services = get_services()

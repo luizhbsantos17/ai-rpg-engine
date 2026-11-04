@@ -2,15 +2,18 @@
 import { nextTick, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
+import CharacterSheet from '../components/CharacterSheet.vue'
 import NarrationBlock from '../components/NarrationBlock.vue'
 import PlayerAction from '../components/PlayerAction.vue'
 import SystemNotice from '../components/SystemNotice.vue'
 import TurnInput from '../components/TurnInput.vue'
 import { usePlayStore } from '../stores/play.js'
+import { parseNotice } from '../utils/notices.js'
 
 const props = defineProps({ id: { type: String, required: true } })
 const play = usePlayStore()
 const bottom = ref(null)
+const sheetOpen = ref(false) // em telas pequenas a ficha abre por botão
 
 const START_PROMPT = 'Comece a história.'
 
@@ -41,10 +44,16 @@ watch(
 
     <template v-else-if="play.campaign">
       <header class="campaign-header">
-        <h1>{{ play.campaign.title }}</h1>
-        <p v-if="play.campaign.premise" class="premise">{{ play.campaign.premise }}</p>
+        <div>
+          <h1>{{ play.campaign.title }}</h1>
+          <p v-if="play.campaign.premise" class="premise">{{ play.campaign.premise }}</p>
+        </div>
+        <button type="button" class="btn sheet-toggle" :aria-expanded="sheetOpen" @click="sheetOpen = !sheetOpen">
+          {{ sheetOpen ? 'Fechar ficha' : 'Ficha' }}
+        </button>
       </header>
 
+      <div class="layout">
       <div class="story" aria-live="polite">
         <SystemNotice v-if="play.isEmpty && !play.streaming">
           A história ainda não começou. Escreva a primeira ação do seu personagem ou peça ao narrador para começar.
@@ -60,7 +69,12 @@ watch(
             :failed="play.turns[message.turn_id]?.status === 'failed'"
           />
           <NarrationBlock v-else-if="message.role === 'narration'" :text="message.content" />
-          <SystemNotice v-else>{{ message.content }}</SystemNotice>
+          <SystemNotice
+            v-else
+            :tag="parseNotice(message.content).tag"
+            :tone="parseNotice(message.content).tone"
+            class="compact"
+          >{{ parseNotice(message.content).text }}</SystemNotice>
         </template>
 
         <NarrationBlock v-if="play.streaming" :text="play.streamingText" streaming />
@@ -74,6 +88,8 @@ watch(
         </SystemNotice>
         <SystemNotice v-if="play.notice" tone="alert" tag="AVISO">{{ play.notice }}</SystemNotice>
         <div ref="bottom"></div>
+      </div>
+      <CharacterSheet class="sheet-panel" :class="{ open: sheetOpen }" :character="play.character" />
       </div>
 
       <div class="input-bar">
@@ -91,9 +107,53 @@ watch(
 }
 
 .campaign-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
   padding-bottom: var(--space-4);
   margin-bottom: var(--space-4);
   border-bottom: 1px solid var(--line);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: var(--space-5);
+  align-items: start;
+  flex: 1;
+}
+
+.sheet-panel {
+  position: sticky;
+  top: var(--space-4);
+}
+
+.sheet-toggle {
+  display: none;
+}
+
+.compact {
+  margin: var(--space-2) 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sheet-toggle {
+    display: inline-flex;
+  }
+  .sheet-panel {
+    display: none;
+    position: static;
+    order: -1;
+  }
+  .sheet-panel.open {
+    display: block;
+  }
 }
 
 .campaign-header h1 {

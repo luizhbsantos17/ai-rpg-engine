@@ -53,7 +53,7 @@ import { RouterLink, RouterView } from 'vue-router'
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 980px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: var(--space-5);
 }
