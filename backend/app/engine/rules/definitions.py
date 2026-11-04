@@ -60,6 +60,15 @@ class SkillDefinition(OpenDefinition):
     rarity: Name | None = None
     max_level: int | None = Field(default=None, ge=1)  # None = sem teto (SPEC 5.2)
     costs: list[SkillCost] = Field(default_factory=list)
+    cooldown: int | Annotated[str, StringConstraints(max_length=30)] | None = None  # recarga: "30m", "1d"...
+
+    @model_validator(mode="after")
+    def _check_cooldown(self):
+        if self.cooldown is not None:
+            from app.engine.time import parse_duration  # import aqui: evita ciclo
+
+            parse_duration(self.cooldown)
+        return self
 
 
 class ItemDefinition(OpenDefinition):

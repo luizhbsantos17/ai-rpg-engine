@@ -277,7 +277,8 @@ def _player_notice(op: str, r: dict[str, Any], player_id: str) -> PlayerNotice |
         return PlayerNotice("ALERTA", f"Habilidade perdida: {r['key']}.")
     if op == "skill.use":
         costs = ", ".join(f"−{c['amount']} {c['resource']} ({c['to']})" for c in r["costs"])
-        return PlayerNotice("SISTEMA", f"Habilidade usada: {r['skill']}" + (f" · {costs}" if costs else "") + ".")
+        ready = f" · pronta de novo em {r['ready_again']}" if r.get("ready_again") else ""
+        return PlayerNotice("SISTEMA", f"Habilidade usada: {r['skill']}" + (f" · {costs}" if costs else "") + ready + ".")
     if op == "entity.update" and r.get("changes", {}).get("status", {}).get("to") == "dead":
         return PlayerNotice("ALERTA", "Você morreu.")
     if op == "entity.move":

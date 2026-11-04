@@ -158,6 +158,23 @@ def test_skill_use_pays_costs_all_or_nothing(db, campaign_id, run, world):
     assert values["mana"][0] == "0.5" and values["vida"][0] == "28"  # a vida da tentativa recusada voltou
 
 
+def test_skill_cooldown_follows_world_time(db, campaign_id, run, world):
+    outcomes = run([
+        {"op": "definition.create", "kind": "skill", "key": "grito", "data": {"name": "Grito", "cooldown": "1h"}},
+        {"op": "definition.create", "kind": "skill", "key": "ruim", "data": {"name": "Ruim", "cooldown": "talvez"}},
+        {"op": "skill.grant", "entity": "player", "key": "grito"},
+        {"op": "skill.use", "entity": "player", "key": "grito"},
+        {"op": "skill.use", "entity": "player", "key": "grito"},
+    ])
+    assert [o["status"] for o in outcomes] == ["applied", "rejected", "applied", "applied", "rejected"]
+    assert outcomes[3]["result"]["ready_again"] == "dia 1, 01:00"
+    assert "recarga" in outcomes[4]["reason"]
+    assert run([{"op": "time.advance", "duration": "30m"},
+                {"op": "skill.use", "entity": "player", "key": "grito"}])[1]["status"] == "rejected"
+    assert run([{"op": "time.advance", "duration": "30m"},
+                {"op": "skill.use", "entity": "player", "key": "grito"}])[1]["status"] == "applied"
+
+
 def test_inventory_without_duplication(db, campaign_id, run, world):
     created = run([
         {"op": "item.create", "ref": "p", "key": "pocao", "owner": "player", "quantity": 3},

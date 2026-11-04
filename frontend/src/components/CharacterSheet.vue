@@ -72,7 +72,7 @@ const statusLabel = { active: 'Ativo', dead: 'Morto' }
         <h3>Habilidades</h3>
         <ul v-if="character.skills.length" class="list">
           <li v-for="skill in character.skills" :key="skill.key" :title="skill.description">
-            <span>{{ skill.name }}</span>
+            <span>{{ skill.name }}<small v-if="skill.ready_at" class="cooldown"> · recarga até {{ skill.ready_at }}</small></span>
             <span class="level">Nv. {{ skill.level }}<template v-if="skill.max_level"> / {{ skill.max_level }}</template></span>
           </li>
         </ul>
@@ -124,6 +124,11 @@ const statusLabel = { active: 'Ativo', dead: 'Morto' }
 
 .effect {
   color: var(--gold);
+}
+
+.cooldown {
+  color: var(--text-faint);
+  font-size: 0.75rem;
 }
 
 .sheet-tag {

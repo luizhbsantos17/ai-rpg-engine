@@ -10,6 +10,7 @@ from app.engine.operations.context import OperationContext
 from app.engine.operations.schemas import SkillEvolve, SkillGrant, SkillRevoke, SkillUse
 from app.engine.rules.values import number_text, to_decimal
 from app.engine.rules.variables import entity_variables
+from app.engine.time import format_world_time, parse_duration
 from app.persistence.models import EntitySkill
 
 
@@ -74,6 +75,12 @@ def skill_use(op: SkillUse, ctx: OperationContext) -> dict:
         raise OperationRejected(f"{entity.name} não tem a habilidade {definition['name']}.")
     target = ctx.entity(op.target) if op.target else None
     variables = {**entity_variables(ctx.data, entity), "level": Decimal(skill.level)}
+    now = ctx.data.campaign().world_clock
+    ready_at = skill.data.get("ready_at")
+    if ready_at is not None and now < ready_at:
+        raise OperationRejected(
+            f"{definition['name']} ainda está em recarga (pronta em {format_world_time(ready_at)})."
+        )
 
     paid = []
     for cost in definition.get("costs", []):
@@ -91,9 +98,15 @@ def skill_use(op: SkillUse, ctx: OperationContext) -> dict:
         ctx.data.attributes.upsert(entity.id, cost["resource"], number_text(current - amount))
         paid.append({"resource": cost["resource"], "amount": number_text(amount), "from": previous,
                      "to": number_text(current - amount), "max": resource.max_value})
+    ready_text = None
+    if definition.get("cooldown") is not None:
+        next_ready = now + parse_duration(definition["cooldown"])
+        skill.data = {**skill.data, "ready_at": next_ready}
+        ctx.data.session.flush()
+        ready_text = format_world_time(next_ready)
     return {"entity_id": entity.id, "name": entity.name, "key": op.key, "skill": definition["name"],
             "level": skill.level, "target_id": target.id if target else None,
-            "target": target.name if target else None, "costs": paid}
+            "target": target.name if target else None, "costs": paid, "ready_again": ready_text}
 
 
 def _cost_amount(raw, variables, skill_name: str) -> Decimal:

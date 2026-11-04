@@ -126,7 +126,12 @@ def _entity_details(data: CampaignData, entity: Entity, aliases: _Aliases) -> li
         ))
     skills = data.skills.for_entity(entity.id)
     if skills:
-        details.append("  habilidades: " + ", ".join(f"{s.definition_key} (nível {s.level})" for s in skills))
+        now = data.campaign().world_clock
+        details.append("  habilidades: " + ", ".join(
+            f"{s.definition_key} (nível {s.level}"
+            + (f", em recarga até {format_world_time(s.data['ready_at'])}" if s.data.get("ready_at", 0) > now else "")
+            + ")" for s in skills
+        ))
     items = data.items.held_by(entity.id)[:MAX_ITEMS_PER_HOLDER]
     if items:
         details.append("  itens: " + ", ".join(_item(i, aliases) for i in items))

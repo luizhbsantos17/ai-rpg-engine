@@ -35,7 +35,7 @@ class CharacterSheetService:
                     "description": player.data.get("description", ""),
                     "location": location.name if location else None,
                     "attributes": [_attribute(data, a) for a in data.attributes.for_entity(player.id)],
-                    "skills": [_skill(data, s) for s in data.skills.for_entity(player.id)],
+                    "skills": [_skill(data, s, data.campaign().world_clock) for s in data.skills.for_entity(player.id)],
                     "items": [_item(data, i) for i in data.items.held_by(player.id)],
                     "effects": [_effect(data, e) for e in data.effects.active_for(player.id)],
                 },
@@ -63,9 +63,11 @@ def _attribute(data: CampaignData, attribute) -> dict[str, Any]:
     }
 
 
-def _skill(data: CampaignData, skill) -> dict[str, Any]:
+def _skill(data: CampaignData, skill, now: int) -> dict[str, Any]:
     definition = _definition_data(data, "skill", skill.definition_key)
+    ready_at = skill.data.get("ready_at")
     return {
+        "ready_at": format_world_time(ready_at) if ready_at is not None and ready_at > now else None,
         "key": skill.definition_key,
         "name": definition.get("name", skill.definition_key),
         "description": definition.get("description", ""),
