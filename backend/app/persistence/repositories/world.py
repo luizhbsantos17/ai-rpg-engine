@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy import or_, select
 
 from app.persistence.models import (
+    CampaignSetting,
     CanonFact,
     Definition,
     DiceRollRecord,
@@ -127,6 +128,22 @@ class RelationshipRepository(CampaignScopedRepository[Relationship]):
             RelationshipEvent.campaign_id == self.campaign_id, RelationshipEvent.relationship_id == relationship_id
         )
         return list(self.session.scalars(query.order_by(RelationshipEvent.created_at)))
+
+
+class SettingsRepository(CampaignScopedRepository[CampaignSetting]):
+    model = CampaignSetting
+
+    def current(self, kind: str) -> CampaignSetting | None:
+        query = self._select().where(CampaignSetting.kind == kind).order_by(CampaignSetting.version.desc()).limit(1)
+        return self.session.scalars(query).first()
+
+    def save(self, kind: str, data: dict[str, Any]) -> CampaignSetting:
+        previous = self.current(kind)
+        return self.add(CampaignSetting(kind=kind, data=data, version=(previous.version + 1) if previous else 1))
+
+    def history(self, kind: str) -> list[CampaignSetting]:
+        query = self._select().where(CampaignSetting.kind == kind).order_by(CampaignSetting.version)
+        return list(self.session.scalars(query))
 
 
 class ScheduledEventRepository(CampaignScopedRepository[ScheduledEvent]):

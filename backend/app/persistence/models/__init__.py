@@ -10,11 +10,12 @@ from app.persistence.models.platform import Campaign, CampaignIntro, User
 from app.persistence.models.quests import Quest
 from app.persistence.models.rules import Definition
 from app.persistence.models.schedule import ScheduledEvent
+from app.persistence.models.settings import CampaignSetting
 from app.persistence.models.social import Relationship, RelationshipEvent
 from app.persistence.models.world import Effect, Entity, EntityAttribute, EntitySkill, ItemInstance
 
 __all__ = [
-    "AiRequest", "Base", "Campaign", "CampaignIntro", "CanonFact", "Definition", "DiceRollRecord", "Disguise", "Effect",
+    "AiRequest", "Base", "Campaign", "CampaignIntro", "CampaignSetting", "CanonFact", "Definition", "DiceRollRecord", "Disguise", "Effect",
     "Entity", "EntityAttribute", "EntitySkill", "Event", "ItemInstance", "Knowledge", "Message", "NpcMemory", "Quest", "Relationship", "RelationshipEvent", "ScheduledEvent", "Summary", "Turn", "User",
     "FTS_TABLE",
 ]

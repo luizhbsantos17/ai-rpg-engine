@@ -48,20 +48,21 @@ class WorldSimulation:
         self.provider = provider
         self.settings = settings
 
-    def should_run(self, elapsed_minutes: int) -> bool:
-        threshold = self.settings.ai_simulation_minutes
+    def should_run(self, elapsed_minutes: int, settings: Settings | None = None) -> bool:
+        threshold = (settings or self.settings).ai_simulation_minutes
         return threshold > 0 and elapsed_minutes >= threshold
 
     def run(self, campaign_id: str, turn_id: str, model: str, brief: CampaignBrief,
-            elapsed_minutes: int, campaign_seed: int) -> dict[str, Any]:
+            elapsed_minutes: int, campaign_seed: int, settings: Settings | None = None) -> dict[str, Any]:
+        settings = settings or self.settings
         with self.db.transaction() as session:
             data = CampaignData(session, campaign_id)
             now = data.campaign().world_clock
             npc_lines, aliases = self._relevant_npcs(data)
         messages = build_simulation_messages(brief, format_duration(elapsed_minutes), format_world_time(now), npc_lines)
-        options = replace(generation_options(self.settings, model), temperature=0.7,
+        options = replace(generation_options(settings, model), temperature=0.7,
                           max_output_tokens=SIMULATION_MAX_TOKENS)
-        result = request_structured(self.provider, messages, options, SimulationOutput, self.settings.ai_json_attempts)
+        result = request_structured(self.provider, messages, options, SimulationOutput, settings.ai_json_attempts)
 
         with self.db.transaction() as session:
             data = CampaignData(session, campaign_id)

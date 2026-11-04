@@ -26,6 +26,7 @@ from app.persistence.repositories.world import (
     QuestRepository,
     RelationshipRepository,
     ScheduledEventRepository,
+    SettingsRepository,
     SkillRepository,
 )
 
@@ -52,6 +53,7 @@ class CampaignData:
         self.relationships = RelationshipRepository(session, campaign_id)
         self.knowledge = KnowledgeRepository(session, campaign_id)
         self.disguises = DisguiseRepository(session, campaign_id)
+        self.settings = SettingsRepository(session, campaign_id)
         self.memories = NpcMemoryRepository(session, campaign_id)
         self.quests = QuestRepository(session, campaign_id)
         self.summaries = SummaryRepository(session, campaign_id)

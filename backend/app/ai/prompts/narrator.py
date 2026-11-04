@@ -58,6 +58,7 @@ class CampaignBrief:
     canon: list[tuple[str, str]] = field(default_factory=list)  # (status, afirmação) do registro canônico
     summaries: list[str] = field(default_factory=list)  # memória narrativa (resumos de trechos anteriores)
     recalled: list[str] = field(default_factory=list)  # memória histórica (trechos antigos ligados à ação)
+    content_rules: str = ""  # limites de maturidade desta campanha + regras fixas de segurança (SPEC 14)
 
 
 CANON_LABELS = {
@@ -81,6 +82,8 @@ def build_narrator_system_prompt(brief: CampaignBrief, mechanics: bool = False) 
         lines.append("- Fatos estabelecidos do mundo (respeite; não contradiga):")
         lines.extend(f"  - {CANON_LABELS.get(status, '')}{statement}" for status, statement in brief.canon)
     lines.extend(memory_lines(brief))
+    if brief.content_rules:
+        lines.append(f"- {brief.content_rules}")
     return "\n".join(lines)
 
 

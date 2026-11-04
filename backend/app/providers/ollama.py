@@ -36,6 +36,8 @@ CONNECT_TIMEOUT_SECONDS = 5.0
 class OllamaProvider(AIProvider):
     name = "ollama"
     is_paid = False
+    content_note = ("Com IA local (Ollama), o que o modelo aceita em temas adultos depende do modelo instalado "
+                    "e da licença dele; alguns recusam ou suavizam.")
 
     def __init__(self, base_url: str, transport: httpx.BaseTransport | None = None):
         self.base_url = base_url.rstrip("/")

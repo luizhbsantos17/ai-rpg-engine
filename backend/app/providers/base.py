@@ -64,6 +64,8 @@ class AIProvider(ABC):
     name: str = "base"
     # Serviço pago? O sistema avisa antes de usar e respeita o limite de gasto (SPEC 17.3).
     is_paid: bool = False
+    # Aviso sobre o que o provedor aceita em temas adultos (D-007); vazio = sem observação.
+    content_note: str = ""
 
     @abstractmethod
     def stream(self, messages: Sequence[ChatMessage], options: GenerationOptions) -> Iterator[StreamEvent]:

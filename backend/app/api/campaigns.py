@@ -8,6 +8,7 @@ from app.api.schemas import (
     DeleteCampaignRequest,
     GenerateCampaignRequest,
     UpdateDraftRequest,
+    UpdateSettingsRequest,
 )
 from app.services.startup import get_services
 
@@ -76,6 +77,20 @@ def known_characters(campaign_id: str):
     """O que o protagonista sabe sobre outros personagens (nunca o estado verdadeiro deles)."""
     services = get_services()
     return services.known.known(services.local_user_id, campaign_id)
+
+
+@bp.get("/campaigns/<campaign_id>/settings")
+def campaign_settings(campaign_id: str):
+    services = get_services()
+    return services.campaign_settings.get(services.local_user_id, campaign_id)
+
+
+@bp.put("/campaigns/<campaign_id>/settings")
+def update_campaign_settings(campaign_id: str):
+    """Grava uma versão nova das configurações (experiência e/ou conteúdo). Avisos de impacto voltam em "warnings"."""
+    services = get_services()
+    body = parse_body(UpdateSettingsRequest)
+    return services.campaign_settings.update(services.local_user_id, campaign_id, body.experience, body.content)
 
 
 @bp.delete("/campaigns/<campaign_id>")

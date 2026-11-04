@@ -54,6 +54,21 @@ class MechanicsInput:
     campaign_seed: int
     world_time: int
     stored: dict[str, Any] | None = None  # turno repetido: mecânicas já aplicadas antes
+    settings: Settings | None = None  # configuração efetiva da campanha (None = a do programa)
+    show_dice: bool = True  # avisos [TESTE] visíveis ao jogador
+    system_window: bool = True  # avisos de "sistema" visíveis (nem todo universo tem janela de status)
+
+
+SYSTEM_WINDOW_TAGS = ("SISTEMA", "ANÁLISE")  # o que some num universo sem "janela de status"
+
+
+def _visible(tag: str, mechanics: MechanicsInput) -> bool:
+    """Preferências de apresentação da campanha (SPEC 12.2). Alertas e missões sempre aparecem."""
+    if tag == "TESTE":
+        return mechanics.show_dice
+    if tag in SYSTEM_WINDOW_TAGS:
+        return mechanics.system_window
+    return True
 
 
 @dataclass
@@ -77,7 +92,8 @@ class MechanicsPhase:
             return MechanicsResult(mechanics.stored.get("narrator_facts", []), [], mechanics.stored,
                                    mechanics.stored.get("scene_notes", []))
 
-        base = replace(generation_options(self.settings, model), temperature=INTERPRETER_TEMPERATURE)
+        settings = mechanics.settings or self.settings
+        base = replace(generation_options(settings, model), temperature=INTERPRETER_TEMPERATURE)
         setup_options = replace(base, max_output_tokens=min(base.max_output_tokens or SETUP_MAX_TOKENS, SETUP_MAX_TOKENS))
         options = replace(base, max_output_tokens=min(base.max_output_tokens or INTERPRETER_MAX_TOKENS,
                                                       INTERPRETER_MAX_TOKENS))
@@ -86,7 +102,7 @@ class MechanicsPhase:
 
         if self._needs_setup(campaign_id):
             setup = request_structured(self.provider, build_setup_messages(mechanics.brief), setup_options,
-                                       CampaignSetup, self.settings.ai_json_attempts)
+                                       CampaignSetup, settings.ai_json_attempts)
             self._record_attempts(campaign_id, turn_id, "setup", setup, build_setup_messages(mechanics.brief))
             if setup.ok:
                 outcomes += self._apply(campaign_id, turn_id, mechanics, setup.value.to_operations(), {})
@@ -97,7 +113,7 @@ class MechanicsPhase:
         state_text, aliases = self._game_state(campaign_id)
         messages = build_interpreter_messages(mechanics.brief, state_text, mechanics.recent_history, mechanics.player_input)
         interpretation = request_structured(self.provider, messages, options, InterpreterOutput,
-                                            self.settings.ai_json_attempts)
+                                            settings.ai_json_attempts)
         self._record_attempts(campaign_id, turn_id, "interpreter", interpretation, messages)
         operations: list = []
         if interpretation.ok:
@@ -112,9 +128,11 @@ class MechanicsPhase:
     def _simulate_world_if_time_passed(self, campaign_id, turn_id, model, mechanics: MechanicsInput, summary) -> None:
         elapsed = sum(o["result"].get("minutes", 0) for o in summary["outcomes"]
                       if o["op"] == "time.advance" and o["status"] == "applied")
-        if not self.simulation.should_run(elapsed):
+        settings = mechanics.settings or self.settings
+        if not self.simulation.should_run(elapsed, settings):
             return
-        simulated = self.simulation.run(campaign_id, turn_id, model, mechanics.brief, elapsed, mechanics.campaign_seed)
+        simulated = self.simulation.run(campaign_id, turn_id, model, mechanics.brief, elapsed, mechanics.campaign_seed,
+                                        settings)
         summary["simulation"] = simulated
         with self.db.transaction() as session:
             turn = CampaignData(session, campaign_id).turns.get(turn_id)
@@ -162,6 +180,7 @@ class MechanicsPhase:
             messages = [
                 data.messages.append(Message.ROLE_SYSTEM, notice.as_message(), turn_id)
                 for notice in player_notices(outcomes, player.id if player else None)
+                if _visible(notice.tag, mechanics)
             ]
             if player is not None:
                 record_witnesses(data, player, mechanics.player_input, facts, data.campaign().world_clock, turn_id)

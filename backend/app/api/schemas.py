@@ -33,6 +33,13 @@ class UpdateDraftRequest(StrictModel):
     genre_tags: list[Tag] | None = Field(default=None, max_length=12)
 
 
+class UpdateSettingsRequest(StrictModel):
+    """O detalhe de cada parte é validado pelo serviço (ExperienceSettings / ContentSettings)."""
+
+    experience: dict | None = None
+    content: dict | None = None
+
+
 class DeleteCampaignRequest(StrictModel):
     confirm_title: str
 

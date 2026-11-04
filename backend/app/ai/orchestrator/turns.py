@@ -32,6 +32,7 @@ from app.ai.orchestrator.events import (
     TurnStarted,
 )
 from app.ai.orchestrator.mechanics import MechanicsInput, MechanicsPhase
+from app.services.campaign_settings import content_guidelines, effective_settings, load_content, load_experience
 from app.ai.prompts.narrator import CampaignBrief
 from app.config import Settings
 from app.persistence.db import Database
@@ -85,6 +86,7 @@ class PreparedTurn:
     context: list[ChatMessage] = field(default_factory=list)  # montado depois das mecânicas
     replay_narration: dict[str, Any] | None = None
     replay_system_messages: list[dict[str, Any]] = field(default_factory=list)
+    settings: Settings | None = None  # configuração efetiva desta campanha (.env + escolhas da campanha)
 
 
 class TurnOrchestrator:
@@ -145,18 +147,22 @@ class TurnOrchestrator:
                             player_input, RECALLED_IN_CONTEXT, before_turn=turn.number - RECENT_TURNS_SEEN
                         )
                     ],
+                    content_rules=content_guidelines(load_content(data)),
                 )
+                experience = load_experience(data)
+                turn_settings = effective_settings(self.settings, experience)
                 mechanics = None
-                if self.settings.ai_mechanics:
+                if turn_settings.ai_mechanics:
                     recent = [h for h in history if h.role in (Message.ROLE_PLAYER, Message.ROLE_NARRATION)]
                     mechanics = MechanicsInput(
                         brief, recent[-RECENT_FOR_INTERPRETER:], player_input, campaign.rng_seed,
-                        campaign.world_clock, stored=turn.mechanics,
+                        campaign.world_clock, stored=turn.mechanics, settings=turn_settings,
+                        show_dice=experience.show_dice, system_window=experience.system_window,
                     )
                 return PreparedTurn(
                     owner_id, campaign_id, turn_to_dict(turn), message_to_dict(player_message),
                     campaign.world_clock, player_input=player_input, brief=brief, history=history,
-                    mechanics=mechanics,
+                    mechanics=mechanics, settings=turn_settings,
                 )
         except IntegrityError:
             # Mesmo id de turno usado em outra campanha, ou duas jogadas simultâneas.
@@ -219,7 +225,8 @@ class TurnOrchestrator:
         model: str | None = None
         started = time.monotonic()
         try:
-            model = resolve_model(self.provider, self.settings.ai_model)
+            settings = prepared.settings or self.settings
+            model = resolve_model(self.provider, settings.ai_model)
             facts: list[str] = []
             scene_notes: list[str] = []
             if prepared.mechanics is not None:
@@ -229,11 +236,11 @@ class TurnOrchestrator:
                     yield MechanicsApplied(outcome.system_messages, outcome.summary.get("intent"))
             prepared.context = build_narration_context(
                 prepared.brief, prepared.history, prepared.player_input,
-                self.settings.ai_context_window, self.settings.ai_max_output_tokens,
+                settings.ai_context_window, settings.ai_max_output_tokens,
                 mechanics=prepared.mechanics is not None, facts=facts, scene_notes=scene_notes,
             )
             result: CompletionResult | None = None
-            for event in self.provider.stream(prepared.context, generation_options(self.settings, model)):
+            for event in self.provider.stream(prepared.context, generation_options(settings, model)):
                 if isinstance(event, TextDelta):
                     yield NarrationDelta(event.text)
                 elif isinstance(event, StreamCompleted):

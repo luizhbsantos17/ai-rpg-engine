@@ -14,6 +14,7 @@ from app.persistence.migrations import upgrade_to_head
 from app.persistence.repositories.narrative import fail_interrupted_turns
 from app.providers import AIProvider
 from app.providers.registry import build_provider
+from app.services.campaign_settings import CampaignSettingsService
 from app.services.campaigns import CampaignService
 from app.services.generation import CampaignGenerationService
 from app.services.known import KnownCharactersService
@@ -37,6 +38,7 @@ class Services:
         self.campaigns = CampaignService(db)
         self.sheets = CharacterSheetService(db)
         self.known = KnownCharactersService(db)
+        self.campaign_settings = CampaignSettingsService(db, provider, settings)
         self.summaries = SummaryService(db, provider, settings)
         self.generation = CampaignGenerationService(db, provider, settings)
         self.turns = TurnOrchestrator(db, provider, settings, on_turn_completed=self.summaries.schedule)
