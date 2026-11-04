@@ -12,6 +12,7 @@ from app.engine.operations.handlers import (
     effects,
     entities,
     items,
+    knowledge,
     narrative,
     skills,
     social,
@@ -20,6 +21,7 @@ from app.engine.operations.handlers import (
 
 HANDLERS = {
     **social.HANDLERS,
+    **knowledge.HANDLERS,
     **time.HANDLERS,
     **effects.HANDLERS,
     **definitions.HANDLERS,

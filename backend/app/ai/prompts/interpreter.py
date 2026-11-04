@@ -44,6 +44,10 @@ Operações (campo "op" + campos):
 - relationship.change {source, target, changes: {dimensão: variação}, add_labels, remove_labels, cause}:
   o que source sente por target (direcional). Dimensões livres (confianca, afeto, medo, respeito...), de -100 a 100,
   no máximo ±50 por acontecimento. "cause" é obrigatório: o acontecimento que causou a mudança.
+- knowledge.record {observer, subject, field, value, level: estimated|partial|confirmed|false,
+  source: presenciou|ouviu|descobriu|contaram|deduziu|avaliou}: o que alguém passou a saber (ou acreditar).
+- memory.record {entity, content, importance 1-5}: lembrança marcante de um personagem.
+  (Quem está na cena já guarda sozinho o que viu; use só para algo especial, como um segredo contado.)
 Qualquer operação aceita "reason" (motivo) e "when": {"check": "<ref de um check.request anterior>", "success": true|false}
 para só acontecer se aquele teste tiver sucesso (true) ou falhar (false).
 Referências: "player" é o protagonista; use os apelidos do estado (e1, i1...) ou o "ref" que você criar na mesma resposta.

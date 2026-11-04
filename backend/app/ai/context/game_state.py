@@ -83,6 +83,10 @@ def build_game_state(data: CampaignData) -> GameStateSnapshot:
             lines.extend("  " + line for line in _entity_details(data, entity, aliases))
             if player is not None:
                 lines.extend("  " + line for line in _relationship_lines(data, entity, player))
+                known = data.knowledge.known_by(entity.id, player.id)
+                if known:
+                    lines.append("    sabe sobre o protagonista: " + ", ".join(
+                        f"{k.field}={k.known_value or '?'} ({k.level})" for k in known))
     if location is not None:
         floor = data.items.at_location(location.id)[:MAX_ITEMS_PER_HOLDER]
         if floor:

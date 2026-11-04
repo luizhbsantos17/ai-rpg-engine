@@ -251,6 +251,27 @@ class RelationshipChange(Operation):
     cause: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
 
 
+class KnowledgeRecord(Operation):
+    """O que `observer` sabe (ou acha que sabe) sobre `subject`. Ninguém sabe tudo automaticamente."""
+
+    op: Literal["knowledge.record"]
+    observer: Ref
+    subject: Ref  # "player", apelido/id de entidade, ou um tema livre ("mapa_perdido")
+    field: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+    value: Annotated[str, StringConstraints(max_length=1000)] | None = None
+    level: Literal["unknown", "estimated", "partial", "confirmed", "false"] = "confirmed"
+    source: Literal["presenciou", "ouviu", "descobriu", "contaram", "deduziu", "avaliou", "ja_sabia"] = "descobriu"
+
+
+class MemoryRecord(Operation):
+    """Uma lembrança na memória individual de um personagem."""
+
+    op: Literal["memory.record"]
+    entity: Ref
+    content: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+    importance: int = Field(default=2, ge=1, le=5)
+
+
 class EventRecord(Operation):
     """Acontecimento narrativo importante, sem mudança mecânica (SPEC 15.2)."""
 
@@ -265,7 +286,7 @@ AnyOperation = Annotated[
     | AttributeSet | AttributeModify | ResourceSpend | ResourceRestore
     | SkillGrant | SkillRevoke | SkillEvolve | SkillUse | ItemCreate | ItemTransfer | ItemDestroy
     | CheckRequest | CanonAssert | CanonAmend | TimeAdvance | EventSchedule | EffectApply | EffectRemove
-    | RelationshipChange | EventRecord,
+    | RelationshipChange | KnowledgeRecord | MemoryRecord | EventRecord,
     Field(discriminator="op"),
 ]
 
@@ -275,7 +296,7 @@ OPERATION_NAMES = (
     "attribute.set", "attribute.modify", "resource.spend", "resource.restore",
     "skill.grant", "skill.revoke", "skill.evolve", "skill.use", "item.create", "item.transfer", "item.destroy",
     "check.request", "canon.assert", "canon.amend", "time.advance", "event.schedule",
-    "effect.apply", "effect.remove", "relationship.change", "event.record",
+    "effect.apply", "effect.remove", "relationship.change", "knowledge.record", "memory.record", "event.record",
 )
 
 

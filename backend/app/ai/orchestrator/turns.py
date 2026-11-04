@@ -199,15 +199,16 @@ class TurnOrchestrator:
         try:
             model = resolve_model(self.provider, self.settings.ai_model)
             facts: list[str] = []
+            scene_notes: list[str] = []
             if prepared.mechanics is not None:
                 outcome = self.mechanics.run(prepared.campaign_id, prepared.turn["id"], model, prepared.mechanics)
-                facts = outcome.narrator_facts
+                facts, scene_notes = outcome.narrator_facts, outcome.scene_notes
                 if outcome.system_messages or outcome.summary.get("intent"):
                     yield MechanicsApplied(outcome.system_messages, outcome.summary.get("intent"))
             prepared.context = build_narration_context(
                 prepared.brief, prepared.history, prepared.player_input,
                 self.settings.ai_context_window, self.settings.ai_max_output_tokens,
-                mechanics=prepared.mechanics is not None, facts=facts,
+                mechanics=prepared.mechanics is not None, facts=facts, scene_notes=scene_notes,
             )
             result: CompletionResult | None = None
             for event in self.provider.stream(prepared.context, generation_options(self.settings, model)):

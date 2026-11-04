@@ -15,11 +15,51 @@ from app.persistence.models import (
     EntityAttribute,
     EntitySkill,
     ItemInstance,
+    Knowledge,
+    NpcMemory,
     Relationship,
     RelationshipEvent,
     ScheduledEvent,
 )
 from app.persistence.repositories.base import CampaignScopedRepository
+
+
+class KnowledgeRepository(CampaignScopedRepository[Knowledge]):
+    model = Knowledge
+
+    def get_for(self, observer_id: str, subject: str, field: str) -> Knowledge | None:
+        query = self._select().where(Knowledge.observer_id == observer_id, Knowledge.subject == subject,
+                                     Knowledge.field == field)
+        return self.session.scalars(query).first()
+
+    def known_by(self, observer_id: str, subject: str | None = None) -> list[Knowledge]:
+        query = self._select().where(Knowledge.observer_id == observer_id)
+        if subject is not None:
+            query = query.where(Knowledge.subject == subject)
+        return list(self.session.scalars(query.order_by(Knowledge.subject, Knowledge.field)))
+
+    def upsert(self, observer_id: str, subject: str, field: str, value, level: str, source: str) -> Knowledge:
+        record = self.get_for(observer_id, subject, field)
+        if record is None:
+            return self.add(Knowledge(observer_id=observer_id, subject=subject, field=field,
+                                      known_value=value, level=level, source=source))
+        record.known_value, record.level, record.source = value, level, source
+        self.session.flush()
+        return record
+
+
+class NpcMemoryRepository(CampaignScopedRepository[NpcMemory]):
+    model = NpcMemory
+
+    def remember(self, npc_id: str, content: str, importance: int, world_time: int, turn_id) -> NpcMemory:
+        return self.add(NpcMemory(npc_id=npc_id, content=content, importance=importance,
+                                  world_time=world_time, turn_id=turn_id))
+
+    def recall(self, npc_id: str, limit: int = 5) -> list[NpcMemory]:
+        """As lembranças mais importantes e recentes, em ordem cronológica."""
+        query = (self._select().where(NpcMemory.npc_id == npc_id)
+                 .order_by(NpcMemory.importance.desc(), NpcMemory.created_at.desc()).limit(limit))
+        return sorted(self.session.scalars(query), key=lambda m: m.created_at)
 
 
 class RelationshipRepository(CampaignScopedRepository[Relationship]):
