@@ -27,7 +27,10 @@ def settings(tmp_path, migrated_db_template):
     data_dir.mkdir()
     shutil.copy(migrated_db_template, data_dir / "rpg.db")
     # env_file=None: os testes nunca leem o .env real do usuário.
-    return load_settings(environ={"APP_ENV": "test", "DATA_DIR": str(data_dir)}, env_file=None)
+    return load_settings(
+        environ={"APP_ENV": "test", "DATA_DIR": str(data_dir), "AI_PROVIDER": "fake", "AI_MODEL": "fake-model"},
+        env_file=None,
+    )
 
 
 @pytest.fixture
@@ -47,3 +50,14 @@ def flask_app(settings):
 @pytest.fixture
 def client(flask_app):
     return flask_app.test_client()
+
+
+@pytest.fixture
+def services(flask_app):
+    return flask_app.extensions["rpg_engine"]
+
+
+@pytest.fixture
+def fake_ai(services):
+    """O FakeProvider da aplicação de teste; use fake_ai.queue("texto") para roteirizar."""
+    return services.provider

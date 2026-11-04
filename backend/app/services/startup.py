@@ -2,23 +2,36 @@
 
 from __future__ import annotations
 
+import logging
+
 from flask import Flask, current_app
 
+from app.ai.orchestrator.turns import TurnOrchestrator
 from app.auth.local_user import ensure_local_user
 from app.config import Settings
 from app.persistence.db import Database
 from app.persistence.migrations import upgrade_to_head
+from app.persistence.repositories.narrative import fail_interrupted_turns
+from app.providers import AIProvider
+from app.providers.registry import build_provider
+from app.services.campaigns import CampaignService
+
+logger = logging.getLogger(__name__)
 
 EXTENSION_KEY = "rpg_engine"
+INTERRUPTED_ON_SHUTDOWN = "O programa foi fechado durante esta jogada. Tente de novo."
 
 
 class Services:
     """Objetos compartilhados pela aplicação inteira (guardados em `flask_app.extensions`)."""
 
-    def __init__(self, settings: Settings, db: Database, local_user_id: str):
+    def __init__(self, settings: Settings, db: Database, provider: AIProvider, local_user_id: str):
         self.settings = settings
         self.db = db
+        self.provider = provider
         self.local_user_id = local_user_id
+        self.campaigns = CampaignService(db)
+        self.turns = TurnOrchestrator(db, provider, settings)
 
 
 def initialize_services(flask_app: Flask, settings: Settings) -> Services:
@@ -28,8 +41,11 @@ def initialize_services(flask_app: Flask, settings: Settings) -> Services:
     db = Database(settings.database_url)
     with db.transaction() as session:
         local_user_id = ensure_local_user(session).id
+        interrupted = fail_interrupted_turns(session, INTERRUPTED_ON_SHUTDOWN)
+    if interrupted:
+        logger.warning("%d jogada(s) interrompida(s) na última execução marcada(s) como falha.", interrupted)
 
-    services = Services(settings, db, local_user_id)
+    services = Services(settings, db, build_provider(settings), local_user_id)
     flask_app.extensions[EXTENSION_KEY] = services
     return services
 

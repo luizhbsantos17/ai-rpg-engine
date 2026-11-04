@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import update
+from sqlalchemy import or_, update
 
 from app.persistence.models import AiRequest, Event, Message, Turn
 from app.persistence.repositories.base import CampaignScopedRepository
@@ -25,6 +25,9 @@ class TurnRepository(CampaignScopedRepository[Turn]):
 
     def list_ordered(self) -> list[Turn]:
         return list(self.session.scalars(self._select().order_by(Turn.number)))
+
+    def latest(self) -> Turn | None:
+        return self.session.scalars(self._select().order_by(Turn.number.desc()).limit(1)).first()
 
     def find_processing(self) -> Turn | None:
         query = self._select().where(Turn.status == Turn.STATUS_PROCESSING).order_by(Turn.number)
@@ -77,6 +80,20 @@ class MessageRepository(CampaignScopedRepository[Message]):
     def recent(self, limit: int) -> list[Message]:
         """As `limit` mensagens mais recentes, em ordem cronológica."""
         query = self._select().order_by(Message.seq.desc()).limit(limit)
+        return list(reversed(list(self.session.scalars(query))))
+
+    def recent_from_completed_turns(self, limit: int) -> list[Message]:
+        """Mensagens recentes de turnos concluídos (e avisos sem turno), em ordem cronológica.
+
+        Usado para montar o contexto da IA: jogadas que falharam não entram na história.
+        """
+        query = (
+            self._select()
+            .outerjoin(Turn, Message.turn_id == Turn.id)
+            .where(or_(Message.turn_id.is_(None), Turn.status == Turn.STATUS_COMPLETED))
+            .order_by(Message.seq.desc())
+            .limit(limit)
+        )
         return list(reversed(list(self.session.scalars(query))))
 
     def for_turn(self, turn_id: str) -> list[Message]:
