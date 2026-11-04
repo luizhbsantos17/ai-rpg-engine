@@ -24,12 +24,20 @@ class OperationContext:
     # apelidos criados nesta lista ("goblin_1" -> id real) e resultados de testes por apelido
     refs: dict[str, str] = field(default_factory=dict)
     check_results: dict[str, dict[str, Any]] = field(default_factory=dict)
+    # Escopo da semente: rolagens de um acontecimento agendado não repetem as do turno.
+    seed_scope: str = "turno"
+    inside_schedule: bool = False  # operações disparadas por um agendamento (não podem avançar o tempo)
     _roll_counter: int = 0
 
     def next_seed(self) -> int:
-        """Semente determinística por rolagem: (semente da campanha, turno, nº da rolagem)."""
+        """Semente determinística por rolagem: (semente da campanha, turno, escopo, nº da rolagem)."""
         self._roll_counter += 1
-        return derive_seed(self.campaign_seed, self.turn_id or "sem-turno", self._roll_counter)
+        return derive_seed(self.campaign_seed, self.turn_id or "sem-turno", self.seed_scope, self._roll_counter)
+
+    def child(self, source: str, world_time: int, seed_scope: str) -> OperationContext:
+        """Contexto para operações disparadas por um acontecimento agendado."""
+        return OperationContext(self.data, source=source, campaign_seed=self.campaign_seed, world_time=world_time,
+                                turn_id=self.turn_id, seed_scope=seed_scope, inside_schedule=True)
 
     def register_ref(self, ref: str | None, record_id: str) -> None:
         if not ref:

@@ -36,6 +36,11 @@ Operações (campo "op" + campos):
 - event.record {summary, entities}: acontecimento importante sem mudança mecânica.
 - canon.assert {key, subject, statement, status: confirmed|rumor|false}: registra um fato duradouro do mundo.
 - canon.amend {key, statement, status, reason}: muda um fato registrado (exige reason).
+- time.advance {duration}: o tempo passa ("30m", "4h", "2d"). Use quando a ação leva tempo (viajar, dormir, treinar).
+- event.schedule {after, summary, operations}: algo vai acontecer no futuro do mundo (ex.: "after": "3d",
+  "summary": "a caravana chega"); "operations" são aplicadas quando a data chegar.
+- effect.apply {target, key, duration, intensity} · effect.remove {target, key}: efeitos (veneno, bênção...);
+  o efeito precisa existir como definição kind "effect".
 Qualquer operação aceita "reason" (motivo) e "when": {"check": "<ref de um check.request anterior>", "success": true|false}
 para só acontecer se aquele teste tiver sucesso (true) ou falhar (false).
 Referências: "player" é o protagonista; use os apelidos do estado (e1, i1...) ou o "ref" que você criar na mesma resposta.

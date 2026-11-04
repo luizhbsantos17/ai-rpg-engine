@@ -10,12 +10,45 @@ from app.persistence.models import (
     CanonFact,
     Definition,
     DiceRollRecord,
+    Effect,
     Entity,
     EntityAttribute,
     EntitySkill,
     ItemInstance,
+    ScheduledEvent,
 )
 from app.persistence.repositories.base import CampaignScopedRepository
+
+
+class ScheduledEventRepository(CampaignScopedRepository[ScheduledEvent]):
+    model = ScheduledEvent
+
+    def due(self, until: int) -> list[ScheduledEvent]:
+        """Pendentes com data até `until`, na ordem em que vencem."""
+        query = self._select().where(
+            ScheduledEvent.status == ScheduledEvent.STATUS_PENDING, ScheduledEvent.due_at <= until
+        )
+        return list(self.session.scalars(query.order_by(ScheduledEvent.due_at, ScheduledEvent.created_at)))
+
+    def pending(self) -> list[ScheduledEvent]:
+        query = self._select().where(ScheduledEvent.status == ScheduledEvent.STATUS_PENDING)
+        return list(self.session.scalars(query.order_by(ScheduledEvent.due_at)))
+
+
+class EffectRepository(CampaignScopedRepository[Effect]):
+    model = Effect
+
+    def active_for(self, entity_id: str) -> list[Effect]:
+        query = self._select().where(Effect.target_id == entity_id, Effect.active.is_(True))
+        return list(self.session.scalars(query.order_by(Effect.starts_at)))
+
+    def active_by_key(self, entity_id: str, key: str) -> Effect | None:
+        query = self._select().where(Effect.target_id == entity_id, Effect.definition_key == key, Effect.active.is_(True))
+        return self.session.scalars(query).first()
+
+    def expiring(self, until: int) -> list[Effect]:
+        query = self._select().where(Effect.active.is_(True), Effect.ends_at.is_not(None), Effect.ends_at <= until)
+        return list(self.session.scalars(query.order_by(Effect.ends_at)))
 
 
 class DefinitionRepository(CampaignScopedRepository[Definition]):

@@ -17,7 +17,7 @@ const msg = (id, seq, role, content, turnId = 't1') => ({ id, seq, role, content
 
 async function loadedStore(history = {}, character = null) {
   api.getHistory.mockResolvedValue({ campaign, turns: [], messages: [], ...history })
-  api.getSheet.mockResolvedValue(character)
+  api.getSheet.mockResolvedValue({ character })
   const store = usePlayStore()
   await store.load('c1')
   return store
@@ -110,7 +110,7 @@ describe('usePlayStore', () => {
   it('avisos do motor entram no chat em ordem e a ficha é atualizada', async () => {
     const store = await loadedStore()
     const sheet = { name: 'Kael', attributes: [], skills: [], items: [] }
-    api.getSheet.mockResolvedValue(sheet)
+    api.getSheet.mockResolvedValue({ character: sheet, world_time: 'dia 1, 08:00' })
     api.playTurn.mockImplementation(async (cid, turnId, input, h) => {
       h.onTurn({ turn: turn(turnId, 'processing'), player_message: msg('m1', 1, 'player', input, turnId) })
       h.onMechanics({ messages: [msg('m2', 2, 'system', '[SISTEMA] Personagem criado: Kael.', turnId)] })

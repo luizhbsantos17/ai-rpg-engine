@@ -13,6 +13,7 @@ export const usePlayStore = defineStore('play', {
   state: () => ({
     campaign: null,
     character: null, // ficha do protagonista (null até a campanha ser preparada)
+    worldTime: null, // "dia 1, 08:00"
     messages: [],
     turns: {},
     loading: false,
@@ -30,9 +31,10 @@ export const usePlayStore = defineStore('play', {
       this.$reset()
       this.loading = true
       try {
-        const [history, character] = await Promise.all([api.getHistory(campaignId), api.getSheet(campaignId)])
+        const [history, sheet] = await Promise.all([api.getHistory(campaignId), api.getSheet(campaignId)])
         this.campaign = history.campaign
-        this.character = character
+        this.character = sheet.character
+        this.worldTime = sheet.world_time ?? null
         this.messages = history.messages
         this.turns = Object.fromEntries(history.turns.map((t) => [t.id, t]))
         // Ao reabrir, se a última jogada falhou, oferece repetir (D-012).
@@ -59,7 +61,9 @@ export const usePlayStore = defineStore('play', {
     async refreshSheet() {
       if (!this.campaign) return
       try {
-        this.character = await api.getSheet(this.campaign.id)
+        const sheet = await api.getSheet(this.campaign.id)
+        this.character = sheet.character
+        this.worldTime = sheet.world_time ?? null
       } catch {
         // a ficha é complementar: se falhar, a história continua
       }

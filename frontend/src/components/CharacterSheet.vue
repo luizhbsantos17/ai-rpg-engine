@@ -4,6 +4,7 @@ import { computed } from 'vue'
 
 const props = defineProps({
   character: { type: Object, default: null },
+  worldTime: { type: String, default: null },
 })
 
 const resources = computed(() => (props.character?.attributes ?? []).filter((a) => a.resource))
@@ -23,6 +24,7 @@ const statusLabel = { active: 'Ativo', dead: 'Morto' }
   <aside class="sheet" aria-label="Ficha do personagem">
     <header class="sheet-header">
       <span class="sheet-tag">STATUS</span>
+      <span v-if="worldTime" class="world-time" title="Tempo do mundo">{{ worldTime }}</span>
     </header>
 
     <p v-if="!character" class="muted empty">A ficha aparece quando a história começar.</p>
@@ -44,6 +46,16 @@ const statusLabel = { active: 'Ativo', dead: 'Morto' }
             <div class="fill" :style="{ width: percent(resource) + '%' }"></div>
           </div>
         </div>
+      </section>
+
+      <section v-if="character.effects?.length" class="block">
+        <h3>Efeitos</h3>
+        <ul class="list">
+          <li v-for="effect in character.effects" :key="effect.key" :title="effect.description">
+            <span class="effect">{{ effect.name }}</span>
+            <span v-if="effect.ends" class="level">até {{ effect.ends }}</span>
+          </li>
+        </ul>
       </section>
 
       <section v-if="attributes.length" class="block">
@@ -96,6 +108,22 @@ const statusLabel = { active: 'Ativo', dead: 'Morto' }
   margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) var(--space-3);
   padding: var(--space-2) var(--space-4);
   background: linear-gradient(90deg, rgba(108, 199, 255, 0.14), transparent);
+}
+
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.world-time {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--gold);
+}
+
+.effect {
+  color: var(--gold);
 }
 
 .sheet-tag {

@@ -201,6 +201,42 @@ class CanonAmend(Operation):
     status: Literal["confirmed", "rumor", "false"] | None = None
 
 
+Duration = int | Annotated[str, StringConstraints(max_length=30)]
+
+
+class TimeAdvance(Operation):
+    """Avança o relógio do mundo. Acontecimentos agendados e efeitos vencidos são processados."""
+
+    op: Literal["time.advance"]
+    duration: Duration  # minutos ou "30m", "4h", "2d"
+
+
+class EventSchedule(Operation):
+    """Agenda algo para o futuro do mundo; `operations` são aplicadas quando a data chegar."""
+
+    op: Literal["event.schedule"]
+    after: Duration  # daqui a quanto tempo
+    summary: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+    operations: list[dict[str, Any]] = Field(default_factory=list, max_length=20)
+
+
+class EffectApply(Operation):
+    """Aplica um efeito (envenenado, abençoado...) com duração opcional em tempo do mundo."""
+
+    op: Literal["effect.apply"]
+    target: Ref
+    key: Key  # definição do tipo "effect"
+    duration: Duration | None = None  # None = até ser removido
+    intensity: Number | None = None
+    source: Ref | None = None
+
+
+class EffectRemove(Operation):
+    op: Literal["effect.remove"]
+    target: Ref
+    key: Key
+
+
 class EventRecord(Operation):
     """Acontecimento narrativo importante, sem mudança mecânica (SPEC 15.2)."""
 
@@ -214,7 +250,8 @@ AnyOperation = Annotated[
     DefinitionCreate | DefinitionAmend | EntityCreate | EntityUpdate | EntityRemove | EntityMove
     | AttributeSet | AttributeModify | ResourceSpend | ResourceRestore
     | SkillGrant | SkillRevoke | SkillEvolve | SkillUse | ItemCreate | ItemTransfer | ItemDestroy
-    | CheckRequest | CanonAssert | CanonAmend | EventRecord,
+    | CheckRequest | CanonAssert | CanonAmend | TimeAdvance | EventSchedule | EffectApply | EffectRemove
+    | EventRecord,
     Field(discriminator="op"),
 ]
 
@@ -223,7 +260,8 @@ OPERATION_NAMES = (
     "definition.create", "definition.amend", "entity.create", "entity.update", "entity.remove", "entity.move",
     "attribute.set", "attribute.modify", "resource.spend", "resource.restore",
     "skill.grant", "skill.revoke", "skill.evolve", "skill.use", "item.create", "item.transfer", "item.destroy",
-    "check.request", "canon.assert", "canon.amend", "event.record",
+    "check.request", "canon.assert", "canon.amend", "time.advance", "event.schedule",
+    "effect.apply", "effect.remove", "event.record",
 )
 
 

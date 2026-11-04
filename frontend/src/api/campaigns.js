@@ -7,8 +7,8 @@ export const createCampaign = (data) => request('POST', '/api/campaigns', data).
 
 export const getHistory = (campaignId) => request('GET', `/api/campaigns/${campaignId}/history`)
 
-export const getSheet = (campaignId) =>
-  request('GET', `/api/campaigns/${campaignId}/sheet`).then((r) => r.character)
+// { character: {...} | null, world_time?: "dia 1, 08:00" }
+export const getSheet = (campaignId) => request('GET', `/api/campaigns/${campaignId}/sheet`)
 
 export const deleteCampaign = (campaignId, confirmTitle) =>
   request('DELETE', `/api/campaigns/${campaignId}`, { confirm_title: confirmTitle })

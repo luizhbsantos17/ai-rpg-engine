@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from app.engine.time import format_world_time
 from app.persistence.models import Definition, Entity
 from app.persistence.repositories import CampaignData
 
@@ -43,7 +44,7 @@ class _Aliases:
 
 def build_game_state(data: CampaignData) -> GameStateSnapshot:
     aliases = _Aliases()
-    lines: list[str] = []
+    lines: list[str] = [f"Tempo do mundo: {format_world_time(data.campaign().world_clock)}.", ""]
 
     definitions = data.definitions.list_current()
     if definitions:
@@ -105,6 +106,11 @@ def _entity_details(data: CampaignData, entity: Entity, aliases: _Aliases) -> li
     items = data.items.held_by(entity.id)[:MAX_ITEMS_PER_HOLDER]
     if items:
         details.append("  itens: " + ", ".join(_item(i, aliases) for i in items))
+    effects = data.effects.active_for(entity.id)
+    if effects:
+        details.append("  efeitos: " + ", ".join(
+            e.definition_key + (f" (até {format_world_time(e.ends_at)})" if e.ends_at is not None else "") for e in effects
+        ))
     return details
 
 

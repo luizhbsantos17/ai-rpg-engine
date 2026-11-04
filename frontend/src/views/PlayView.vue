@@ -89,7 +89,7 @@ watch(
         <SystemNotice v-if="play.notice" tone="alert" tag="AVISO">{{ play.notice }}</SystemNotice>
         <div ref="bottom"></div>
       </div>
-      <CharacterSheet class="sheet-panel" :class="{ open: sheetOpen }" :character="play.character" />
+      <CharacterSheet class="sheet-panel" :class="{ open: sheetOpen }" :character="play.character" :world-time="play.worldTime" />
       </div>
 
       <div class="input-bar">

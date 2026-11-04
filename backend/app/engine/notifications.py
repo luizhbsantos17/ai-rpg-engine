@@ -32,9 +32,24 @@ def describe_for_narrator(outcomes: list[OperationOutcome]) -> list[str]:
             continue
         elif outcome.op == "check.request":
             lines.append(_check_line(r))
+        elif outcome.op == "time.advance":
+            lines.extend(_time_lines(r))
         else:
             lines.append(_applied_line(outcome.op, r))
     return [line for line in lines if line]
+
+
+def _nested(outcomes: list[dict[str, Any]]) -> list[OperationOutcome]:
+    return [OperationOutcome(**o) for o in outcomes]
+
+
+def _time_lines(r: dict[str, Any]) -> list[str]:
+    lines = [f"O tempo passou: {r['duration_text']} (agora {r['to_text']})."]
+    for event in r["triggered"]:
+        lines.append(f"Enquanto o tempo passava ({event['due_text']}): {event['summary']}")
+        lines.extend("  " + line for line in describe_for_narrator(_nested(event["outcomes"])))
+    lines.extend(f"Terminou o efeito {e['name']} em {e['target']}." for e in r["expired_effects"])
+    return lines
 
 
 def _check_line(r: dict[str, Any]) -> str:
@@ -85,8 +100,13 @@ def _applied_line(op: str, r: dict[str, Any]) -> str:
         return f"Fato do mundo estabelecido ({r['status']}): {r['statement']}"
     if op == "canon.amend":
         return f"Fato do mundo mudou: antes \"{r['previous']}\", agora \"{r['statement']}\"."
-    if op in ("definition.create", "definition.amend"):
-        return ""  # regras não precisam ser narradas
+    if op == "effect.apply":
+        until = f" até {r['ends_text']}" if r.get("ends_text") else ""
+        return f"{r['name']} está sob o efeito {r['effect']}{until}."
+    if op == "effect.remove":
+        return f"O efeito {r['effect']} de {r['name']} terminou."
+    if op in ("definition.create", "definition.amend", "event.schedule"):
+        return ""  # regras e planos futuros não são narrados (agendamentos são segredos do mestre)
     return f"{op} aplicado."
 
 
@@ -97,9 +117,22 @@ def player_notices(outcomes: list[OperationOutcome], player_id: str | None) -> l
     for outcome in outcomes:
         if outcome.status != "applied":
             continue
+        if outcome.op == "time.advance":
+            notices.extend(_time_notices(outcome.result, player_id))
+            continue
         notice = _player_notice(outcome.op, outcome.result, player_id)
         if notice:
             notices.append(notice)
+    return notices
+
+
+def _time_notices(r: dict[str, Any], player_id: str) -> list[PlayerNotice]:
+    """O jogador vê o relógio e o que o afeta diretamente; o resto dos agendamentos é narrado (ou não)."""
+    notices = [PlayerNotice("SISTEMA", f"Tempo: {r['to_text']} (+{r['duration_text']}).")]
+    for event in r["triggered"]:
+        notices.extend(player_notices(_nested(event["outcomes"]), player_id))
+    notices.extend(PlayerNotice("SISTEMA", f"Efeito terminou: {e['name']}.")
+                   for e in r["expired_effects"] if e["target_id"] == player_id)
     return notices
 
 
@@ -117,6 +150,11 @@ def _player_notice(op: str, r: dict[str, Any], player_id: str) -> PlayerNotice |
                                      f"(dificuldade {r['difficulty']}) → {verdict}.")
     if not mine and op not in ("item.create", "item.transfer"):
         return None
+    if op == "effect.apply":
+        until = f" (até {r['ends_text']})" if r.get("ends_text") else ""
+        return PlayerNotice("ALERTA", f"Efeito: {r['effect']}{until}.")
+    if op == "effect.remove":
+        return PlayerNotice("SISTEMA", f"Efeito terminou: {r['effect']}.")
     if op in ("attribute.set", "attribute.modify", "resource.spend", "resource.restore"):
         maximum = f" / {r['max']}" if r.get("max") else ""
         return PlayerNotice("SISTEMA", f"{r['attribute']}: {r.get('from') or '—'} → {r['to']}{maximum}")

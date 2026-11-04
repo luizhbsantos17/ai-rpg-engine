@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.engine.time import format_world_time
 from app.persistence.db import Database
 from app.persistence.repositories import CampaignData, CampaignRepository
 from app.services.errors import NotFoundError
@@ -36,7 +37,9 @@ class CharacterSheetService:
                     "attributes": [_attribute(data, a) for a in data.attributes.for_entity(player.id)],
                     "skills": [_skill(data, s) for s in data.skills.for_entity(player.id)],
                     "items": [_item(data, i) for i in data.items.held_by(player.id)],
-                }
+                    "effects": [_effect(data, e) for e in data.effects.active_for(player.id)],
+                },
+                "world_time": format_world_time(data.campaign().world_clock),
             }
 
 
@@ -68,6 +71,16 @@ def _skill(data: CampaignData, skill) -> dict[str, Any]:
         "rarity": definition.get("rarity"),
         "level": skill.level,
         "max_level": definition.get("max_level"),
+    }
+
+
+def _effect(data: CampaignData, effect) -> dict[str, Any]:
+    definition = _definition_data(data, "effect", effect.definition_key)
+    return {
+        "key": effect.definition_key,
+        "name": definition.get("name", effect.definition_key),
+        "description": definition.get("description", ""),
+        "ends": format_world_time(effect.ends_at) if effect.ends_at is not None else None,
     }
 
 

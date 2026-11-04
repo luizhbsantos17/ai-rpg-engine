@@ -30,6 +30,14 @@ describe('CharacterSheet', () => {
     expect(wrapper.text()).toContain('Bússola')
   })
 
+  it('mostra o tempo do mundo e os efeitos ativos', () => {
+    const withEffect = { ...character, effects: [{ key: 'veneno', name: 'Envenenado', ends: 'dia 1, 10:00', description: '' }] }
+    const wrapper = mount(CharacterSheet, { props: { character: withEffect, worldTime: 'dia 1, 08:00' } })
+    expect(wrapper.find('.world-time').text()).toBe('dia 1, 08:00')
+    expect(wrapper.text()).toContain('Envenenado')
+    expect(wrapper.text()).toContain('até dia 1, 10:00')
+  })
+
   it('números enormes não quebram a barra', () => {
     const big = { ...character, attributes: [{ ...character.attributes[0], value: '1E+40', max: 'abc' }] }
     const wrapper = mount(CharacterSheet, { props: { character: big } })

@@ -10,13 +10,16 @@ from app.persistence.repositories.narrative import (
     MessageRepository,
     TurnRepository,
 )
+from app.persistence.models import Campaign
 from app.persistence.repositories.world import (
     AttributeRepository,
     CanonRepository,
     DefinitionRepository,
     DiceRollRepository,
+    EffectRepository,
     EntityRepository,
     ItemRepository,
+    ScheduledEventRepository,
     SkillRepository,
 )
 
@@ -38,6 +41,15 @@ class CampaignData:
         self.items = ItemRepository(session, campaign_id)
         self.dice_rolls = DiceRollRepository(session, campaign_id)
         self.canon = CanonRepository(session, campaign_id)
+        self.schedule = ScheduledEventRepository(session, campaign_id)
+        self.effects = EffectRepository(session, campaign_id)
+
+    def campaign(self) -> Campaign:
+        """A própria campanha (para o relógio do mundo). Permissão de dono já foi conferida antes."""
+        campaign = self.session.get(Campaign, self.campaign_id)
+        if campaign is None:
+            raise LookupError("Campanha não existe mais.")
+        return campaign
 
     def savepoint(self):
         """Transação interna: se a operação falhar, desfaz só ela (o resto do turno continua)."""

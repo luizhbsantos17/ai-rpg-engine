@@ -4,9 +4,22 @@ Todos recebem (operação, contexto) e devolvem um dicionário com o resultado, 
 o log de eventos e para a IA narrar. Se a operação for inválida: `raise OperationRejected`.
 """
 
-from app.engine.operations.handlers import attributes, canon, checks, definitions, entities, items, narrative, skills
+from app.engine.operations.handlers import (
+    attributes,
+    canon,
+    checks,
+    definitions,
+    effects,
+    entities,
+    items,
+    narrative,
+    skills,
+    time,
+)
 
 HANDLERS = {
+    **time.HANDLERS,
+    **effects.HANDLERS,
     **definitions.HANDLERS,
     **entities.HANDLERS,
     **attributes.HANDLERS,
