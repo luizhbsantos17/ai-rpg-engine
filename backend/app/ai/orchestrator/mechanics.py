@@ -57,6 +57,7 @@ class MechanicsInput:
     settings: Settings | None = None  # configuração efetiva da campanha (None = a do programa)
     show_dice: bool = True  # avisos [TESTE] visíveis ao jogador
     system_window: bool = True  # avisos de "sistema" visíveis (nem todo universo tem janela de status)
+    system_label: str = "SISTEMA"  # nome da janela de sistema neste universo
 
 
 SYSTEM_WINDOW_TAGS = ("SISTEMA", "ANÁLISE")  # o que some num universo sem "janela de status"
@@ -69,6 +70,11 @@ def _visible(tag: str, mechanics: MechanicsInput) -> bool:
     if tag in SYSTEM_WINDOW_TAGS:
         return mechanics.system_window
     return True
+
+
+def _labeled(notice, mechanics: MechanicsInput) -> str:
+    tag = mechanics.system_label if notice.tag == "SISTEMA" else notice.tag
+    return f"[{tag}] {notice.text}"
 
 
 @dataclass
@@ -178,7 +184,7 @@ class MechanicsPhase:
             summary["narrator_facts"] = facts
             player = data.entities.player()
             messages = [
-                data.messages.append(Message.ROLE_SYSTEM, notice.as_message(), turn_id)
+                data.messages.append(Message.ROLE_SYSTEM, _labeled(notice, mechanics), turn_id)
                 for notice in player_notices(outcomes, player.id if player else None)
                 if _visible(notice.tag, mechanics)
             ]

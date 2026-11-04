@@ -44,6 +44,8 @@ class ExperienceSettings(BaseModel):
     summary_every: int | None = Field(default=None, ge=0, le=100)
     show_dice: bool = True  # mostrar os avisos [TESTE] com os números
     system_window: bool = True  # mostrar avisos de "sistema" (nem todo mundo tem janela de status, SPEC 12.2)
+    # Nome da "janela de sistema" neste universo (ex.: ORÁCULO, VISÃO, GRIMÓRIO). Só letras.
+    system_label: str = Field(default="SISTEMA", min_length=1, max_length=20, pattern=r"^[A-ZÀ-Ú]+$")
 
 
 class ContentSettings(BaseModel):

@@ -114,6 +114,11 @@ async function save() {
         </div>
         <label class="check"><input v-model="experience.show_dice" type="checkbox" /> Mostrar os avisos de testes com os números dos dados</label>
         <label class="check"><input v-model="experience.system_window" type="checkbox" /> Mostrar avisos de "sistema" (desligue em universos sem janela de status)</label>
+        <div class="field">
+          <label for="system-label">Nome da "janela de sistema" neste universo (só letras maiúsculas)</label>
+          <input id="system-label" v-model="experience.system_label" class="input" maxlength="20"
+                 placeholder="SISTEMA, ORÁCULO, GRIMÓRIO..." @input="experience.system_label = experience.system_label.toUpperCase()" />
+        </div>
       </fieldset>
 
       <fieldset class="panel">

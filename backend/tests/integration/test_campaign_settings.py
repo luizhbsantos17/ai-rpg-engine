@@ -92,6 +92,18 @@ def test_turning_mechanics_off_makes_a_single_ai_call(client, fake, campaign_id)
     assert len(fake.calls) == 1
 
 
+def test_system_window_can_have_another_name_in_this_universe(app_, client, fake, campaign_id):
+    assert client.put(f"/api/campaigns/{campaign_id}/settings",
+                      json={"experience": {"system_label": "oráculo"}}).status_code == 400  # só maiúsculas
+    client.put(f"/api/campaigns/{campaign_id}/settings", json={"experience": {"system_label": "ORÁCULO"}})
+    fake.queue(SETUP, CHECK, "Narração.")
+    play(client, campaign_id)
+    with app_.extensions["rpg_engine"].db.transaction() as session:
+        notices = [m.content for m in CampaignData(session, campaign_id).messages.list_ordered() if m.role == "system"]
+    assert "[ORÁCULO] Personagem criado: Kael." in notices
+    assert any(n.startswith("[TESTE]") for n in notices)  # outras etiquetas não mudam
+
+
 def test_presentation_preferences_hide_dice_and_system_notices(app_, client, fake, campaign_id):
     client.put(f"/api/campaigns/{campaign_id}/settings",
                json={"experience": {"show_dice": False, "system_window": False}})

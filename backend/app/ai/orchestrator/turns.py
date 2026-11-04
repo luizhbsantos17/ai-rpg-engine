@@ -158,6 +158,7 @@ class TurnOrchestrator:
                         brief, recent[-RECENT_FOR_INTERPRETER:], player_input, campaign.rng_seed,
                         campaign.world_clock, stored=turn.mechanics, settings=turn_settings,
                         show_dice=experience.show_dice, system_window=experience.system_window,
+                        system_label=experience.system_label,
                     )
                 return PreparedTurn(
                     owner_id, campaign_id, turn_to_dict(turn), message_to_dict(player_message),
