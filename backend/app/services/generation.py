@@ -53,6 +53,8 @@ class CampaignGenerationService:
             raise UnavailableError("A IA não conseguiu gerar uma campanha válida. Tente de novo.")
 
         concept = result.value.model_copy(update=kept)  # o que o jogador quis manter prevalece
+        if not concept.genre_tags:  # modelos pequenos às vezes esquecem (medido com qwen2.5:1.5b)
+            concept = concept.model_copy(update={"genre_tags": list(genres) or [ingredients["tom"]]})
         secrets = {f"segredo_{n}": text for n, text in enumerate(concept.secrets, start=1)}
         secrets["inspiracao"] = ingredients
         secrets["semente_inspiracao"] = seed

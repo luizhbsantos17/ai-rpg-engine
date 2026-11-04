@@ -52,6 +52,15 @@ def test_regenerate_keeps_chosen_fields(client, fake_ai, services):
         assert [e.type for e in CampaignData(session, draft["id"]).events.list_ordered()].count("campaign.generated") == 2
 
 
+def test_missing_genres_are_filled(client, fake_ai):
+    fake_ai.queue(concept("Sem Gêneros", tags=()))
+    with_pref = client.post("/api/campaigns/generate", json={"genres": ["horror"]}).get_json()["campaign"]
+    assert with_pref["genre_tags"] == ["horror"]
+    fake_ai.queue(concept("Sem Gêneros 2", tags=()))
+    without = client.post("/api/campaigns/generate", json={}).get_json()["campaign"]
+    assert len(without["genre_tags"]) == 1  # o tom sorteado
+
+
 def test_customize_then_start_then_cannot_regenerate(client, fake_ai):
     fake_ai.queue(concept("Rascunho"))
     draft = client.post("/api/campaigns/generate", json={}).get_json()["campaign"]
