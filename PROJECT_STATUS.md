@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-Última atualização: 2026-11-04 (sessão autônoma da madrugada).
+Última atualização: 2026-11-04 (sessão autônoma; Etapa 7 concluída + equipamentos + provedor openai_compat).
 
 ## Resumo
 | Etapa | Status |
