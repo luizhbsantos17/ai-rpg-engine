@@ -8,7 +8,11 @@ set "ROOT=%~dp0"
 rem Node.js portatil (fora do disco C:). Se nao existir, usa o Node do sistema.
 set "NODE_DIR=F:\Tools\node-v24.22.2-win-x64"
 if exist "%NODE_DIR%\node.exe" set "PATH=%NODE_DIR%;%PATH%"
-set "npm_config_cache=F:\Tools\npm-cache"
+rem Temporarios e caches no projeto (o disco C: esta quase cheio).
+set "npm_config_cache=%ROOT%.cache\npm"
+if not exist "%ROOT%.tmp" mkdir "%ROOT%.tmp"
+set "TEMP=%ROOT%.tmp"
+set "TMP=%ROOT%.tmp"
 set "PIP_NO_CACHE_DIR=1"
 
 where py >nul 2>nul || (echo [ERRO] Python nao encontrado. Instale o Python 3.12 ou mais novo. & goto :fim_erro)

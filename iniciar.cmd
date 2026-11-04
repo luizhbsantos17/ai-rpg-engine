@@ -9,7 +9,11 @@ setlocal
 set "ROOT=%~dp0"
 set "NODE_DIR=F:\Tools\node-v24.22.2-win-x64"
 if exist "%NODE_DIR%\node.exe" set "PATH=%NODE_DIR%;%PATH%"
-set "npm_config_cache=F:\Tools\npm-cache"
+rem Temporarios e caches no projeto (o disco C: esta quase cheio).
+set "npm_config_cache=%ROOT%.cache\npm"
+if not exist "%ROOT%.tmp" mkdir "%ROOT%.tmp"
+set "TEMP=%ROOT%.tmp"
+set "TMP=%ROOT%.tmp"
 rem Ollama portatil e pasta dos modelos (fora do disco C:).
 set "OLLAMA_DIR=F:\Tools\ollama"
 set "OLLAMA_MODELS=F:\Tools\ollama-models"

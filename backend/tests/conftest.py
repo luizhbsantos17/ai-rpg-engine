@@ -9,9 +9,19 @@ import shutil
 import pytest
 
 from app import create_app
-from app.config import load_settings
+from app.config import PROJECT_ROOT, load_settings
 from app.persistence.db import Database
 from app.persistence.migrations import upgrade_to_head
+
+# Arquivos temporários dos testes ficam no projeto (o disco C: do dono está quase cheio).
+# O pytest esvazia esta pasta no início de cada execução.
+TEST_TMP_DIR = PROJECT_ROOT / ".tmp" / "pytest"
+
+
+def pytest_configure(config):
+    if not config.option.basetemp:
+        TEST_TMP_DIR.parent.mkdir(exist_ok=True)
+        config.option.basetemp = str(TEST_TMP_DIR)
 
 
 @pytest.fixture(scope="session")

@@ -1,7 +1,7 @@
 """Mede o desempenho com uma campanha grande (Etapa 7.4). Usa a IA falsa: mede só o motor e o banco.
 
 Uso (na pasta backend):  .venv/Scripts/python.exe scripts/benchmark_large_campaign.py [npcs] [turnos]
-Cria tudo numa pasta temporária; não toca no banco real do jogo.
+Cria tudo numa pasta temporária em .tmp/ (no projeto); não toca no banco real do jogo.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ from sqlalchemy import event  # noqa: E402
 from app import create_app  # noqa: E402
 from app.ai.context.game_state import build_game_state  # noqa: E402
 from app.ai.orchestrator.simulation import WorldSimulation  # noqa: E402
-from app.config import load_settings  # noqa: E402
+from app.config import PROJECT_ROOT, load_settings  # noqa: E402
 from app.engine.operations.context import OperationContext  # noqa: E402
 from app.engine.operations.pipeline import apply_operations  # noqa: E402
 from app.persistence.repositories import CampaignData  # noqa: E402
@@ -120,7 +120,9 @@ def play_turns(services, campaign_id: str, turns: int) -> None:
 def main() -> None:
     npcs = int(sys.argv[1]) if len(sys.argv) > 1 else 500
     turns = int(sys.argv[2]) if len(sys.argv) > 2 else 300
-    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+    work_dir = PROJECT_ROOT / ".tmp"  # fora do disco C:
+    work_dir.mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=work_dir, prefix="benchmark-", ignore_cleanup_errors=True) as tmp:
         settings = load_settings(environ={
             "APP_ENV": "test", "DATA_DIR": tmp, "AI_PROVIDER": "fake", "AI_MODEL": "fake-model",
             "AI_MECHANICS": "true", "AI_SIMULATION_MINUTES": "0", "AI_SUMMARY_EVERY": "0",

@@ -23,6 +23,10 @@ data/
 *.db-wal
 *.db-shm
 
+# Temporários e caches locais (mantidos no projeto, fora do disco C:)
+.tmp/
+.cache/
+
 # Sistema/editor
 .DS_Store
 Thumbs.db
