@@ -21,6 +21,10 @@ def create_app(settings: Settings | None = None) -> Flask:
         SETTINGS=settings,
     )
 
+    from app.services.startup import initialize_services
+
+    initialize_services(flask_app, settings)
+
     from app.api import register_api
 
     register_api(flask_app)
