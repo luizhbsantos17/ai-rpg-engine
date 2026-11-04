@@ -23,7 +23,15 @@ from typing import Any
 from sqlalchemy.exc import IntegrityError
 
 from app.ai.context.narration import HistoryItem, build_narration_context
-from app.ai.orchestrator.events import NarrationDelta, TurnCompleted, TurnEvent, TurnFailed, TurnStarted
+from app.ai.orchestrator.events import (
+    MechanicsApplied,
+    NarrationDelta,
+    TurnCompleted,
+    TurnEvent,
+    TurnFailed,
+    TurnStarted,
+)
+from app.ai.orchestrator.mechanics import MechanicsInput, MechanicsPhase
 from app.ai.prompts.narrator import CampaignBrief
 from app.config import Settings
 from app.persistence.db import Database
@@ -46,6 +54,7 @@ logger = logging.getLogger(__name__)
 
 MAX_INPUT_CHARS = 4000
 HISTORY_FETCH_LIMIT = 60
+RECENT_FOR_INTERPRETER = 4
 NARRATOR_ROLE = "narrator"
 INTERRUPTED_MESSAGE = "Jogada interrompida antes do fim (conexão encerrada). Tente de novo."
 INTERNAL_ERROR_MESSAGE = "Erro interno ao processar a jogada. Tente de novo; se persistir, veja o log do servidor."
@@ -58,8 +67,13 @@ class PreparedTurn:
     turn: dict[str, Any]
     player_message: dict[str, Any]
     world_time: int
-    context: list[ChatMessage] = field(default_factory=list)
+    player_input: str = ""
+    brief: CampaignBrief | None = None
+    history: list[HistoryItem] = field(default_factory=list)
+    mechanics: MechanicsInput | None = None  # None = motor desligado (AI_MECHANICS=false)
+    context: list[ChatMessage] = field(default_factory=list)  # montado depois das mecânicas
     replay_narration: dict[str, Any] | None = None
+    replay_system_messages: list[dict[str, Any]] = field(default_factory=list)
 
 
 class TurnOrchestrator:
@@ -67,6 +81,7 @@ class TurnOrchestrator:
         self.db = db
         self.provider = provider
         self.settings = settings
+        self.mechanics = MechanicsPhase(db, provider, settings)
 
     # ---------- fase 1 ----------
 
@@ -89,9 +104,11 @@ class TurnOrchestrator:
                 else:
                     player_message, narration = self._existing_turn_messages(data, turn, player_input)
                     if turn.status == Turn.STATUS_COMPLETED:
+                        notices = [m for m in data.messages.for_turn(turn.id) if m.role == Message.ROLE_SYSTEM]
                         return PreparedTurn(
                             owner_id, campaign_id, turn_to_dict(turn), message_to_dict(player_message),
                             campaign.world_clock, replay_narration=message_to_dict(narration),
+                            replay_system_messages=[message_to_dict(m) for m in notices],
                         )
                     self._retry_failed_turn(data, turn, campaign.world_clock)
 
@@ -105,13 +122,17 @@ class TurnOrchestrator:
                     player_visible=dict(campaign.intro.player_visible) if campaign.intro else {},
                     gm_secret=dict(campaign.intro.gm_secret) if campaign.intro else {},
                 )
-                context = build_narration_context(
-                    brief, history, player_input,
-                    self.settings.ai_context_window, self.settings.ai_max_output_tokens,
-                )
+                mechanics = None
+                if self.settings.ai_mechanics:
+                    recent = [h for h in history if h.role in (Message.ROLE_PLAYER, Message.ROLE_NARRATION)]
+                    mechanics = MechanicsInput(
+                        brief, recent[-RECENT_FOR_INTERPRETER:], player_input, campaign.rng_seed,
+                        campaign.world_clock, stored=turn.mechanics,
+                    )
                 return PreparedTurn(
                     owner_id, campaign_id, turn_to_dict(turn), message_to_dict(player_message),
-                    campaign.world_clock, context=context,
+                    campaign.world_clock, player_input=player_input, brief=brief, history=history,
+                    mechanics=mechanics,
                 )
         except IntegrityError:
             # Mesmo id de turno usado em outra campanha, ou duas jogadas simultâneas.
@@ -164,6 +185,8 @@ class TurnOrchestrator:
         replay = prepared.replay_narration is not None
         yield TurnStarted(prepared.turn, prepared.player_message, replay=replay)
         if replay:
+            if prepared.replay_system_messages:
+                yield MechanicsApplied(prepared.replay_system_messages)
             yield NarrationDelta(prepared.replay_narration["content"])
             yield TurnCompleted(prepared.turn, prepared.replay_narration)
             return
@@ -173,6 +196,17 @@ class TurnOrchestrator:
         started = time.monotonic()
         try:
             model = resolve_model(self.provider, self.settings.ai_model)
+            facts: list[str] = []
+            if prepared.mechanics is not None:
+                outcome = self.mechanics.run(prepared.campaign_id, prepared.turn["id"], model, prepared.mechanics)
+                facts = outcome.narrator_facts
+                if outcome.system_messages or outcome.summary.get("intent"):
+                    yield MechanicsApplied(outcome.system_messages, outcome.summary.get("intent"))
+            prepared.context = build_narration_context(
+                prepared.brief, prepared.history, prepared.player_input,
+                self.settings.ai_context_window, self.settings.ai_max_output_tokens,
+                mechanics=prepared.mechanics is not None, facts=facts,
+            )
             result: CompletionResult | None = None
             for event in self.provider.stream(prepared.context, generation_options(self.settings, model)):
                 if isinstance(event, TextDelta):

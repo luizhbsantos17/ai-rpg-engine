@@ -9,10 +9,18 @@ import json
 from collections.abc import Iterator
 from dataclasses import asdict
 
-from app.ai.orchestrator.events import NarrationDelta, TurnCompleted, TurnEvent, TurnFailed, TurnStarted
+from app.ai.orchestrator.events import (
+    MechanicsApplied,
+    NarrationDelta,
+    TurnCompleted,
+    TurnEvent,
+    TurnFailed,
+    TurnStarted,
+)
 
 EVENT_NAMES = {
     TurnStarted: "turn",
+    MechanicsApplied: "mechanics",
     NarrationDelta: "delta",
     TurnCompleted: "done",
     TurnFailed: "error",

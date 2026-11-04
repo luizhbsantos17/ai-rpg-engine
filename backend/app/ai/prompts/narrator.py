@@ -23,8 +23,7 @@ Agência do jogador:
 Mundo:
 - O mundo não existe para proteger o protagonista: ações arriscadas podem falhar e ter consequências reais.
 - Respeite tudo o que já aconteceu na história. Não contradiga fatos anteriores.
-- Ainda não há um motor de regras ativo nesta campanha: não invente números de atributos, rolagens de dados,
-  níveis ou janelas de status. Narre as consequências de forma narrativa.
+{mechanics_rule}
 
 Formato:
 - Responda apenas com a narração. Não fale sobre ser uma IA, não comente as regras e não use cabeçalhos.
@@ -37,6 +36,17 @@ Formato:
 """
 
 
+RULE_WITHOUT_ENGINE = """\
+- Não há motor de regras ativo nesta campanha: não invente números de atributos, rolagens de dados,
+  níveis ou janelas de status. Narre as consequências de forma narrativa."""
+
+RULE_WITH_ENGINE = """\
+- Um motor de regras resolve testes e mudanças de estado. Os "RESULTADOS DO MOTOR" que acompanham a ação
+  são FATOS que já aconteceram: narre de acordo com eles, sem contradizer e sem inventar outros números.
+  Um teste com FALHA falhou de verdade; um com SUCESSO deu certo. Itens "(não aconteceu ...)" não aconteceram.
+- O jogador já vê as mensagens [SISTEMA] e [TESTE]; não repita números delas, mostre o efeito na cena."""
+
+
 @dataclass(frozen=True)
 class CampaignBrief:
     """O que o narrador precisa saber da campanha."""
@@ -47,8 +57,9 @@ class CampaignBrief:
     gm_secret: dict[str, Any] = field(default_factory=dict)
 
 
-def build_narrator_system_prompt(brief: CampaignBrief) -> str:
-    lines = [NARRATOR_RULES, "", "Campanha:", f"- Título: {brief.title}"]
+def build_narrator_system_prompt(brief: CampaignBrief, mechanics: bool = False) -> str:
+    rules = NARRATOR_RULES.format(mechanics_rule=RULE_WITH_ENGINE if mechanics else RULE_WITHOUT_ENGINE)
+    lines = [rules, "", "Campanha:", f"- Título: {brief.title}"]
     if brief.genre_tags:
         lines.append(f"- Gêneros e temas: {', '.join(brief.genre_tags)}")
     premise = brief.player_visible.get("premise")

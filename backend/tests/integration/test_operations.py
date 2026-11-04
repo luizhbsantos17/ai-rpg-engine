@@ -93,7 +93,10 @@ def test_attribute_changes_and_resource_limits(db, campaign_id, run, world):
     assert [o["status"] for o in outcomes] == [
         "applied", "applied", "applied", "rejected", "applied", "applied", "rejected", "rejected",
     ]
-    assert outcomes[2]["result"]["to"] == "40"  # recuperação limitada ao máximo
+    assert (outcomes[0]["result"]["from"], outcomes[0]["result"]["to"]) == ("12", "15")  # "antes" correto
+    assert (outcomes[1]["result"]["from"], outcomes[1]["result"]["to"]) == ("25.5", "15")
+    assert (outcomes[2]["result"]["from"], outcomes[2]["result"]["to"]) == ("30", "40")  # limitada ao máximo
+    assert (outcomes[5]["result"]["from"], outcomes[5]["result"]["to"]) == ("C", "S")
     assert outcomes[4]["result"]["to"] == "0" and outcomes[4]["result"]["clamped"] is True  # 10 - 15, mínimo 0
     assert "escala" in outcomes[6]["reason"]
     assert "suficiente" in outcomes[7]["reason"]

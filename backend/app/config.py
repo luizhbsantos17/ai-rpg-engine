@@ -44,6 +44,9 @@ class Settings:
     ai_max_output_tokens: int
     ai_context_window: int
     ai_timeout_seconds: float
+    # Motor de regras nos turnos (intérprete + operações). Desligar = só narração (1 chamada à IA).
+    ai_mechanics: bool
+    ai_json_attempts: int  # tentativas quando a IA devolve JSON inválido (D-008)
     ai_spend_limit_per_session: Decimal
     image_provider: str
     # Segredos: repr=False impede que apareçam em logs ou mensagens de erro.
@@ -101,6 +104,8 @@ def load_settings(
         ai_max_output_tokens=_parse_number("AI_MAX_OUTPUT_TOKENS", get("AI_MAX_OUTPUT_TOKENS", "1024"), int, 16, 1_000_000),
         ai_context_window=_parse_number("AI_CONTEXT_WINDOW", get("AI_CONTEXT_WINDOW", "8192"), int, 512, 10_000_000),
         ai_timeout_seconds=_parse_number("AI_TIMEOUT_SECONDS", get("AI_TIMEOUT_SECONDS", "600"), float, 1, 86_400),
+        ai_mechanics=_parse_bool("AI_MECHANICS", get("AI_MECHANICS", "true")),
+        ai_json_attempts=_parse_number("AI_JSON_ATTEMPTS", get("AI_JSON_ATTEMPTS", "2"), int, 1, 5),
         ai_spend_limit_per_session=_parse_spend_limit(get("AI_SPEND_LIMIT_PER_SESSION", "0")),
         image_provider=get("IMAGE_PROVIDER", "none"),
         secret_key=secret_key or DEV_SECRET_KEY,
@@ -136,6 +141,15 @@ def _parse_spend_limit(raw: str) -> Decimal:
     if not limit.is_finite() or limit < 0:
         raise ConfigError("AI_SPEND_LIMIT_PER_SESSION deve ser um número maior ou igual a 0.")
     return limit
+
+
+def _parse_bool(name: str, raw: str) -> bool:
+    lowered = raw.strip().lower()
+    if lowered in ("1", "true", "sim", "yes", "on"):
+        return True
+    if lowered in ("0", "false", "nao", "não", "no", "off"):
+        return False
+    raise ConfigError(f"{name}={raw!r} inválido. Use true ou false.")
 
 
 def _parse_number(name: str, raw: str, kind: type, minimum: float, maximum: float):

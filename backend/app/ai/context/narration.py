@@ -37,16 +37,26 @@ def _to_chat_message(item: HistoryItem) -> ChatMessage:
     return ChatMessage("user", f"[Aviso do jogo] {item.content}")
 
 
+def with_engine_facts(player_input: str, facts: Sequence[str]) -> str:
+    """Ação do jogador + resultados reais do motor (só no turno atual; o histórico guarda só a ação)."""
+    if not facts:
+        return player_input
+    listed = "\n".join(f"- {fact}" for fact in facts)
+    return f"{player_input}\n\nRESULTADOS DO MOTOR (fatos que já aconteceram; narre de acordo):\n{listed}"
+
+
 def build_narration_context(
     brief: CampaignBrief,
     history: Sequence[HistoryItem],
     player_input: str,
     context_window: int,
     max_output_tokens: int,
+    mechanics: bool = False,
+    facts: Sequence[str] = (),
 ) -> list[ChatMessage]:
     """Monta as mensagens, mantendo o histórico mais recente que couber no orçamento."""
-    system = ChatMessage("system", build_narrator_system_prompt(brief))
-    current = ChatMessage("user", player_input)
+    system = ChatMessage("system", build_narrator_system_prompt(brief, mechanics))
+    current = ChatMessage("user", with_engine_facts(player_input, facts))
 
     budget = context_window - max_output_tokens - SAFETY_MARGIN_TOKENS
     budget -= estimate_tokens(system.content) + estimate_tokens(current.content)

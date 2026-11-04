@@ -55,10 +55,11 @@ def attribute_set(op: AttributeSet, ctx: OperationContext) -> dict:
             raise OperationRejected(f"{definition.name}: o valor atual não pode passar do máximo ({max_value}).")
     elif op.max is not None:
         raise OperationRejected(f"{definition.name} não é um recurso; não tem máximo.")
+    previous = current.value if current else None  # ler ANTES de gravar (o registro é o mesmo objeto)
     ctx.data.attributes.upsert(entity.id, op.key, value, max_value)
     return {
         "entity_id": entity.id, "name": entity.name, "key": op.key, "attribute": definition.name,
-        "from": current.value if current else None, "to": value, "max": max_value,
+        "from": previous, "to": value, "max": max_value,
     }
 
 
@@ -71,14 +72,15 @@ def attribute_modify(op: AttributeModify, ctx: OperationContext) -> dict:
     if current is None:
         raise OperationRejected(f"{entity.name} não tem o atributo {definition.name}; use attribute.set primeiro.")
     delta = _amount(op.delta, ctx, entity)
-    old = to_decimal(current.value)
+    previous = current.value
+    old = to_decimal(previous)
     new, clamped = _clamped(definition, old + delta, current.max_value)
     if definition.value_type == "integer":
         new = new.to_integral_value()
     ctx.data.attributes.upsert(entity.id, op.key, number_text(new))
     return {
         "entity_id": entity.id, "name": entity.name, "key": op.key, "attribute": definition.name,
-        "from": current.value, "to": number_text(new), "delta": number_text(delta), "clamped": clamped,
+        "from": previous, "to": number_text(new), "delta": number_text(delta), "clamped": clamped,
         "max": current.max_value,
     }
 
@@ -86,23 +88,25 @@ def attribute_modify(op: AttributeModify, ctx: OperationContext) -> dict:
 def resource_spend(op: ResourceSpend, ctx: OperationContext) -> dict:
     entity, definition, current = _resource(op.entity, op.key, ctx)
     amount = _positive(op.amount, ctx, entity)
-    old = to_decimal(current.value)
+    previous = current.value
+    old = to_decimal(previous)
     if amount > old:
         raise OperationRejected(f"{entity.name} não tem {definition.name} suficiente ({current.value} < {number_text(amount)}).")
     new = old - amount
     ctx.data.attributes.upsert(entity.id, op.key, number_text(new))
     return {"entity_id": entity.id, "name": entity.name, "key": op.key, "attribute": definition.name,
-            "from": current.value, "to": number_text(new), "spent": number_text(amount), "max": current.max_value}
+            "from": previous, "to": number_text(new), "spent": number_text(amount), "max": current.max_value}
 
 
 def resource_restore(op: ResourceRestore, ctx: OperationContext) -> dict:
     entity, definition, current = _resource(op.entity, op.key, ctx)
     amount = _positive(op.amount, ctx, entity)
-    old = to_decimal(current.value)
+    previous = current.value
+    old = to_decimal(previous)
     new = min(old + amount, to_decimal(current.max_value))
     ctx.data.attributes.upsert(entity.id, op.key, number_text(new))
     return {"entity_id": entity.id, "name": entity.name, "key": op.key, "attribute": definition.name,
-            "from": current.value, "to": number_text(new), "restored": number_text(new - old), "max": current.max_value}
+            "from": previous, "to": number_text(new), "restored": number_text(new - old), "max": current.max_value}
 
 
 def _resource(ref: str, key: str, ctx: OperationContext):

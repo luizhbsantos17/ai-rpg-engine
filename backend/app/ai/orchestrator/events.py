@@ -14,6 +14,14 @@ class TurnStarted:
 
 
 @dataclass(frozen=True)
+class MechanicsApplied:
+    """O motor aplicou as operações do turno; `messages` são os avisos [SISTEMA]/[TESTE] do jogador."""
+
+    messages: list[dict[str, Any]]
+    intent: str | None = None
+
+
+@dataclass(frozen=True)
 class NarrationDelta:
     text: str
 
@@ -31,4 +39,4 @@ class TurnFailed:
     retryable: bool
 
 
-TurnEvent = TurnStarted | NarrationDelta | TurnCompleted | TurnFailed
+TurnEvent = TurnStarted | MechanicsApplied | NarrationDelta | TurnCompleted | TurnFailed

@@ -28,6 +28,9 @@ class Turn(CampaignScopedMixin, CreatedAtMixin, Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default=STATUS_PROCESSING)
     error: Mapped[str | None] = mapped_column(Text)
     completed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    # Resultado das mecânicas já aplicadas (intérprete + motor). Se a narração falhar e o turno
+    # for repetido, as operações NÃO são aplicadas de novo: reaproveita-se este resultado.
+    mechanics: Mapped[dict[str, Any] | None] = mapped_column(JSON)
 
 
 class Message(IdMixin, CampaignScopedMixin, CreatedAtMixin, Base):
