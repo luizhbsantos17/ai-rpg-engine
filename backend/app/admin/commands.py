@@ -24,6 +24,7 @@ from app.persistence.snapshots import (
     list_snapshots,
     read_snapshot,
     restore_campaign,
+    work_dir_for,
     write_snapshot,
 )
 
@@ -331,7 +332,8 @@ def snapshot_restore(ctx: AdminContext) -> AdminOutcome:
         raise AdminError("Use: /admin snapshot.restore <id>  (veja os ids com /admin snapshot list)")
     try:
         saved = read_snapshot(ctx.data_dir, ctx.data.campaign_id, ctx.command.args[0])
-        restore_campaign(ctx.data.session, saved, ctx.owner_id, replace_existing=True)
+        restore_campaign(ctx.data.session, saved, ctx.owner_id, replace_existing=True,
+                         work_dir=work_dir_for(ctx.data_dir))
     except SnapshotError as exc:
         raise AdminError(str(exc)) from None
     return AdminOutcome([f"Campanha restaurada para o snapshot {ctx.command.args[0]} ({saved.get('label', '')}).",

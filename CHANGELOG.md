@@ -7,6 +7,7 @@
 - Correção: falha no snapshot automático não impede o resumo da história.
 - Desempenho em campanhas longas: contagens pelo banco, índice das lembranças de NPC, missões limitadas no
   contexto da IA, snapshot automático em segundo plano; script de medição `scripts/benchmark_large_campaign.py`.
+- Snapshots e exportações de versões anteriores do programa são convertidos automaticamente ao restaurar/importar.
 
 ## [0.6.0] — Etapa 6 (concluída)
 - Modo administrador e debug: interpretador próprio, sessão por senha, confirmação de destrutivos,

@@ -261,3 +261,13 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
   já eram). Snapshot automático roda em segundo plano, como o resumo (`services/background.py`), porque numa
   campanha enorme leva ~1–1,5 s. Medição reproduzível: `scripts/benchmark_large_campaign.py`.
 - Motivo: SPEC 17.6 e 20 (muitos NPCs/eventos sem perder desempenho; a IA recebe só o que cabe).
+
+### D-050 — Snapshots de versões anteriores são atualizados pelas próprias migrações
+- Decisão: ao restaurar/importar um arquivo de versão anterior do banco, o programa cria um banco temporário
+  em `data/tmp/` NA VERSÃO do arquivo, insere os dados (usando o esquema lido desse banco), roda as migrações
+  até a versão atual e exporta de novo; só então restaura normalmente. Arquivo de versão mais nova ou
+  desconhecida é recusado com mensagem clara. O banco temporário é apagado em seguida.
+- Motivo: SPEC 15 (backup e importação confiáveis). Sem isso, qualquer atualização do programa (até um índice
+  novo) tornava todos os snapshots antigos inúteis. Reaproveitar as migrações garante que mudanças de dados
+  futuras também sejam aplicadas aos arquivos antigos, sem código de conversão duplicado.
+- Complementa D-045.

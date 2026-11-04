@@ -8,6 +8,7 @@ transação (com as chaves estrangeiras conferidas no fim). As outras campanhas 
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -16,7 +17,10 @@ from sqlalchemy import Table, delete, insert, select, text
 from sqlalchemy.orm import Session
 
 from app.persistence.models import FTS_TABLE, Base, Campaign
+from app.persistence.snapshot_upgrade import SnapshotUpgradeError, upgrade_snapshot
 from app.persistence.types import UTCDateTime, utc_now
+
+logger = logging.getLogger(__name__)
 
 FORMAT_VERSION = 1
 PLATFORM_TABLES = ("users",)  # não pertencem à campanha
@@ -52,14 +56,29 @@ def export_campaign(session: Session, campaign_id: str) -> dict[str, Any]:
     }
 
 
-def restore_campaign(session: Session, snapshot: dict[str, Any], owner_id: str, replace_existing: bool) -> str:
-    """Recoloca a campanha do snapshot. `replace_existing`: apaga a versão atual dela antes (restaurar)."""
+def restore_campaign(session: Session, snapshot: dict[str, Any], owner_id: str, replace_existing: bool,
+                     work_dir: Path | None = None) -> str:
+    """Recoloca a campanha do snapshot. `replace_existing`: apaga a versão atual dela antes (restaurar).
+
+    Arquivo de uma versão anterior do programa é atualizado antes (`snapshot_upgrade`), usando `work_dir`
+    para o banco temporário.
+    """
     if snapshot.get("format") != "ai-rpg-engine/campaign":
         raise SnapshotError("Arquivo não é uma exportação de campanha do AI RPG Engine.")
     if snapshot.get("format_version") != FORMAT_VERSION:
         raise SnapshotError("Versão do arquivo de campanha não suportada.")
+    if not isinstance(snapshot.get("tables"), dict) or not snapshot.get("campaign_id"):
+        raise SnapshotError("Arquivo de campanha incompleto.")
     if snapshot.get("schema_revision") not in (None, _schema_revision(session)):
-        raise SnapshotError("O arquivo é de outra versão do banco; restaure com a mesma versão do programa.")
+        try:
+            snapshot = upgrade_snapshot(snapshot, work_dir)
+        except SnapshotUpgradeError as exc:
+            raise SnapshotError(str(exc)) from None
+        except Exception:
+            logger.exception("Falha ao atualizar snapshot de versão anterior")
+            raise SnapshotError("Não foi possível converter o arquivo da versão anterior do programa.") from None
+        if snapshot.get("schema_revision") != _schema_revision(session):
+            raise SnapshotError("O arquivo é de outra versão do banco; restaure com a mesma versão do programa.")
     campaign_id = snapshot["campaign_id"]
     campaign_table = Campaign.__table__
     exists = session.execute(select(campaign_table.c.id).where(campaign_table.c.id == campaign_id)).first()
@@ -108,6 +127,11 @@ def _from_json(table: Table, row: dict[str, Any]) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------- arquivos de snapshot
+
+def work_dir_for(data_dir: Path | None) -> Path | None:
+    """Pasta para arquivos temporários (ex.: atualizar snapshot antigo), junto dos dados do jogo."""
+    return data_dir / "tmp" if data_dir is not None else None
+
 
 def snapshot_dir(data_dir: Path, campaign_id: str) -> Path:
     return data_dir / "backups" / campaign_id
@@ -163,4 +187,4 @@ def read_snapshot(data_dir: Path, campaign_id: str, snapshot_id: str) -> dict[st
 
 
 __all__ = ["SnapshotError", "export_campaign", "list_snapshots", "read_snapshot", "restore_campaign",
-           "write_snapshot"]
+           "work_dir_for", "write_snapshot"]

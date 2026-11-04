@@ -8,7 +8,7 @@ from typing import Any
 from app.persistence.db import Database
 from app.persistence.models import Event
 from app.persistence.repositories import CampaignData, CampaignRepository
-from app.persistence.snapshots import SnapshotError, export_campaign, restore_campaign, write_snapshot
+from app.persistence.snapshots import SnapshotError, export_campaign, restore_campaign, work_dir_for, write_snapshot
 from app.services.errors import InvalidInputError, NotFoundError
 from app.services.serializers import campaign_to_dict, message_to_dict, turn_to_dict
 
@@ -27,7 +27,8 @@ class CampaignService:
     def import_(self, owner_id: str, snapshot: dict[str, Any]) -> dict[str, Any]:
         try:
             with self.db.transaction() as session:
-                campaign_id = restore_campaign(session, snapshot, owner_id, replace_existing=False)
+                campaign_id = restore_campaign(session, snapshot, owner_id, replace_existing=False,
+                                               work_dir=work_dir_for(self.data_dir))
         except SnapshotError as exc:
             raise InvalidInputError(str(exc)) from None
         except (KeyError, TypeError, ValueError):

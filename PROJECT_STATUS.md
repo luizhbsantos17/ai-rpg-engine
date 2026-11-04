@@ -5,17 +5,21 @@
 ## Resumo
 | Etapa | Status |
 |---|---|
-| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-049) |
+| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-050) |
 | 1 — Fundação | **concluída** e verificada com Ollama real |
 | 2 — Motor de RPG | **concluída** e verificada com Ollama real |
 | 3 — Narrativa e mundo | **concluída** (teste de campanha simulada com reinício) |
 | 4 — Sistemas avançados | **concluída** (`tests/e2e/test_different_rule_systems.py`) |
 | 5 — Interface completa | **concluída** (testes de componentes; falta o dono olhar a tela) |
 | 6 — Imagens e administração | **concluída** (imagens: só a estrutura, desligada; gerador real pendente) |
-| 7 — Qualidade e expansão | **em andamento**: 7.1 a 7.4 concluídas; faltam 7.5 e 7.6 |
+| 7 — Qualidade e expansão | **em andamento**: 7.1 a 7.4 e 7.6 concluídas; falta 7.5 |
 
 ## Última tarefa concluída
-Etapa 7.4: desempenho com campanha grande (D-049). Medição com `scripts/benchmark_large_campaign.py`
+Etapa 7.6: snapshots e exportações de versões anteriores do programa voltam a ser restauráveis (D-050):
+o arquivo é convertido num banco temporário pelas próprias migrações. Testado com um arquivo da versão da
+Etapa 2 (sem cânone, sem mecânicas no turno): importação pela API e restauração pelo `/admin`.
+
+Antes, Etapa 7.4: desempenho com campanha grande (D-049). Medição com `scripts/benchmark_large_campaign.py`
 (IA falsa; mede só motor e banco), 2.000 NPCs, 1.000 turnos, 12 mil eventos:
 - estado do jogo enviado à IA **não cresce**: ~1.900 tokens com 100 ou 2.000 NPCs; ~133 consultas, ~35–65 ms;
 - turno (sem a IA) caiu de ~152 ms para ~69 ms numa campanha de 1.000 turnos (índice das lembranças de NPC:
@@ -27,11 +31,7 @@ Antes: 7.1 (segurança, D-047), 7.2 (teste real ponta a ponta com Ollama), 7.3 (
 Critério (SPEC Parte 23): o projeto funciona de maneira consistente, com testes demonstrando os principais fluxos.
 Faltam:
 5. Documentação final (README, guia do jogador) e preparação para hospedagem (Dockerfile opcional, D-009).
-6. **Snapshots de versões antigas do programa**: hoje restaurar/importar exige a mesma versão do banco (D-045);
-   qualquer migração nova (como a 14 desta etapa) torna snapshots e exportações antigas impossíveis de restaurar.
-   Plano: restaurar o arquivo num banco temporário na versão dele, rodar as migrações nesse banco e então
-   importar. Hoje não afeta nada (o banco real está vazio e não há snapshots), mas precisa existir antes do
-   dono jogar de verdade.
+
 
 ## Arquivos modificados nesta sessão (Etapa 7)
 `backend/app/__init__.py`, `backend/app/admin/sessions.py`, `backend/app/config.py`,
@@ -39,7 +39,8 @@ Faltam:
 summaries.py, journal.py}`, `backend/app/persistence/repositories/narrative.py`,
 `backend/app/persistence/models/knowledge.py`, `backend/app/ai/context/game_state.py`,
 `backend/app/admin/commands.py`, `backend/alembic/versions/...db33890eefb9_indice_memorias_npc.py`,
-`backend/scripts/benchmark_large_campaign.py`,
+`backend/scripts/benchmark_large_campaign.py`, `backend/app/persistence/snapshot_upgrade.py`,
+`backend/app/services/campaigns.py`, `backend/tests/integration/test_snapshot_upgrade.py`,
 `backend/tests/{integration/test_security.py, integration/test_auto_backup.py,
 integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
 `docs/{AI_PROVIDERS.md, DECISIONS.md, DATABASE.md}`, `CLAUDE.md`, `PROJECT_STATUS.md`, `CHANGELOG.md`.
@@ -78,7 +79,7 @@ integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **327 passed**, 1 deselected (externo) |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **330 passed**, 1 deselected (externo) |
 | 2026-11-04 | frontend `npm test` (Vitest) | **43 passed** |
 | 2026-11-04 | frontend `npm run build` | ok |
 | 2026-11-04 | `pytest -m external` com Ollama real | **1 passed** |
