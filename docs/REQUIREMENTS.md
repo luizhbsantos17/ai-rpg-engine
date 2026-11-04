@@ -17,14 +17,14 @@ Status possíveis: `pendente`, `parcial`, `pronto` (só com teste executado).
 | RF-09 | Geração aleatória de campanhas, com regenerar, personalizar e preservar elementos | 3 | 3 | pronto |
 | RF-10 | Geração de protagonista, reencarnação e turmas com indivíduos distintos | 4 | 3 | parcial (protagonista e turma prontos; reencarnação detalhada depende da premissa) |
 | RF-11 | Registro canônico com versões (sem sobrescrever o passado) | 3.4 | 3 | pronto |
-| RF-12 | NPCs com memória individual, objetivos e autonomia | 8 | 3 | parcial (memória, conhecimento, personalidade e objetivos prontos; simulação fora de cena na Etapa 4) |
+| RF-12 | NPCs com memória individual, objetivos e autonomia | 8 | 3 | pronto (qualidade das decisões depende do modelo) |
 | RF-13 | Relacionamentos multidimensionais e romance | 9 | 3 | pronto (dimensões livres incluem afeto/ciúme; romance é narrativo) |
 | RF-14 | Missões tradicionais e emergentes | 10.1 | 3 | pronto |
-| RF-15 | Relógio do mundo sem avanço offline; eventos mundiais | 10.2–10.3 | 3–4 | parcial (relógio e agendamentos prontos; eventos mundiais autônomos na Etapa 4) |
-| RF-16 | Combate híbrido (narrativo + mecânico) | 7.1 | 4 | pendente |
-| RF-17 | Avaliação, ocultação e falsificação de informações | 6 | 4 | pendente |
-| RF-18 | Regras de morte por universo | 7.4 | 4 | pendente |
-| RF-19 | Mecânicas e regras criadas pela IA, validadas | 5.3, 6.4 | 4 | parcial (definições abertas versionadas e fórmulas seguras prontas) |
+| RF-15 | Relógio do mundo sem avanço offline; eventos mundiais | 10.2–10.3 | 3–4 | pronto |
+| RF-16 | Combate híbrido (narrativo + mecânico) | 7.1 | 4 | parcial (testes, dano condicional, efeitos, morte; sem ordem de iniciativa dedicada) |
+| RF-17 | Avaliação, ocultação e falsificação de informações | 6 | 4 | pronto |
+| RF-18 | Regras de morte por universo | 7.4 | 4 | pronto |
+| RF-19 | Mecânicas e regras criadas pela IA, validadas | 5.3, 6.4 | 4 | pronto |
 | RF-20 | Interface completa (23 telas/módulos) e mensagens diegéticas | 12 | 5 | pendente |
 | RF-21 | Geração opcional de imagens associadas a entidades | 13 | 6 | pendente |
 | RF-22 | Modo administrador e debug com interpretador próprio | 16 | 6 | pendente |

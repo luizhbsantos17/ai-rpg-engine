@@ -5,36 +5,33 @@
 ## Resumo
 | Etapa | Status |
 |---|---|
-| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-037) |
+| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-041) |
 | 1 — Fundação | **concluída** e verificada com Ollama real |
 | 2 — Motor de RPG | **concluída** e verificada com Ollama real |
 | 3 — Narrativa e mundo | **concluída**: critério verificado por teste de campanha simulada com reinício |
-| 4 — Sistemas avançados | **em andamento**: 4.1 backend concluído (avaliação/ocultação/falsificação); falta o painel na interface |
-| 5 a 7 | não iniciadas |
+| 4 — Sistemas avançados | **concluída**: critério verificado (`tests/e2e/test_different_rule_systems.py`) |
+| 5 — Interface completa | não iniciada (plano abaixo) |
+| 6 e 7 | não iniciadas |
 
 ## Última tarefa concluída
-Etapa 3 completa: cânone, relógio/agendamentos/efeitos, relacionamentos, conhecimento/memória,
-missões, memória em camadas (resumos + busca), geração aleatória de campanhas, turmas, teste de fluxo.
+Etapa 4 completa: avaliação/ocultação/falsificação (+ painel "Conhecidos"), regras de morte por universo,
+recarga de habilidades, simulação de NPCs fora de cena e eventos mundiais, teste de sistemas de regras diferentes.
 
-## Próxima tarefa: Etapa 4.1 (interface) — painel "Personagens conhecidos" usando `GET /api/campaigns/<id>/known`; depois 4.2
+## Próxima tarefa: Etapa 5 — Interface completa
+Critério (SPEC Parte 23): o jogador usa os principais sistemas pela interface, sem mexer no banco.
+Subtarefas planejadas:
+1. **Configurações durante a campanha** (SPEC 19, RF-23/24): tabela `campaign_settings` versionada; separar
+   experiência (modelo, criatividade, motor ligado, intensidade da simulação, frequência de resumos,
+   avisos de dados visíveis) × regras (mudam o funcionamento: avisar antes) × narrativa; maturidade por
+   categoria (SPEC 14) limitada pelo provedor (D-007). Tela de configurações.
+2. **Mapa**: locais conhecidos/visitados pelo protagonista e quem/o que está no local atual (só o visível).
+3. **Diário**: linha do tempo do protagonista (resumos, avisos importantes, missões).
+4. **Relacionamentos** do ponto de vista do jogador (só o que ele sabe).
+5. Organização dos painéis (abas na coluna lateral), notificações diegéticas configuráveis por universo.
+6. Testes de componentes e um fluxo de uso completo.
 
-Feito em 4.1 (backend, testado): tabela `disguises` (migração 10), operações `disguise.apply/remove` e
-`knowledge.assess` (regra em `app/engine/operations/handlers/assessment.py`), avisos `[ANÁLISE]`, rota `/known`.
-
-## Plano da Etapa 4 — Sistemas avançados
-Critério (SPEC Parte 23): campanhas diferentes conseguem usar sistemas de regras significativamente diferentes.
-Subtarefas planejadas, nesta ordem:
-1. **Avaliação, ocultação e falsificação** (SPEC 6): tabela `disguises`; operações `disguise.apply/remove` e
-   `knowledge.assess` (poder de avaliação × ocultação, rolado pelo motor; resultado vira `knowledge` com nível
-   estimado/parcial/confirmado/falso). Painel "Personagens conhecidos" mostrando só o que o protagonista sabe.
-2. **Regras de morte por universo** (SPEC 7.4): definição `death_rule` (permanente, ressurreição, reencarnação,
-   inconsciência...); recurso vital chegando a 0 aplica a regra automaticamente, sem mudar retroativamente.
-3. **Recarga de habilidades** (cooldown no tempo do mundo) e **progressão** com regras definidas pela campanha.
-4. **Simulação de NPCs fora de cena** (SPEC 8.4): níveis de simulação; quando o tempo avança bastante, a IA
-   propõe o que NPCs relevantes fizeram (operações validadas); NPCs distantes avançam por agenda.
-5. **Eventos mundiais** (SPEC 10.2) gerados durante passagens longas de tempo.
-6. Teste do critério: duas campanhas com sistemas de regras bem diferentes (ex.: atributos numéricos ×
-   ranks nominais e conceituais), operando lado a lado.
+## Pendência menor da Etapa 4
+- Combate não tem ordem de iniciativa dedicada (funciona por testes + dano condicional + efeitos + morte).
 
 ## O que existe e funciona (com testes)
 - **Backend** (Python 3.13, Flask 3.1, SQLAlchemy 2.1, Alembic 1.20, Pydantic 2.14, httpx):
@@ -65,8 +62,8 @@ Subtarefas planejadas, nesta ordem:
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **265 passed**, 1 deselected (externo) |
-| 2026-11-04 | frontend `npm test` (Vitest) | **32 passed** |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **280 passed**, 1 deselected (externo) |
+| 2026-11-04 | frontend `npm test` (Vitest) | **34 passed** |
 | 2026-11-04 | frontend `npm run build` | ok |
 | 2026-11-04 | `pytest -m external` com Ollama real | **1 passed** |
 | 2026-11-04 | Etapa 1 com IA real: criar → jogar → desligar → religar → continuar | ok |
@@ -104,9 +101,8 @@ Backend: `app/{config.py, persistence, providers, ai, engine, services, api}`, `
 Raiz: `instalar.cmd`, `iniciar.cmd`. Docs: `docs/*.md`.
 
 ## Casos da SPEC Parte 22 cobertos por testes
-1, 2, 3, 4, 5, 6, 7, 8 (parcial), 9 (parcial), 13, 14 (parcial: agendados), 15, 18, 19, 20, 21, 22, 24,
-25 (parcial: dono), 26. Faltam: 10, 11, 12 (avaliação/ocultação/falsificação — Etapa 4), 16 (admin — Etapa 6),
-17 (backup — Etapa 6/7), 23 (morte — Etapa 4).
+1 a 15, 18 a 24, 25 (parcial: dono), 26. Faltam: 16 (operações administrativas — Etapa 6) e
+17 (recuperação de backups — Etapa 6/7).
 
 ## Riscos principais
 | Risco | Mitigação |

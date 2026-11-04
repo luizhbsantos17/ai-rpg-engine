@@ -123,6 +123,14 @@ premissa, segredos do mestre); fatos canônicos; últimos resumos; trechos antig
 estado da cena (tempo, protagonista, presentes com personalidade/objetivo/relação/conhecimento, missões);
 histórico recente; ação atual; e, para o narrador, os resultados reais do motor e o que cada NPC presente sabe.
 
+### 3.2.3. Módulos da Etapa 4
+| Módulo | Responsabilidade |
+|---|---|
+| `app/engine/operations/handlers/assessment.py` | avaliação × ocultação/falsificação |
+| `app/engine/death.py` | regras de morte por universo |
+| `app/ai/orchestrator/simulation.py` + `app/ai/prompts/simulation.py` | NPCs relevantes fora de cena e eventos mundiais |
+| `app/services/known.py` | personagens conhecidos (só o que o protagonista sabe) |
+
 ### 3.3. API HTTP (Etapa 1)
 | Método e endereço | O que faz |
 |---|---|
@@ -136,6 +144,7 @@ histórico recente; ação atual; e, para o narrador, os resultados reais do mot
 | `POST /api/campaigns/generate` | gera (ou gera de novo: `draft_id`, `keep`) campanha aleatória como rascunho |
 | `PATCH /api/campaigns/<id>` | ajusta título/premissa/gêneros de um rascunho |
 | `POST /api/campaigns/<id>/start` | começa o rascunho (passa a aceitar jogadas) |
+| `GET /api/campaigns/<id>/known` | personagens conhecidos pelo protagonista (falso aparece como confirmado) |
 | `POST /api/campaigns/<id>/turns` | joga: `{turn_id (UUID do frontend), input}` → stream SSE |
 
 Eventos do stream do turno: `turn` (turno registrado + mensagem do jogador), `mechanics` (avisos
@@ -252,12 +261,14 @@ dela vira, por exemplo, `effect.apply` + `attribute.modify` + `knowledge.record`
 
 O catálogo pode crescer, mas cada verbo novo exige validador e testes.
 
-**Implementado** (`app/engine/operations/`, 30 operações):
+**Implementado** (`app/engine/operations/`, 33 operações):
 - Etapa 2: `definition.create/amend`, `entity.create/update/remove/move`, `attribute.set/modify`,
   `resource.spend/restore`, `skill.grant/revoke/evolve/use`, `item.create/transfer/destroy`, `check.request`,
   `event.record`.
 - Etapa 3: `canon.assert/amend`, `time.advance`, `event.schedule`, `effect.apply/remove`,
   `relationship.change`, `knowledge.record`, `memory.record`, `quest.create/update`.
+- Etapa 4: `disguise.apply/remove`, `knowledge.assess` (D-038); `skill.use` com recarga; regras de morte
+  aplicadas pelo motor após cada operação (`app/engine/death.py`, D-040); `sim_tier` em entidades.
 
 Regras do pipeline: cada operação é aplicada num *savepoint* (se for recusada, só ela é desfeita, inclusive
 apelidos `ref`); toda operação aceita `reason` e `when` (condição sobre um teste anterior, D-025); toda

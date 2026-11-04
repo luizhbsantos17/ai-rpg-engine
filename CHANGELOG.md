@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.4.0] — Etapa 4 (concluída)
+- Avaliação, ocultação e falsificação (`knowledge.assess`, `disguise.*`); painel "Personagens conhecidos".
+- Regras de morte por universo aplicadas pelo motor (permanente, desmaio, ressurreição, reencarnação, narrativa).
+- Recarga de habilidades no tempo do mundo.
+- Simulação de NPCs relevantes fora de cena e eventos mundiais em passagens longas de tempo.
+- Teste do critério: duas campanhas com sistemas de regras muito diferentes lado a lado.
+
 ## [0.3.0] — Etapa 3 (concluída)
 - Registro canônico versionado (fatos confirmados, rumores, crenças falsas); fatos iniciais e regras de morte.
 - Relógio do mundo (`time.advance`), acontecimentos agendados com operações, efeitos com duração.

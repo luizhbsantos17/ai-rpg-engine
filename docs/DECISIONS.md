@@ -184,3 +184,27 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
 ### D-037 — Fatos canônicos versionados por chave
 - Decisão: `canon.assert` recusa chave já existente; `canon.amend` exige motivo e cria versão nova (a antiga
   fica com `is_current=false`). Status: confirmado, rumor ou crença falsa.
+
+### D-038 — Regra da avaliação × ocultação
+- Decisão: total = dados + poder de avaliação; dificuldade = 10 + força da ocultação do campo. Margem ≥ 10:
+  verdade confirmada (e percebe a ocultação); ≥ 0: confirmada (ou "parcial" se havia ocultação); de -5 a -1:
+  estimativa ("≈"); < -5: engano (valor falso, se houver) ou nada. O alvo pode perceber (`detection`).
+- O jogador enganado vê a informação falsa como "confirmada" (ele não sabe); o narrador vê a verdade.
+- Motivo: SPEC 6.4 (resultado depende de poder, diferença e ocultação, não só sucesso/fracasso).
+
+### D-039 — Progressão não automática
+- Decisão: não há subida de nível automática por XP. A evolução é proposta pela IA (`skill.evolve`,
+  `attribute.modify`, novas habilidades/definições) e validada pelo motor, sem teto.
+- Motivo: SPEC 5.2 ("não torne a evolução automática ou previsível"). Uma campanha pode definir XP como atributo.
+
+### D-040 — Regras de morte aplicadas pelo motor
+- Decisão: definição `death_rule` (permanent, unconscious, resurrection, reincarnation, narrative) ligada a um
+  recurso vital; ao chegar a 0, o motor aplica na mesma operação (desmaio e ressurreição viram agendamentos).
+  Sem regra definida, nada automático. Inconsciente/morto não age.
+- Motivo: SPEC 7.4 (cada universo tem sua regra; não mudar retroativamente para salvar o protagonista).
+
+### D-041 — Níveis de simulação e simulação do mundo
+- Decisão: `sim_tier` 0 (em cena/protagonista), 1 (relevante: a IA simula fora de cena), 2 (distante: só
+  agendamentos; padrão de novas entidades), 3 (dormente). Simulação roda quando um turno avança o tempo
+  ≥ `AI_SIMULATION_MINUTES` (padrão 360); operações validadas, sem `time.advance`; o narrador não recebe.
+- Motivo: SPEC 8.4 (otimização sem destruir a autonomia) e 10.2 (o mundo evolui sem depender do jogador).
