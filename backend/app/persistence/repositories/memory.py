@@ -40,6 +40,14 @@ class SummaryRepository(CampaignScopedRepository[Summary]):
         latest = self.latest(1)
         return latest[0].to_turn if latest else 0
 
+    def covering(self, turn_number: int) -> list[Summary]:
+        """Resumos que incluem o turno `turn_number` (ou turnos depois dele)."""
+        return list(self.session.scalars(self._select().where(Summary.to_turn >= turn_number)))
+
+    def remove(self, summary: Summary) -> None:
+        self.session.delete(summary)
+        self.session.flush()
+
 
 class MemorySearchRepository:
     """Índice FTS5 (busca por palavras) restrito à campanha. Específico do SQLite (D-033)."""
@@ -71,6 +79,10 @@ class MemorySearchRepository:
             params["before_turn"] = before_turn
         rows = self.session.execute(text(sql + " ORDER BY rank LIMIT :limit"), params)
         return [MemoryHit(kind, int(turn), snippet) for kind, turn, snippet in rows]
+
+    def remove(self, kind: str, ref_id: str) -> None:
+        self.session.execute(text(f"DELETE FROM {FTS_TABLE} WHERE campaign_id = :c AND kind = :kind AND ref_id = :ref"),
+                             {"c": self.campaign_id, "kind": kind, "ref": ref_id})
 
     def delete_campaign(self) -> None:
         self.session.execute(text(f"DELETE FROM {FTS_TABLE} WHERE campaign_id = :c"), {"c": self.campaign_id})

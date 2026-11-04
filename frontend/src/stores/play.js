@@ -25,9 +25,17 @@ export const usePlayStore = defineStore('play', {
     streamingText: '',
     failure: null, // { turnId, input, message, retryable }
     notice: null, // aviso que não é falha de turno (ex.: pedido recusado)
+    replacingId: null, // narração sendo reescrita ("gerar outra versão"): some enquanto a nova chega
   }),
   getters: {
     isEmpty: (state) => state.messages.length === 0,
+    // Só a narração da última jogada concluída pode ganhar outra versão.
+    regenerableId: (state) => {
+      if (state.streaming || state.failure) return null
+      const last = state.messages.at(-1)
+      if (!last || last.role !== 'narration') return null
+      return state.turns[last.turn_id]?.status === 'completed' ? last.id : null
+    },
   },
   actions: {
     async load(campaignId) {
@@ -91,6 +99,42 @@ export const usePlayStore = defineStore('play', {
       if (message && !this.messages.some((m) => m.id === message.id)) {
         this.messages.push(message)
         this.messages.sort((a, b) => a.seq - b.seq)
+      }
+    },
+
+    // Outra versão da narração da última jogada (mesmos dados). Se falhar, a anterior fica.
+    async regenerate() {
+      const old = this.messages.find((m) => m.id === this.regenerableId)
+      if (!old || !this.campaign) return
+      this.streaming = true
+      this.streamingText = ''
+      this.notice = null
+      this.replacingId = old.id
+      let finished = false
+      try {
+        await api.regenerateTurn(this.campaign.id, old.turn_id, {
+          onDelta: (data) => {
+            this.streamingText += data.text
+          },
+          onDone: (data) => {
+            finished = true
+            this.turns[data.turn.id] = data.turn
+            this.messages = this.messages.filter((m) => m.id !== old.id)
+            this.addMessage(data.narration_message)
+          },
+          onError: (data) => {
+            finished = true
+            this.turns[data.turn.id] = data.turn
+            this.notice = `Não foi possível gerar outra versão (a anterior foi mantida): ${data.message}`
+          },
+        })
+        if (!finished) this.notice = `${STREAM_CUT_MESSAGE} A versão anterior foi mantida.`
+      } catch (err) {
+        this.notice = err.message
+      } finally {
+        this.streaming = false
+        this.streamingText = ''
+        this.replacingId = null
       }
     },
 

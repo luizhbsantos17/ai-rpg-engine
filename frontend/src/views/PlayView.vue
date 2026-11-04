@@ -94,7 +94,18 @@ watch(
             :text="message.content"
             :failed="play.turns[message.turn_id]?.status === 'failed'"
           />
-          <NarrationBlock v-else-if="message.role === 'narration'" :text="message.content" />
+          <template v-else-if="message.role === 'narration'">
+            <NarrationBlock v-if="message.id !== play.replacingId" :text="message.content" />
+            <div v-if="message.id === play.regenerableId" class="narration-actions">
+              <button
+                type="button"
+                class="btn btn-small"
+                title="Escreve esta narração de outro jeito. Dados e resultados continuam os mesmos."
+                :disabled="admin.busy"
+                @click="play.regenerate()"
+              >↻ Outra versão</button>
+            </div>
+          </template>
           <SystemNotice
             v-else
             :tag="parseNotice(message.content).tag"
@@ -214,6 +225,18 @@ watch(
 
 .sheet-toggle {
   display: none;
+}
+
+.narration-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: calc(-1 * var(--space-2));
+}
+
+.btn-small {
+  padding: 2px var(--space-3);
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
 .compact {

@@ -88,6 +88,7 @@ class PreparedTurn:
     replay_narration: dict[str, Any] | None = None
     replay_system_messages: list[dict[str, Any]] = field(default_factory=list)
     settings: Settings | None = None  # configuração efetiva desta campanha (.env + escolhas da campanha)
+    previous_narration: dict[str, Any] | None = None  # "gerar outra versão": a narração que será trocada
 
 
 class TurnOrchestrator:
@@ -104,10 +105,7 @@ class TurnOrchestrator:
     def prepare(self, owner_id: str, campaign_id: str, turn_id: str, player_input: str) -> PreparedTurn:
         player_input = (player_input or "").strip()
         self._validate(turn_id, player_input)
-        if self.provider.is_paid and self.settings.ai_spend_limit_per_session <= 0:
-            raise ConflictError(
-                "O provedor de IA configurado é pago e o limite de gasto (AI_SPEND_LIMIT_PER_SESSION) é 0."
-            )
+        self._check_spending()
         try:
             with self.db.transaction() as session:
                 campaign = CampaignRepository(session, owner_id).get(campaign_id)
@@ -129,46 +127,90 @@ class TurnOrchestrator:
                             replay_system_messages=[message_to_dict(m) for m in notices],
                         )
                     self._retry_failed_turn(data, turn, campaign.world_clock)
-
-                history = [
-                    HistoryItem(m.role, m.content)
-                    for m in data.messages.recent_from_completed_turns(HISTORY_FETCH_LIMIT)
-                ]
-                brief = CampaignBrief(
-                    title=campaign.title,
-                    genre_tags=list(campaign.genre_tags),
-                    player_visible=dict(campaign.intro.player_visible) if campaign.intro else {},
-                    gm_secret=story_secrets(campaign.intro.gm_secret if campaign.intro else {}),
-                    canon=[(f.status, f.statement) for f in data.canon.list_current(CANON_IN_CONTEXT)],
-                    summaries=[s.content for s in data.summaries.latest(SUMMARIES_IN_CONTEXT)],
-                    # Só lembranças de turnos que já saíram do histórico recente (evita repetir o que a IA já vê).
-                    recalled=[
-                        f"(turno {hit.turn_number}) {hit.snippet}"
-                        for hit in data.memory_search.search(
-                            player_input, RECALLED_IN_CONTEXT, before_turn=turn.number - RECENT_TURNS_SEEN
-                        )
-                    ],
-                    content_rules=content_guidelines(load_content(data)),
-                )
-                experience = load_experience(data)
-                turn_settings = effective_settings(self.settings, experience)
-                mechanics = None
-                if turn_settings.ai_mechanics:
-                    recent = [h for h in history if h.role in (Message.ROLE_PLAYER, Message.ROLE_NARRATION)]
-                    mechanics = MechanicsInput(
-                        brief, recent[-RECENT_FOR_INTERPRETER:], player_input, campaign.rng_seed,
-                        campaign.world_clock, stored=turn.mechanics, settings=turn_settings,
-                        show_dice=experience.show_dice, system_window=experience.system_window,
-                        system_label=experience.system_label,
-                    )
-                return PreparedTurn(
-                    owner_id, campaign_id, turn_to_dict(turn), message_to_dict(player_message),
-                    campaign.world_clock, player_input=player_input, brief=brief, history=history,
-                    mechanics=mechanics, settings=turn_settings,
-                )
+                return self._build_prepared(owner_id, data, campaign, turn, player_message, player_input)
         except IntegrityError:
             # Mesmo id de turno usado em outra campanha, ou duas jogadas simultâneas.
             raise ConflictError("Não foi possível registrar a jogada: identificador já usado ou jogada simultânea.") from None
+
+    def prepare_regeneration(self, owner_id: str, campaign_id: str, turn_id: str) -> PreparedTurn:
+        """Outra versão da narração da jogada MAIS RECENTE (como o "gerar de novo" dos chatbots).
+
+        As mecânicas ficam como estão: dados já rolados e operações já aplicadas não mudam; só o
+        texto é escrito de novo. A versão anterior só é trocada quando a nova fica pronta; se a IA
+        falhar, ela continua valendo.
+        """
+        self._check_spending()
+        with self.db.transaction() as session:
+            campaign = CampaignRepository(session, owner_id).get(campaign_id)
+            if campaign is None:
+                raise NotFoundError("Campanha não encontrada.")
+            data = CampaignData(session, campaign_id)
+            turn = data.turns.get(turn_id)
+            if turn is None:
+                raise NotFoundError("Jogada não encontrada.")
+            latest = data.turns.latest()
+            if turn.status != Turn.STATUS_COMPLETED or latest is None or latest.id != turn.id:
+                raise ConflictError("Só dá para gerar outra versão da narração da última jogada concluída.")
+            if data.turns.find_processing() is not None:
+                raise ConflictError("Já existe uma jogada em andamento nesta campanha. Aguarde terminar.")
+            player_message, narration = self._existing_turn_messages(data, turn, turn.player_input)
+            if narration is None:
+                raise ConflictError("Esta jogada não tem narração para trocar.")
+            data.turns.mark_processing(turn)  # sai do histórico enviado à IA enquanto é reescrita
+            data.events.record("turn.regeneration_started", Event.SOURCE_SYSTEM, {"number": turn.number},
+                               turn.id, campaign.world_clock)
+            prepared = self._build_prepared(owner_id, data, campaign, turn, player_message, turn.player_input,
+                                            keep_mechanics=True)
+            prepared.previous_narration = message_to_dict(narration)
+            return prepared
+
+    def _check_spending(self) -> None:
+        if self.provider.is_paid and self.settings.ai_spend_limit_per_session <= 0:
+            raise ConflictError(
+                "O provedor de IA configurado é pago e o limite de gasto (AI_SPEND_LIMIT_PER_SESSION) é 0."
+            )
+
+    def _build_prepared(self, owner_id: str, data: CampaignData, campaign, turn: Turn, player_message: Message,
+                        player_input: str, keep_mechanics: bool = False) -> PreparedTurn:
+        """Contexto da narração (e das mecânicas) montado dentro da transação curta da preparação."""
+        history = [
+            HistoryItem(m.role, m.content)
+            for m in data.messages.recent_from_completed_turns(HISTORY_FETCH_LIMIT)
+        ]
+        brief = CampaignBrief(
+            title=campaign.title,
+            genre_tags=list(campaign.genre_tags),
+            player_visible=dict(campaign.intro.player_visible) if campaign.intro else {},
+            gm_secret=story_secrets(campaign.intro.gm_secret if campaign.intro else {}),
+            canon=[(f.status, f.statement) for f in data.canon.list_current(CANON_IN_CONTEXT)],
+            summaries=[s.content for s in data.summaries.latest(SUMMARIES_IN_CONTEXT)],
+            # Só lembranças de turnos que já saíram do histórico recente (evita repetir o que a IA já vê).
+            recalled=[
+                f"(turno {hit.turn_number}) {hit.snippet}"
+                for hit in data.memory_search.search(
+                    player_input, RECALLED_IN_CONTEXT, before_turn=turn.number - RECENT_TURNS_SEEN
+                )
+            ],
+            content_rules=content_guidelines(load_content(data)),
+        )
+        experience = load_experience(data)
+        turn_settings = effective_settings(self.settings, experience)
+        mechanics = None
+        if turn_settings.ai_mechanics:
+            recent = [h for h in history if h.role in (Message.ROLE_PLAYER, Message.ROLE_NARRATION)]
+            # keep_mechanics: nunca aplica operações de novo (turno sem mecânicas guardadas = sem fatos).
+            stored = (turn.mechanics or {}) if keep_mechanics else turn.mechanics
+            mechanics = MechanicsInput(
+                brief, recent[-RECENT_FOR_INTERPRETER:], player_input, campaign.rng_seed,
+                campaign.world_clock, stored=stored, settings=turn_settings,
+                show_dice=experience.show_dice, system_window=experience.system_window,
+                system_label=experience.system_label,
+            )
+        return PreparedTurn(
+            owner_id, campaign.id, turn_to_dict(turn), message_to_dict(player_message),
+            campaign.world_clock, player_input=player_input, brief=brief, history=history,
+            mechanics=mechanics, settings=turn_settings,
+        )
 
     @staticmethod
     def _validate(turn_id: str, player_input: str) -> None:
@@ -218,7 +260,8 @@ class TurnOrchestrator:
 
     def run(self, prepared: PreparedTurn) -> Iterator[TurnEvent]:
         replay = prepared.replay_narration is not None
-        yield TurnStarted(prepared.turn, prepared.player_message, replay=replay)
+        regenerating = prepared.previous_narration is not None
+        yield TurnStarted(prepared.turn, prepared.player_message, replay=replay, regenerating=regenerating)
         if replay:
             if prepared.replay_system_messages:
                 yield MechanicsApplied(prepared.replay_system_messages)
@@ -243,6 +286,7 @@ class TurnOrchestrator:
                 prepared.brief, prepared.history, prepared.player_input,
                 settings.ai_context_window, settings.ai_max_output_tokens,
                 mechanics=prepared.mechanics is not None, facts=facts, scene_notes=scene_notes,
+                rejected=prepared.previous_narration["content"] if regenerating else None,
             )
             result: CompletionResult | None = None
             for event in self.provider.stream(prepared.context, generation_options(settings, model)):
@@ -286,6 +330,8 @@ class TurnOrchestrator:
             turn = data.turns.get(prepared.turn["id"])
             if turn is None:
                 raise NotFoundError("A campanha foi apagada durante a jogada.")
+            if prepared.previous_narration is not None:
+                self._discard_previous_narration(data, turn, prepared.previous_narration["id"])
             narration = data.messages.append(Message.ROLE_NARRATION, result.text, turn.id)
             ai_request = data.ai_requests.record(
                 turn_id=turn.id,
@@ -297,10 +343,13 @@ class TurnOrchestrator:
                 duration_ms=result.duration_ms,
                 request_messages=[m.to_dict() for m in prepared.context],
             )
+            payload = {"number": turn.number, "narration_message_id": narration.id, "ai_request_id": ai_request.id}
+            if prepared.previous_narration is not None:
+                payload["previous_text"] = prepared.previous_narration["content"]  # auditoria: nada some sem rastro
             data.events.record(
-                "turn.completed",
+                "turn.narration_regenerated" if prepared.previous_narration is not None else "turn.completed",
                 Event.SOURCE_SYSTEM,
-                {"number": turn.number, "narration_message_id": narration.id, "ai_request_id": ai_request.id},
+                payload,
                 turn.id,
                 prepared.world_time,
             )
@@ -314,6 +363,17 @@ class TurnOrchestrator:
                 campaigns.touch(campaign)
             return turn_to_dict(turn), message_to_dict(narration)
 
+    @staticmethod
+    def _discard_previous_narration(data: CampaignData, turn: Turn, message_id: str) -> None:
+        """Tira a narração trocada da história, da busca e dos resumos que a usaram (refeitos depois)."""
+        previous = data.messages.get(message_id)
+        if previous is not None:
+            data.messages.remove(previous)
+        data.memory_search.remove("narration", message_id)
+        for summary in data.summaries.covering(turn.number):
+            data.memory_search.remove("summary", summary.id)
+            data.summaries.remove(summary)
+
     def _save_failure(self, prepared: PreparedTurn, error: str, model: str | None, started: float) -> dict[str, Any]:
         try:
             with self.db.transaction() as session:
@@ -321,7 +381,11 @@ class TurnOrchestrator:
                 turn = data.turns.get(prepared.turn["id"])
                 if turn is None:
                     return {**prepared.turn, "status": Turn.STATUS_FAILED, "error": error}
-                data.turns.mark_failed(turn, error)
+                regenerating = prepared.previous_narration is not None
+                if regenerating:
+                    data.turns.mark_completed(turn)  # a versão anterior continua valendo
+                else:
+                    data.turns.mark_failed(turn, error)
                 data.ai_requests.record(
                     turn_id=turn.id,
                     role=NARRATOR_ROLE,
@@ -332,7 +396,8 @@ class TurnOrchestrator:
                     request_messages=[m.to_dict() for m in prepared.context],
                 )
                 data.events.record(
-                    "turn.failed", Event.SOURCE_SYSTEM, {"number": turn.number, "error": error},
+                    "turn.regeneration_failed" if regenerating else "turn.failed", Event.SOURCE_SYSTEM,
+                    {"number": turn.number, "error": error},
                     turn.id, prepared.world_time,
                 )
                 return turn_to_dict(turn)

@@ -11,6 +11,7 @@ class TurnStarted:
     turn: dict[str, Any]
     player_message: dict[str, Any]
     replay: bool = False  # True: turno já concluído antes; nada foi gerado de novo
+    regenerating: bool = False  # True: outra versão da narração do mesmo turno (mesmas mecânicas)
 
 
 @dataclass(frozen=True)

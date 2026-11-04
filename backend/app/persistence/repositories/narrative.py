@@ -115,6 +115,10 @@ class MessageRepository(CampaignScopedRepository[Message]):
         query = self._select().where(Message.turn_id == turn_id).order_by(Message.seq)
         return list(self.session.scalars(query))
 
+    def remove(self, message: Message) -> None:
+        self.session.delete(message)
+        self.session.flush()
+
 
 class EventRepository(CampaignScopedRepository[Event]):
     model = Event

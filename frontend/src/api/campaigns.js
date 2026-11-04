@@ -63,13 +63,20 @@ export const deleteCampaign = (campaignId, confirmTitle) =>
 
 // Joga um turno. `handlers` recebe: onTurn, onMechanics, onDelta, onDone, onError (eventos do servidor).
 // Erros antes do stream (campanha inexistente, texto vazio...) são lançados como ApiError.
-export async function playTurn(campaignId, turnId, input, handlers) {
+export const playTurn = (campaignId, turnId, input, handlers) =>
+  streamTurn(`/api/campaigns/${campaignId}/turns`, { turn_id: turnId, input }, handlers)
+
+// Outra versão da narração da última jogada: mesmos dados e resultados, texto novo. Mesmos eventos.
+export const regenerateTurn = (campaignId, turnId, handlers) =>
+  streamTurn(`/api/campaigns/${campaignId}/turns/${turnId}/regenerate`, {}, handlers)
+
+async function streamTurn(url, body, handlers) {
   let response
   try {
-    response = await fetch(`/api/campaigns/${campaignId}/turns`, {
+    response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-      body: JSON.stringify({ turn_id: turnId, input }),
+      body: JSON.stringify(body),
     })
   } catch {
     throw new ApiError(NETWORK_ERROR, 0)

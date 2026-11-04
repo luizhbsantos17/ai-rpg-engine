@@ -11,6 +11,7 @@ vi.mock('../api/campaigns.js', () => ({
   getKnown: vi.fn().mockResolvedValue([]),
   getJournal: vi.fn().mockResolvedValue({ map: { current: null, places: [] }, diary: [], bonds: [] }),
   playTurn: vi.fn(),
+  regenerateTurn: vi.fn(),
 }))
 
 const campaign = { id: 'c1', title: 'Teste', premise: null }
@@ -133,5 +134,47 @@ describe('usePlayStore', () => {
     release()
     await first
     expect(api.playTurn).toHaveBeenCalledTimes(1)
+  })
+
+  it('outra versão: só na última narração concluída; troca o texto e mantém o resto', async () => {
+    const store = await loadedStore({
+      turns: [turn('t1', 'completed')],
+      messages: [msg('m1', 1, 'player', 'Ajo.'), msg('m2', 2, 'system', '[TESTE] ok'), msg('m3', 3, 'narration', 'Versão A.')],
+    })
+    expect(store.regenerableId).toBe('m3')
+    let hiddenWhileStreaming
+    api.regenerateTurn.mockImplementation(async (cid, turnId, h) => {
+      expect(turnId).toBe('t1')
+      hiddenWhileStreaming = store.replacingId
+      h.onDelta({ text: 'Versão B.' })
+      h.onDone({ turn: turn('t1', 'completed'), narration_message: msg('m4', 4, 'narration', 'Versão B.') })
+    })
+    await store.regenerate()
+    expect(hiddenWhileStreaming).toBe('m3')
+    expect(store.messages.map((m) => m.content)).toEqual(['Ajo.', '[TESTE] ok', 'Versão B.'])
+    expect(store.replacingId).toBeNull()
+    expect(store.regenerableId).toBe('m4')
+  })
+
+  it('outra versão que falha mantém a anterior e avisa', async () => {
+    const store = await loadedStore({
+      turns: [turn('t1', 'completed')],
+      messages: [msg('m1', 1, 'player', 'Ajo.'), msg('m2', 2, 'narration', 'Versão A.')],
+    })
+    api.regenerateTurn.mockImplementation(async (cid, turnId, h) => {
+      h.onError({ turn: turn('t1', 'completed'), message: 'IA desligada.', retryable: true })
+    })
+    await store.regenerate()
+    expect(store.messages.map((m) => m.content)).toEqual(['Ajo.', 'Versão A.'])
+    expect(store.notice).toContain('IA desligada.')
+    expect(store.failure).toBeNull()
+  })
+
+  it('não oferece outra versão quando a última jogada falhou', async () => {
+    const store = await loadedStore({
+      turns: [turn('t1', 'completed'), turn('t2', 'failed', { number: 2 })],
+      messages: [msg('m1', 1, 'player', 'Ajo.'), msg('m2', 2, 'narration', 'A.'), msg('m3', 3, 'player', 'De novo.', 't2')],
+    })
+    expect(store.regenerableId).toBeNull()
   })
 })

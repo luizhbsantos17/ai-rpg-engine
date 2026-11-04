@@ -58,10 +58,12 @@ class SummaryService:
             if len(chunk) < every:
                 return None
             turns = []
+            used_ids = []  # narrações usadas: se alguma for trocada no meio ("gerar outra versão"), descarta
             for turn in chunk:
-                narration = next((m.content for m in data.messages.for_turn(turn.id)
-                                  if m.role == Message.ROLE_NARRATION), "")
-                turns.append((turn.number, turn.player_input, narration))
+                narration = next((m for m in data.messages.for_turn(turn.id) if m.role == Message.ROLE_NARRATION), None)
+                if narration is not None:
+                    used_ids.append(narration.id)
+                turns.append((turn.number, turn.player_input, narration.content if narration else ""))
 
         messages = build_summarizer_messages(title, turns)
         model = resolve_model(self.provider, self.settings.ai_model)
@@ -80,6 +82,8 @@ class SummaryService:
             data = CampaignData(session, campaign_id)
             if data.summaries.last_covered_turn() >= chunk[-1].number:
                 return None  # outro processo já resumiu
+            if any(data.messages.get(message_id) is None for message_id in used_ids):
+                return None  # a narração mudou enquanto a IA resumia; o próximo turno resume de novo
             summary = data.summaries.add(Summary(scope="scene", from_turn=chunk[0].number,
                                                  to_turn=chunk[-1].number, content=text))
             data.memory_search.index("summary", summary.id, summary.to_turn, text)

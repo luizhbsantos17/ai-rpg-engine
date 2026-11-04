@@ -25,3 +25,15 @@ def play_turn(campaign_id: str):
         mimetype="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@bp.post("/campaigns/<campaign_id>/turns/<turn_id>/regenerate")
+def regenerate_narration(campaign_id: str, turn_id: str):
+    """Outra versão da narração da última jogada (mesmos dados e resultados). Mesmo formato SSE."""
+    services = get_services()
+    prepared = services.turns.prepare_regeneration(services.local_user_id, campaign_id, turn_id)
+    return Response(
+        turn_events_to_sse(services.turns.run(prepared)),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
