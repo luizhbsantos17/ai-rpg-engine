@@ -3,6 +3,7 @@ import { nextTick, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import CharacterSheet from '../components/CharacterSheet.vue'
+import KnownCharacters from '../components/KnownCharacters.vue'
 import QuestLog from '../components/QuestLog.vue'
 import NarrationBlock from '../components/NarrationBlock.vue'
 import PlayerAction from '../components/PlayerAction.vue'
@@ -93,6 +94,7 @@ watch(
       <div class="sheet-panel" :class="{ open: sheetOpen }">
         <CharacterSheet :character="play.character" :world-time="play.worldTime" />
         <QuestLog :quests="play.quests" />
+        <KnownCharacters :characters="play.known" />
       </div>
       </div>
 

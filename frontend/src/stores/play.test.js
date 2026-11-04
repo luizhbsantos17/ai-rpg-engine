@@ -8,6 +8,7 @@ import { STREAM_CUT_MESSAGE, usePlayStore } from './play.js'
 vi.mock('../api/campaigns.js', () => ({
   getHistory: vi.fn(),
   getSheet: vi.fn(),
+  getKnown: vi.fn().mockResolvedValue([]),
   playTurn: vi.fn(),
 }))
 

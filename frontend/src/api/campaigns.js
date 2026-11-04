@@ -23,6 +23,10 @@ export const getHistory = (campaignId) => request('GET', `/api/campaigns/${campa
 // { character: {...} | null, world_time?: "dia 1, 08:00" }
 export const getSheet = (campaignId) => request('GET', `/api/campaigns/${campaignId}/sheet`)
 
+// Só o que o protagonista sabe sobre outros personagens (informação falsa aparece como confirmada).
+export const getKnown = (campaignId) =>
+  request('GET', `/api/campaigns/${campaignId}/known`).then((r) => r.characters)
+
 export const deleteCampaign = (campaignId, confirmTitle) =>
   request('DELETE', `/api/campaigns/${campaignId}`, { confirm_title: confirmTitle })
 

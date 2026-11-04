@@ -15,6 +15,7 @@ export const usePlayStore = defineStore('play', {
     character: null, // ficha do protagonista (null até a campanha ser preparada)
     worldTime: null, // "dia 1, 08:00"
     quests: [], // missões visíveis ao jogador
+    known: [], // personagens conhecidos (só o que o protagonista sabe)
     messages: [],
     turns: {},
     loading: false,
@@ -49,6 +50,16 @@ export const usePlayStore = defineStore('play', {
       } finally {
         this.loading = false
       }
+      await this.refreshKnown()
+    },
+
+    async refreshKnown() {
+      if (!this.campaign) return
+      try {
+        this.known = await api.getKnown(this.campaign.id)
+      } catch {
+        // painel complementar: se falhar, a história continua
+      }
     },
 
     send(input) {
@@ -70,6 +81,7 @@ export const usePlayStore = defineStore('play', {
       } catch {
         // a ficha é complementar: se falhar, a história continua
       }
+      await this.refreshKnown()
     },
 
     addMessage(message) {
