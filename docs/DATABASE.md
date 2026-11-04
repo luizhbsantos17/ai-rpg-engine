@@ -27,7 +27,7 @@ Etapa 2 (migração `2026_11_03_2353-f2dd50ffa852`): `definitions`, `entities`, 
 `turns.mechanics` (resumo das mecânicas aplicadas no turno, para repetição segura).
 Etapa 3 (migrações 4 a 9): `canon_facts`, `scheduled_events`, `relationships`, `relationship_events`,
 `knowledge`, `npc_memories`, `quests`, `summaries` e a tabela virtual FTS5 `memory_fts` (busca no passado,
-criada à mão; D-033). Etapa 4 (migração 10): `disguises`. As demais tabelas abaixo são o plano das próximas etapas. `world_clock` = minutos do mundo desde o início da campanha (inteiro).
+criada à mão; D-033). Etapa 4 (migração 10): `disguises`. Etapa 5 (migração 11): `campaign_settings`. As demais tabelas abaixo são o plano das próximas etapas. `world_clock` = minutos do mundo desde o início da campanha (inteiro).
 `ai_requests.request_messages` guarda as mensagens enviadas à IA (para `/debug show_context`).
 
 ### Definições (o "sistema de RPG" de cada campanha)

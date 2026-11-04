@@ -5,33 +5,35 @@
 ## Resumo
 | Etapa | Status |
 |---|---|
-| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-041) |
+| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-043) |
 | 1 — Fundação | **concluída** e verificada com Ollama real |
 | 2 — Motor de RPG | **concluída** e verificada com Ollama real |
-| 3 — Narrativa e mundo | **concluída**: critério verificado por teste de campanha simulada com reinício |
-| 4 — Sistemas avançados | **concluída**: critério verificado (`tests/e2e/test_different_rule_systems.py`) |
-| 5 — Interface completa | não iniciada (plano abaixo) |
-| 6 e 7 | não iniciadas |
+| 3 — Narrativa e mundo | **concluída** (teste de campanha simulada com reinício) |
+| 4 — Sistemas avançados | **concluída** (`tests/e2e/test_different_rule_systems.py`) |
+| 5 — Interface completa | **concluída** (testes de componentes; falta o dono olhar a tela) |
+| 6 — Imagens e administração | não iniciada (plano abaixo) |
+| 7 — Qualidade e expansão | não iniciada |
 
 ## Última tarefa concluída
-Etapa 4 completa: avaliação/ocultação/falsificação (+ painel "Conhecidos"), regras de morte por universo,
-recarga de habilidades, simulação de NPCs fora de cena e eventos mundiais, teste de sistemas de regras diferentes.
+Etapa 5: configurações da campanha (experiência × conteúdo, versionadas) + tela; mapa, diário e laços;
+painéis em abas; nome da "janela de sistema" por universo.
 
-## Próxima tarefa: Etapa 5 — Interface completa
-Critério (SPEC Parte 23): o jogador usa os principais sistemas pela interface, sem mexer no banco.
-Subtarefas planejadas:
-1. **Configurações durante a campanha** (SPEC 19, RF-23/24): tabela `campaign_settings` versionada; separar
-   experiência (modelo, criatividade, motor ligado, intensidade da simulação, frequência de resumos,
-   avisos de dados visíveis) × regras (mudam o funcionamento: avisar antes) × narrativa; maturidade por
-   categoria (SPEC 14) limitada pelo provedor (D-007). Tela de configurações.
-2. **Mapa**: locais conhecidos/visitados pelo protagonista e quem/o que está no local atual (só o visível).
-3. **Diário**: linha do tempo do protagonista (resumos, avisos importantes, missões).
-4. **Relacionamentos** do ponto de vista do jogador (só o que ele sabe).
-5. Organização dos painéis (abas na coluna lateral), notificações diegéticas configuráveis por universo.
-6. Testes de componentes e um fluxo de uso completo.
+## Próxima tarefa: Etapa 6 — Imagens e administração
+Critério (SPEC Parte 23): os recursos administrativos funcionam independentemente da narrativa normal.
+Subtarefas planejadas (ordem):
+1. **Interpretador de comandos** `/admin` e `/debug` (`app/admin/`): sintaxe de `docs/ADMIN_COMMANDS.md`;
+   só mensagens que COMEÇAM com `/admin` ou `/debug` são comandos; nunca passam pela IA.
+2. **Acesso protegido** por `ADMIN_PASSWORD` (sessão administrativa com expiração), mesmo rodando local.
+3. Comandos de consulta (`/debug show_context`, `show_events`, `inspect_entity`, `inspect_rules`,
+   `inspect_ai_requests`, `validate_world`; `/admin status`, `inspect`).
+4. Comandos de alteração viram operações do motor com origem `admin` (log + `admin_audit` com desfazer);
+   destrutivos exigem confirmação com código.
+5. **Snapshots/backup por campanha** (D-014) e restauração (casos 16 e 17 da SPEC Parte 22).
+6. **Imagens opcionais** (SPEC 13): camada de provedor de imagens desligada por padrão (sem custo).
 
-## Pendência menor da Etapa 4
-- Combate não tem ordem de iniciativa dedicada (funciona por testes + dano condicional + efeitos + morte).
+## Pendências menores
+- Combate sem ordem de iniciativa dedicada (funciona por testes + dano condicional + efeitos + morte).
+- Equipamento por espaços (mão, armadura...) não existe; itens ficam no inventário.
 
 ## O que existe e funciona (com testes)
 - **Backend** (Python 3.13, Flask 3.1, SQLAlchemy 2.1, Alembic 1.20, Pydantic 2.14, httpx):
@@ -62,8 +64,8 @@ Subtarefas planejadas:
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **280 passed**, 1 deselected (externo) |
-| 2026-11-04 | frontend `npm test` (Vitest) | **34 passed** |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **288 passed**, 1 deselected (externo) |
+| 2026-11-04 | frontend `npm test` (Vitest) | **39 passed** |
 | 2026-11-04 | frontend `npm run build` | ok |
 | 2026-11-04 | `pytest -m external` com Ollama real | **1 passed** |
 | 2026-11-04 | Etapa 1 com IA real: criar → jogar → desligar → religar → continuar | ok |

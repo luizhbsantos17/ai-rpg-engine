@@ -208,3 +208,16 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
   agendamentos; padrão de novas entidades), 3 (dormente). Simulação roda quando um turno avança o tempo
   ≥ `AI_SIMULATION_MINUTES` (padrão 360); operações validadas, sem `time.advance`; o narrador não recebe.
 - Motivo: SPEC 8.4 (otimização sem destruir a autonomia) e 10.2 (o mundo evolui sem depender do jogador).
+
+### D-042 — Configurações da campanha versionadas, por cima do `.env`
+- Decisão: `campaign_settings` com versões (`experience`, `content`); vazio = padrão do programa. Experiência
+  (modelo, criatividade, motor, simulação, resumos, avisos de dados, janela de sistema e seu nome) vale a partir
+  da próxima jogada; nada do passado é recalculado. Conteúdo: nível 0–3 por categoria + regras fixas de
+  segurança sempre enviadas à IA. Regras e narrativa NÃO mudam pela tela de configurações (só pelo motor).
+- Motivo: SPEC 19 (separar experiência × regras × narrativa; avisar antes de mudanças que afetam a consistência).
+
+### D-043 — Painéis do jogador mostram só o ponto de vista do protagonista
+- Decisão: mapa = lugares visitados + o que está à vista no local atual; laços = relações do próprio
+  protagonista; personagens conhecidos = `knowledge` do protagonista (falso aparece como confirmado).
+  Sentimentos e status dos outros, agendamentos e missões ocultas nunca vão para a interface do jogador.
+- Motivo: SPEC 6.1 e 6.5.

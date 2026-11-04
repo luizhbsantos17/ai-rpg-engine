@@ -145,6 +145,8 @@ histórico recente; ação atual; e, para o narrador, os resultados reais do mot
 | `PATCH /api/campaigns/<id>` | ajusta título/premissa/gêneros de um rascunho |
 | `POST /api/campaigns/<id>/start` | começa o rascunho (passa a aceitar jogadas) |
 | `GET /api/campaigns/<id>/known` | personagens conhecidos pelo protagonista (falso aparece como confirmado) |
+| `GET /api/campaigns/<id>/journal` | mapa, diário e laços do ponto de vista do protagonista |
+| `GET/PUT /api/campaigns/<id>/settings` | configurações da campanha (experiência e conteúdo), versionadas |
 | `POST /api/campaigns/<id>/turns` | joga: `{turn_id (UUID do frontend), input}` → stream SSE |
 
 Eventos do stream do turno: `turn` (turno registrado + mensagem do jogador), `mechanics` (avisos

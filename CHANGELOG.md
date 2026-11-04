@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.5.0] — Etapa 5 (concluída)
+- Configurações da campanha versionadas: experiência (modelo, criatividade, motor, mundo vivo, avisos, nome da
+  janela de sistema) e conteúdo por categoria com regras fixas de segurança; tela de configurações.
+- Mapa, diário e laços do ponto de vista do protagonista; coluna lateral em abas
+  (Status, Missões, Conhecidos, Mapa, Diário, Laços).
+
 ## [0.4.0] — Etapa 4 (concluída)
 - Avaliação, ocultação e falsificação (`knowledge.assess`, `disguise.*`); painel "Personagens conhecidos".
 - Regras de morte por universo aplicadas pelo motor (permanente, desmaio, ressurreição, reencarnação, narrativa).
