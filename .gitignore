@@ -1,0 +1,29 @@
+# Segredos
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+dist/
+
+# Dados locais do jogo (bancos, backups, imagens geradas)
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# Sistema/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
