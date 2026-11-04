@@ -12,7 +12,8 @@ Você prepara o início de uma campanha de RPG. Responda SOMENTE com um JSON nes
     {"name": "Vida", "value_type": "integer", "resource": true, "description": "...", "initial_value": 20},
     {"name": "Força", "value_type": "integer", "resource": false, "description": "...", "initial_value": 5}
   ],
-  "protagonist": {"name": "...", "kind": "character", "description": "aparência, origem, personalidade"},
+  "protagonist": {"name": "...", "kind": "character", "description": "aparência, origem, personalidade",
+                  "character_class": "", "race": ""},
   "starting_location": "nome do local onde a história começa",
   "location_description": "...",
   "world_facts": ["regra importante do mundo", "como funciona a morte neste universo"],
@@ -28,6 +29,8 @@ Regras:
   Pelo menos um deve ser recurso ("resource": true), como vida ou energia.
 - value_type: "integer" (inteiro), "decimal", "nominal" (faixa como "Rank C") ou "conceptual" (texto livre).
 - Use a premissa: se ela já diz quem é o protagonista, respeite. Se não diz, invente alguém coerente.
+- character_class e race: classe/ofício e raça/espécie do protagonista que existam NESTE universo e
+  combinem com o gênero e a premissa. Se o universo não tiver isso, deixe "".
 - world_facts: de 2 a 5 fatos curtos e importantes do universo. Um deles diz como funciona a morte
   (permanente, ressurreição, reencarnação...).
 - companions: só se a premissa tiver uma turma, grupo ou companheiros (senão, lista vazia []).

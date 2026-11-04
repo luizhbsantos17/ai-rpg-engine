@@ -105,6 +105,19 @@ def _check_line(r: dict[str, Any]) -> str:
             f"= {r['total']} contra dificuldade {r['difficulty']} → {verdict}.")
 
 
+def _bonus_text(bonus: dict | None) -> str:
+    """{"defesa": 2, "estilo": "pesado"} -> " · +2 defesa, estilo pesado"."""
+    if not bonus:
+        return ""
+    parts = []
+    for key, value in bonus.items():
+        if isinstance(value, int | float) and not isinstance(value, bool):
+            parts.append(f"{value:+g} {key}")
+        else:
+            parts.append(f"{key} {value}")
+    return " · " + ", ".join(parts)
+
+
 def _applied_line(op: str, r: dict[str, Any]) -> str:
     if op == "entity.create":
         return f"Surgiu {r['name']} ({r['kind']})."
@@ -136,6 +149,11 @@ def _applied_line(op: str, r: dict[str, Any]) -> str:
         return f"{r['item']} ×{r['quantity']} foi para {r['to']}."
     if op == "item.destroy":
         return f"{r['item']} ×{r['destroyed']} foi destruído."
+    if op == "item.equip":
+        replaced = f" (no lugar de {r['replaced']})" if r.get("replaced") else ""
+        return f"{r['owner']} equipou {r['item']} em '{r['slot']}'{replaced}" + _bonus_text(r.get("bonus")) + "."
+    if op == "item.unequip":
+        return f"{r['owner']} tirou {r['item']} de '{r['slot']}'."
     if op == "event.record":
         return f"Acontecimento: {r['summary']}"
     if op == "canon.assert":
@@ -259,7 +277,7 @@ def _player_notice(op: str, r: dict[str, Any], player_id: str) -> PlayerNotice |
     if op in ("disguise.apply", "disguise.remove") and mine:
         verb = "ativa" if op == "disguise.apply" else "desfeita"
         return PlayerNotice("SISTEMA", f"Ocultação {verb}: {r['field']}.")
-    if not mine and op not in ("item.create", "item.transfer"):
+    if not mine and op not in ("item.create", "item.transfer", "item.equip", "item.unequip"):
         return None
     if op == "effect.apply":
         until = f" (até {r['ends_text']})" if r.get("ends_text") else ""
@@ -283,6 +301,10 @@ def _player_notice(op: str, r: dict[str, Any], player_id: str) -> PlayerNotice |
         return PlayerNotice("ALERTA", "Você morreu.")
     if op == "entity.move":
         return PlayerNotice("SISTEMA", f"Local: {r['to_name']}.")
+    if op in ("item.equip", "item.unequip") and r.get("owner_id") == player_id:
+        verb = "Equipado" if op == "item.equip" else "Desequipado"
+        extra = _bonus_text(r.get("bonus")) if op == "item.equip" else ""
+        return PlayerNotice("SISTEMA", f"{verb}: {r['item']} ({r['slot']}){extra}.")
     if op == "item.create" and r.get("holder_id") == player_id:
         return PlayerNotice("SISTEMA", f"Item recebido: {r['item']} ×{r['quantity']}.")
     if op == "item.transfer" and r.get("to_id") == player_id:

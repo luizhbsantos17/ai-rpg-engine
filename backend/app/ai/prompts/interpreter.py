@@ -21,17 +21,18 @@ Operações (campo "op" + campos):
   key: letras minúsculas, números e _ (ex.: "forca"). data sempre tem "name".
   Atributo: data {name, value_type: integer|decimal|nominal|conceptual, resource: true para vida/mana/energia, min, max, scale}.
   Habilidade: data {name, description, category, rarity, max_level, costs: [{resource, amount}]} + o que quiser inventar.
-  Item: data {name, description, stackable}.
+  Item: data {name, description, stackable, slot (espaço onde equipa: "mao", "corpo"...), bonus {atributo: número}}.
 - definition.amend {kind, key, data, reason}: muda uma regra (nova versão; exige reason).
 - entity.create {ref, kind, name, location, is_player, attributes: {chave: valor ou {"value": x, "max": y}}}
-- entity.update {entity, name, status: active|dead, data, sim_tier} · entity.move {entity, to} · entity.remove {entity}
+- entity.update {entity, name, status: active|dead, data, sim_tier}  (data.class = classe, data.race = raça/espécie) · entity.move {entity, to} · entity.remove {entity}
   sim_tier: 1 = personagem importante (age sozinho quando o tempo passa), 2 = distante, 3 = dormente.
 - attribute.set {entity, key, value, max} · attribute.modify {entity, key, delta}  (delta: número ou fórmula)
 - resource.spend {entity, key, amount} · resource.restore {entity, key, amount}
 - skill.grant {entity, key, level} · skill.evolve {entity, key, levels} · skill.revoke {entity, key}
 - skill.use {entity, key, target}: usar uma habilidade; o motor cobra os custos dela sozinho (não gaste à mão).
 - item.create {ref, key, owner OU location, quantity} · item.transfer {item, to_owner OU to_location, quantity}
-- item.destroy {item, quantity}
+- item.destroy {item, quantity} · item.equip {item, slot} · item.unequip {item}
+  Equipado, o bonus do item soma ao atributo nos testes (um item por espaço).
 - check.request {ref, actor, target, label, dice: "1d20", modifier, difficulty, critical_success, critical_failure}
   modifier e difficulty: número ou fórmula com atributos (ex.: "forca - target.defesa", "skills.esgrima * 2").
 - event.record {summary, entities}: acontecimento importante sem mudança mecânica.

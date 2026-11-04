@@ -78,6 +78,12 @@ Qualidade: o intérprete devolveu quase sempre "nenhuma operação" (14–25 tok
 não avançou o relógio, então a simulação do mundo não rodou. Narração confusa ("dormindo... completamente
 acordada"). Reforça a decisão pendente de um modelo maior.
 
+### Classe e raça na preparação, `qwen2.5:1.5b`, 2026-11-04
+Com texto explicativo DENTRO do exemplo JSON, o modelo copiou a explicação literalmente como valor; com exemplos
+concretos nas regras ("meio-elfa"), copiou o exemplo até em ficção científica. Versão final: campos vazios no
+exemplo e a regra em palavras. Resultado: fantasia → Arqueiro/Humano, ficção científica → Guerreiro/Humano
+(coerente, ainda pouco criativo). 1º turno 52–56 s. Lição para os prompts: modelo pequeno copia exemplos.
+
 Modelos com modo "pensamento" (ex.: família `qwen3`) foram evitados por enquanto: o texto de raciocínio
 precisaria ser separado da narração.
 

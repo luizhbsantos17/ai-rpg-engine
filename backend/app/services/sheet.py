@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.engine.rules.variables import EQUIPPED_FIELD
 from app.engine.time import format_world_time
 from app.persistence.db import Database
 from app.persistence.repositories import CampaignData, CampaignRepository
@@ -33,6 +34,8 @@ class CharacterSheetService:
                     "kind": player.kind,
                     "status": player.status,
                     "description": player.data.get("description", ""),
+                    "class": player.data.get("class") or None,
+                    "race": player.data.get("race") or None,
                     "location": location.name if location else None,
                     "attributes": [_attribute(data, a) for a in data.attributes.for_entity(player.id)],
                     "skills": [_skill(data, s, data.campaign().world_clock) for s in data.skills.for_entity(player.id)],
@@ -101,4 +104,6 @@ def _item(data: CampaignData, item) -> dict[str, Any]:
         "name": definition.get("name", item.definition_key),
         "description": definition.get("description", ""),
         "quantity": item.quantity,
+        "equipped_slot": item.data.get(EQUIPPED_FIELD),  # None = só carregado
+        "bonus": definition.get("bonus") if isinstance(definition.get("bonus"), dict) else {},
     }

@@ -27,6 +27,8 @@ class SetupProtagonist(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     kind: str = Field(default="character", max_length=40)
     description: str = Field(default="", max_length=2000)
+    character_class: str = Field(default="", max_length=100, description="classe ou ofício, se o universo tiver")
+    race: str = Field(default="", max_length=100, description="raça ou espécie, se o universo tiver")
 
 
 class SetupCompanion(BaseModel):
@@ -84,9 +86,14 @@ class CampaignSetup(BaseModel):
                                "statement": fact[:2000], "reason": "fato inicial do universo"})
         operations.append({"op": "entity.create", "ref": "protagonista", "kind": self.protagonist.kind or "character",
                            "name": self.protagonist.name, "is_player": True, "location": "local_inicial",
-                           "data": {"description": self.protagonist.description}, "attributes": values})
+                           "data": self._protagonist_data(), "attributes": values})
         operations += self._companion_operations(set(values))
         return operations
+
+    def _protagonist_data(self) -> dict[str, Any]:
+        data = {"description": self.protagonist.description, "class": self.protagonist.character_class.strip(),
+                "race": self.protagonist.race.strip()}
+        return {k: v for k, v in data.items() if v or k == "description"}
 
     def _death_rule_operation(self, attributes: list[SetupAttribute]) -> list[dict[str, Any]]:
         """A regra de morte vale para o primeiro recurso (ex.: Vida). Sem recurso, não há regra automática."""

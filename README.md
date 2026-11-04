@@ -9,6 +9,7 @@ personagens, enquanto um motor de jogo valida as regras e guarda tudo de forma p
 ## O que já funciona
 - Campanhas independentes, criadas à mão ou **geradas aleatoriamente** (com segredos que só a IA conhece).
 - **Motor de regras próprio de cada universo**: atributos, recursos, habilidades com custo e recarga, itens,
+  equipamentos com bônus por espaço, classe e raça,
   testes com dados (rolados pelo motor, com semente registrada), efeitos com duração, regras de morte.
 - **Mundo persistente**: fatos canônicos, relógio do mundo, acontecimentos agendados, missões,
   relacionamentos, o que cada personagem sabe (com disfarces e informações falsas), memória individual de NPCs,
@@ -19,7 +20,7 @@ personagens, enquanto um motor de jogo valida as regras e guarda tudo de forma p
 - IA local e gratuita (Ollama). Imagens: estrutura pronta, desligada (sem gerador escolhido).
 
 Ainda não: contas de usuário/multiplayer, provedores de IA externos, gerador de imagens, ordem de iniciativa
-no combate, espaços de equipamento.
+no combate.
 
 ## Tecnologias
 Python 3.12+ (desenvolvido com 3.13), Flask, SQLAlchemy, Alembic, Pydantic, SQLite ·

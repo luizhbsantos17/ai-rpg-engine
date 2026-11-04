@@ -31,6 +31,9 @@ Segredos do mundo gerado (reviravoltas, vilões ocultos) ficam só no servidor: 
   mudar por universo nas configurações.
 - Se der erro (IA desligada, demora demais), aparece **Tentar de novo**: a jogada é repetida sem duplicar nada.
 
+Equipamento: diga o que veste ou empunha ("visto a cota de malha", "empunho o escudo"). O bônus do item
+entra nos testes do motor enquanto estiver equipado; dar ou largar o item o desequipa.
+
 Dica: frases claras ajudam a IA a entender a mecânica ("tento arrombar a porta com o ombro", "durmo até o
 amanhecer"). Com o modelo pequeno instalado hoje, ela às vezes ignora a parte mecânica; o motor nunca deixa
 o estado ficar inválido, mas pode não aplicar o que você esperava.
@@ -38,7 +41,7 @@ o estado ficar inválido, mas pode não aplicar o que você esperava.
 ## 4. Painéis à direita (no celular: botão **Ficha**)
 | Aba | O que mostra |
 |---|---|
-| **Status** | hora do mundo, recursos (vida, mana...), efeitos ativos, atributos, habilidades (com recarga), inventário |
+| **Status** | classe e raça, hora do mundo, recursos (vida, mana...), efeitos ativos, atributos, habilidades (com recarga), **equipamento** (o que está em uso, em qual espaço e o bônus) e inventário |
 | **Missões** | missões ativas, concluídas e falhadas, com objetivos |
 | **Conhecidos** | personagens que você conhece e o que você **acha** que sabe deles (pode estar errado ou disfarçado) |
 | **Mapa** | lugares que você visitou e o que está à vista agora |

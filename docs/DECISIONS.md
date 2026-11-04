@@ -281,3 +281,15 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
   proxy com login (docs/HOSTING.md).
 - Motivo: D-009 (Docker opcional) e SPEC 18 (arquitetura pronta para hospedagem futura).
 - Limite: o Dockerfile não foi testado (Docker não instalado nesta máquina); o modo de servir o frontend foi.
+
+### D-052 — Equipamentos por espaço, com bônus aplicado pelo motor; classe e raça na ficha
+- Decisão: a definição de item pode ter `slot` (espaço livre por universo: "mao", "corpo", "anel"...) e
+  `bonus` ({atributo: número}). `item.equip`/`item.unequip` marcam `data.equipped_slot` do item; um item por
+  espaço por dono (equipar outro no mesmo espaço tira o anterior); dar/largar o item desequipa. Sem `slot` na
+  definição, a operação pode informar o espaço. Enquanto equipado, o bônus soma ao atributo nas fórmulas dos
+  testes (`defesa` já inclui o escudo; `defesa_base` é o valor puro); bônus que não é número é só descrição.
+  Classe e raça/espécie ficam em `entity.data.class` / `entity.data.race` (preparação da campanha e
+  `entity.update`), mostradas na ficha e no contexto da IA.
+- Motivo: SPEC 4 (equipamentos, classes, raças criados pela IA) e SPEC interface itens 9 e 11; o bônus pelo
+  motor atende "o motor processa bloqueios/resistências" (SPEC 7.1) sem a IA somar números de cabeça.
+- Sem migração: `item_instances.data` e `entities.data` já são JSON.

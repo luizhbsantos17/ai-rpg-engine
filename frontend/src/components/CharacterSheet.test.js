@@ -30,6 +30,36 @@ describe('CharacterSheet', () => {
     expect(wrapper.text()).toContain('Bússola')
   })
 
+  it('separa o equipamento do inventário e mostra classe e raça', () => {
+    const equippedCharacter = {
+      ...character,
+      class: 'guerreiro',
+      race: 'anão',
+      items: [
+        ...character.items,
+        { id: 'i2', key: 'cota', name: 'Cota de malha', quantity: 1, description: '', equipped_slot: 'corpo',
+          bonus: { defesa: 2, estilo: 'pesado' } },
+      ],
+    }
+    const wrapper = mount(CharacterSheet, { props: { character: equippedCharacter } })
+    expect(wrapper.find('.identity').text()).toBe('anão · guerreiro')
+    const blocks = wrapper.findAll('section.block')
+    const titled = (title) => blocks.find((b) => b.find('h3').exists() && b.find('h3').text() === title)
+    const equipment = titled('Equipamento')
+    const inventory = titled('Inventário')
+    expect(equipment.text()).toContain('Cota de malha')
+    expect(equipment.text()).toContain('+2 defesa, estilo pesado')
+    expect(equipment.text()).toContain('corpo')
+    expect(inventory.text()).toContain('Bússola')
+    expect(inventory.text()).not.toContain('Cota de malha')
+  })
+
+  it('sem nada equipado, não mostra a seção de equipamento', () => {
+    const wrapper = mount(CharacterSheet, { props: { character } })
+    expect(wrapper.findAll('h3').map((h) => h.text())).not.toContain('Equipamento')
+    expect(wrapper.find('.identity').exists()).toBe(false)
+  })
+
   it('mostra o tempo do mundo e os efeitos ativos', () => {
     const withEffect = { ...character, effects: [{ key: 'veneno', name: 'Envenenado', ends: 'dia 1, 10:00', description: '' }] }
     const wrapper = mount(CharacterSheet, { props: { character: withEffect, worldTime: 'dia 1, 08:00' } })

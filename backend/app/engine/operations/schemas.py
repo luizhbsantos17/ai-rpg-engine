@@ -170,6 +170,19 @@ class ItemDestroy(Operation):
     quantity: int | None = Field(default=None, ge=1)  # None = tudo
 
 
+class ItemEquip(Operation):
+    """Equipa um item que a entidade carrega. Um item por espaço; o "bonus" da definição vale nos testes."""
+
+    op: Literal["item.equip"]
+    item: Ref
+    slot: Key | None = None  # padrão: o "slot" da definição do item
+
+
+class ItemUnequip(Operation):
+    op: Literal["item.unequip"]
+    item: Ref
+
+
 class CheckRequest(Operation):
     """Pede um teste ao motor. A IA define o que está em jogo; o MOTOR rola (D-005)."""
 
@@ -342,7 +355,7 @@ class EventRecord(Operation):
 AnyOperation = Annotated[
     DefinitionCreate | DefinitionAmend | EntityCreate | EntityUpdate | EntityRemove | EntityMove
     | AttributeSet | AttributeModify | ResourceSpend | ResourceRestore
-    | SkillGrant | SkillRevoke | SkillEvolve | SkillUse | ItemCreate | ItemTransfer | ItemDestroy
+    | SkillGrant | SkillRevoke | SkillEvolve | SkillUse | ItemCreate | ItemTransfer | ItemDestroy | ItemEquip | ItemUnequip
     | CheckRequest | CanonAssert | CanonAmend | TimeAdvance | EventSchedule | EffectApply | EffectRemove
     | RelationshipChange | KnowledgeRecord | MemoryRecord | QuestCreate | QuestUpdate
     | DisguiseApply | DisguiseRemove | KnowledgeAssess | EventRecord,

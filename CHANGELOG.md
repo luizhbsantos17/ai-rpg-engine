@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [0.8.0] — Depois da Etapa 7
+- Equipamentos: itens com espaço (`slot`) e bônus; `item.equip`/`item.unequip`; um item por espaço; o bônus vale
+  nos testes do motor; seção "Equipamento" na ficha.
+- Classe e raça/espécie do protagonista na ficha e no contexto da IA (a preparação da campanha pede as duas).
+
 ## [0.7.0] — Etapa 7 (concluída)
 - Segurança: limite de 50 MB por pedido, bloqueio de 60 s após 5 senhas de administrador erradas.
 - Snapshot automático a cada `AUTO_SNAPSHOT_EVERY` jogadas (padrão 20), mantendo os 5 automáticos mais recentes.

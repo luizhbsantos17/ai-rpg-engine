@@ -5,7 +5,7 @@
 ## Resumo
 | Etapa | Status |
 |---|---|
-| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-051) |
+| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-052) |
 | 1 — Fundação | **concluída** e verificada com Ollama real |
 | 2 — Motor de RPG | **concluída** e verificada com Ollama real |
 | 3 — Narrativa e mundo | **concluída** (teste de campanha simulada com reinício) |
@@ -15,7 +15,12 @@
 | 7 — Qualidade e expansão | **concluída** (Dockerfile escrito, não testado: sem Docker nesta máquina) |
 
 ## Última tarefa concluída
-Etapa 7.5: documentação final e preparação para hospedagem (D-051): README atualizado, guia do jogador
+Equipamentos e classe/raça (D-052), itens 9 e 11 da interface da SPEC que faltavam: `item.equip` /
+`item.unequip`, um item por espaço, bônus somado pelo motor nos testes, seção "Equipamento" na ficha,
+classe e raça na ficha e no contexto da IA, preparação da campanha pede classe e raça.
+Testado com Ollama real: fluxo completo ok; preparação preenche classe/raça coerentes (ver AI_PROVIDERS.md).
+
+Antes, Etapa 7.5: documentação final e preparação para hospedagem (D-051): README atualizado, guia do jogador
 (`docs/GUIA_DO_JOGADOR.md`), guia de hospedagem (`docs/HOSTING.md`), `FRONTEND_DIST` (backend serve o
 frontend compilado; testado com `npm run build` real em modo produção na porta 5001), `Dockerfile` e
 `.dockerignore` (**não testados**: o Docker não está instalado). Com isso a Etapa 7 está concluída.
@@ -37,9 +42,9 @@ As 7 etapas da SPEC (Parte 23) estão concluídas. O que vem agora depende do do
 1. **Testar a interface com os próprios olhos** (passo a passo em "Como testar") e anotar o que estranhar.
 2. Escolher um **modelo de IA maior**: é o que mais melhora a qualidade (decisão pendente 1).
 3. Melhorias técnicas que posso fazer sem decisão do dono, por prioridade:
-   a. ordem de iniciativa no combate; b. espaços de equipamento (mão, armadura...);
-   c. adaptador para APIs compatíveis com OpenAI (só código e testes com provedor falso; usar de verdade
-      depende de autorização por ter custo); d. contas de usuário para hospedagem.
+   a. ordem de iniciativa no combate (a SPEC não exige; hoje o combate funciona por testes + dano + efeitos);
+   b. adaptador para APIs compatíveis com OpenAI (só código e testes com provedor falso; usar de verdade
+      depende de autorização por ter custo); c. contas de usuário para hospedagem.
 
 
 ## Arquivos modificados nesta sessão (Etapa 7)
@@ -53,13 +58,16 @@ summaries.py, journal.py}`, `backend/app/persistence/repositories/narrative.py`,
 `backend/app/{web.py, __init__.py, config.py}`, `backend/pyproject.toml`,
 `backend/tests/integration/test_frontend_serving.py`, `Dockerfile`, `.dockerignore`, `README.md`,
 `docs/{GUIA_DO_JOGADOR.md, HOSTING.md, ARCHITECTURE.md}`,
+`backend/app/engine/{operations/schemas.py, operations/handlers/items.py, rules/variables.py, notifications.py}`,
+`backend/app/ai/{context/game_state.py, prompts/interpreter.py, prompts/setup.py, schemas/setup.py}`,
+`backend/app/services/sheet.py`, `backend/tests/integration/test_equipment.py`,
+`frontend/src/components/CharacterSheet.{vue,test.js}`,
 `backend/tests/{integration/test_security.py, integration/test_auto_backup.py,
 integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
 `docs/{AI_PROVIDERS.md, DECISIONS.md, DATABASE.md}`, `CLAUDE.md`, `PROJECT_STATUS.md`, `CHANGELOG.md`.
 
 ## Pendências menores
 - Combate sem ordem de iniciativa dedicada (funciona por testes + dano condicional + efeitos + morte).
-- Equipamento por espaços (mão, armadura...) não existe; itens ficam no inventário.
 - **Troque `ADMIN_PASSWORD` no `.env`**: hoje está com o valor de exemplo (`troque-esta-senha`).
 
 ## O que existe e funciona (com testes)
@@ -91,8 +99,8 @@ integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **335 passed**, 1 deselected (externo) |
-| 2026-11-04 | frontend `npm test` (Vitest) | **43 passed** |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **341 passed**, 1 deselected (externo) |
+| 2026-11-04 | frontend `npm test` (Vitest) | **45 passed** |
 | 2026-11-04 | frontend `npm run build` | ok |
 | 2026-11-04 | `pytest -m external` com Ollama real | **1 passed** |
 | 2026-11-04 | Etapa 1 com IA real: criar → jogar → desligar → religar → continuar | ok |

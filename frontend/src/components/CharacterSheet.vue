@@ -9,6 +9,16 @@ const props = defineProps({
 
 const resources = computed(() => (props.character?.attributes ?? []).filter((a) => a.resource))
 const attributes = computed(() => (props.character?.attributes ?? []).filter((a) => !a.resource))
+const equipped = computed(() => (props.character?.items ?? []).filter((i) => i.equipped_slot))
+const carried = computed(() => (props.character?.items ?? []).filter((i) => !i.equipped_slot))
+const identity = computed(() => [props.character?.race, props.character?.class].filter(Boolean).join(' · '))
+
+// {defesa: 2, estilo: 'pesado'} -> "+2 defesa, estilo pesado"
+function bonusText(bonus) {
+  return Object.entries(bonus ?? {})
+    .map(([key, value]) => (typeof value === 'number' ? `${value >= 0 ? '+' : ''}${value} ${key}` : `${key} ${value}`))
+    .join(', ')
+}
 
 function percent(attribute) {
   const value = Number(attribute.value)
@@ -31,6 +41,7 @@ const statusLabel = { active: 'Ativo', dead: 'Morto' }
 
     <template v-else>
       <h2 class="name">{{ character.name }}</h2>
+      <p v-if="identity" class="identity">{{ identity }}</p>
       <p class="meta">
         <span :class="{ dead: character.status === 'dead' }">{{ statusLabel[character.status] ?? character.status }}</span>
         <template v-if="character.location"> · {{ character.location }}</template>
@@ -79,10 +90,20 @@ const statusLabel = { active: 'Ativo', dead: 'Morto' }
         <p v-else class="muted small">Nenhuma ainda.</p>
       </section>
 
+      <section v-if="equipped.length" class="block">
+        <h3>Equipamento</h3>
+        <ul class="list">
+          <li v-for="item in equipped" :key="item.id" :title="item.description">
+            <span>{{ item.name }}<small v-if="bonusText(item.bonus)" class="bonus"> · {{ bonusText(item.bonus) }}</small></span>
+            <span class="level">{{ item.equipped_slot }}</span>
+          </li>
+        </ul>
+      </section>
+
       <section class="block">
         <h3>Inventário</h3>
-        <ul v-if="character.items.length" class="list">
-          <li v-for="item in character.items" :key="item.id" :title="item.description">
+        <ul v-if="carried.length" class="list">
+          <li v-for="item in carried" :key="item.id" :title="item.description">
             <span>{{ item.name }}</span>
             <span class="level">×{{ item.quantity }}</span>
           </li>
@@ -94,6 +115,17 @@ const statusLabel = { active: 'Ativo', dead: 'Morto' }
 </template>
 
 <style scoped>
+.identity {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+
+.bonus {
+  color: var(--accent);
+}
+
 .sheet {
   background: var(--panel);
   border: 1px solid var(--line-strong);

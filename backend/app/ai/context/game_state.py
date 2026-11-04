@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from app.engine.rules.variables import EQUIPPED_FIELD
 from app.engine.time import format_world_time
 from app.persistence.models import Definition, Entity
 from app.persistence.repositories import CampaignData
@@ -113,15 +114,15 @@ def _status(entity: Entity) -> str:
     return {"active": "ativo", "dead": "MORTO"}.get(entity.status, entity.status)
 
 
-PROFILE_FIELDS = (("personality", "personalidade"), ("goal", "objetivo"))
+PROFILE_FIELDS = (("class", "classe"), ("race", "raça/espécie"), ("personality", "personalidade"), ("goal", "objetivo"))
 
 
 def _entity_details(data: CampaignData, entity: Entity, aliases: _Aliases) -> list[str]:
     details = []
-    if not entity.is_player:
-        profile = [f"{label}: {str(entity.data[key])[:200]}" for key, label in PROFILE_FIELDS if entity.data.get(key)]
-        if profile:
-            details.append("  " + "; ".join(profile))
+    fields = PROFILE_FIELDS if not entity.is_player else PROFILE_FIELDS[:2]  # do protagonista: só classe e raça
+    profile = [f"{label}: {str(entity.data[key])[:200]}" for key, label in fields if entity.data.get(key)]
+    if profile:
+        details.append("  " + "; ".join(profile))
     attributes = data.attributes.for_entity(entity.id)
     if attributes:
         details.append("  atributos: " + ", ".join(
@@ -167,7 +168,8 @@ def _relationship_lines(data: CampaignData, other: Entity, player: Entity) -> li
 
 
 def _item(item, aliases: _Aliases) -> str:
-    return f"{aliases.get('i', item.id)}={item.definition_key}×{item.quantity}"
+    slot = item.data.get(EQUIPPED_FIELD)
+    return f"{aliases.get('i', item.id)}={item.definition_key}×{item.quantity}" + (f" [equipado: {slot}]" if slot else "")
 
 
 def _describe_definition(definition: Definition) -> str:
@@ -189,6 +191,11 @@ def _describe_definition(definition: Definition) -> str:
             extras.append(f"nível máx. {data['max_level']}")
         for cost in data.get("costs", []):
             extras.append(f"custa {cost['amount']} de {cost['resource']}")
-    elif definition.kind == "item" and data.get("stackable") is False:
-        extras.append("não empilhável")
+    elif definition.kind == "item":
+        if data.get("stackable") is False:
+            extras.append("não empilhável")
+        if data.get("slot"):
+            extras.append(f"equipa em {data['slot']}")
+        if isinstance(data.get("bonus"), dict) and data["bonus"]:
+            extras.append("bônus " + ", ".join(f"{k} {v}" for k, v in data["bonus"].items()))
     return label + (f" ({', '.join(extras)})" if extras else "")
