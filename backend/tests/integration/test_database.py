@@ -14,6 +14,7 @@ from app.persistence.models import Base, Campaign, Event, Message, Turn, User
 
 EXPECTED_TABLES = {
     "users", "campaigns", "campaign_intro", "turns", "messages", "events", "ai_requests",
+    "definitions", "entities", "entity_attributes", "entity_skills", "item_instances", "effects", "dice_rolls",
 }
 PLATFORM_TABLES = {"users", "campaigns"}
 
@@ -76,6 +77,23 @@ def test_transaction_rolls_back_everything_on_error(db):
             raise RuntimeError("falha no meio")
     with db.transaction() as session:
         assert session.scalar(select(func.count()).select_from(Campaign)) == 0
+
+
+def test_savepoint_undoes_only_the_failed_part(db):
+    from app.persistence.repositories import CampaignData
+
+    with db.transaction() as session:
+        campaign = make_campaign(session, "Savepoint")
+        data = CampaignData(session, campaign.id)
+        data.events.record("fica", "system")
+        with pytest.raises(RuntimeError):
+            with data.savepoint():
+                data.events.record("desfeito", "system")
+                raise RuntimeError("operação inválida")
+        data.events.record("também fica", "system")
+    with db.transaction() as session:
+        types = [e.type for e in CampaignData(session, campaign.id).events.list_ordered()]
+        assert types == ["fica", "também fica"]
 
 
 def test_dates_are_stored_and_returned_in_utc(db):

@@ -30,12 +30,19 @@ def create_db_engine(database_url: str) -> Engine:
 
     @event.listens_for(engine, "connect")
     def _sqlite_pragmas(dbapi_connection, _record):
+        # O driver sqlite3 abre transações sozinho e atrapalha SAVEPOINT; quem controla
+        # o início das transações passa a ser o SQLAlchemy (receita da documentação dele).
+        dbapi_connection.isolation_level = None
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA synchronous=NORMAL")
         cursor.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
         cursor.close()
+
+    @event.listens_for(engine, "begin")
+    def _sqlite_begin(connection):
+        connection.exec_driver_sql("BEGIN")
 
     return engine
 

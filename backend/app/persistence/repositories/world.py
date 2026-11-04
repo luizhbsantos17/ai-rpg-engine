@@ -1,0 +1,146 @@
+"""Repositórios do mundo: definições, entidades, atributos, habilidades, itens e rolagens."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from sqlalchemy import or_
+
+from app.persistence.models import (
+    Definition,
+    DiceRollRecord,
+    Entity,
+    EntityAttribute,
+    EntitySkill,
+    ItemInstance,
+)
+from app.persistence.repositories.base import CampaignScopedRepository
+
+
+class DefinitionRepository(CampaignScopedRepository[Definition]):
+    model = Definition
+
+    def current(self, kind: str, key: str) -> Definition | None:
+        query = self._select().where(Definition.kind == kind, Definition.key == key, Definition.is_current.is_(True))
+        return self.session.scalars(query).first()
+
+    def current_by_key(self, key: str) -> Definition | None:
+        """Definição atual com essa chave, de qualquer tipo (chaves são únicas por tipo)."""
+        query = self._select().where(Definition.key == key, Definition.is_current.is_(True))
+        return self.session.scalars(query.order_by(Definition.kind)).first()
+
+    def list_current(self, kind: str | None = None) -> list[Definition]:
+        query = self._select().where(Definition.is_current.is_(True))
+        if kind:
+            query = query.where(Definition.kind == kind)
+        return list(self.session.scalars(query.order_by(Definition.kind, Definition.key)))
+
+    def history(self, kind: str, key: str) -> list[Definition]:
+        query = self._select().where(Definition.kind == kind, Definition.key == key)
+        return list(self.session.scalars(query.order_by(Definition.version)))
+
+    def create(self, kind: str, key: str, data: dict[str, Any], created_by: str) -> Definition:
+        return self.add(Definition(kind=kind, key=key, version=1, data=data, created_by=created_by))
+
+    def amend(self, previous: Definition, data: dict[str, Any], created_by: str) -> Definition:
+        """Nova versão; a anterior fica guardada e deixa de ser a atual."""
+        previous.is_current = False
+        self.session.flush()
+        return self.add(
+            Definition(
+                kind=previous.kind, key=previous.key, version=previous.version + 1,
+                data=data, supersedes_id=previous.id, created_by=created_by,
+            )
+        )
+
+
+class EntityRepository(CampaignScopedRepository[Entity]):
+    model = Entity
+
+    def player(self) -> Entity | None:
+        query = self._select().where(Entity.is_player.is_(True), Entity.status != Entity.STATUS_REMOVED)
+        return self.session.scalars(query.order_by(Entity.created_at)).first()
+
+    def list(self, kind: str | None = None, include_removed: bool = False) -> list[Entity]:
+        query = self._select()
+        if kind:
+            query = query.where(Entity.kind == kind)
+        if not include_removed:
+            query = query.where(Entity.status != Entity.STATUS_REMOVED)
+        return list(self.session.scalars(query.order_by(Entity.created_at)))
+
+    def at_location(self, location_id: str) -> list[Entity]:
+        query = self._select().where(Entity.location_id == location_id, Entity.status != Entity.STATUS_REMOVED)
+        return list(self.session.scalars(query.order_by(Entity.created_at)))
+
+
+class AttributeRepository(CampaignScopedRepository[EntityAttribute]):
+    model = EntityAttribute
+
+    def get_for(self, entity_id: str, key: str) -> EntityAttribute | None:
+        query = self._select().where(EntityAttribute.entity_id == entity_id, EntityAttribute.definition_key == key)
+        return self.session.scalars(query).first()
+
+    def for_entity(self, entity_id: str) -> list[EntityAttribute]:
+        query = self._select().where(EntityAttribute.entity_id == entity_id)
+        return list(self.session.scalars(query.order_by(EntityAttribute.definition_key)))
+
+    def upsert(self, entity_id: str, key: str, value: str, max_value: str | None = None) -> EntityAttribute:
+        attribute = self.get_for(entity_id, key)
+        if attribute is None:
+            return self.add(EntityAttribute(entity_id=entity_id, definition_key=key, value=value, max_value=max_value))
+        attribute.value = value
+        if max_value is not None:
+            attribute.max_value = max_value
+        self.session.flush()
+        return attribute
+
+
+class SkillRepository(CampaignScopedRepository[EntitySkill]):
+    model = EntitySkill
+
+    def get_for(self, entity_id: str, key: str) -> EntitySkill | None:
+        query = self._select().where(EntitySkill.entity_id == entity_id, EntitySkill.definition_key == key)
+        return self.session.scalars(query).first()
+
+    def for_entity(self, entity_id: str, only_active: bool = True) -> list[EntitySkill]:
+        query = self._select().where(EntitySkill.entity_id == entity_id)
+        if only_active:
+            query = query.where(EntitySkill.active.is_(True))
+        return list(self.session.scalars(query.order_by(EntitySkill.acquired_at)))
+
+
+class ItemRepository(CampaignScopedRepository[ItemInstance]):
+    model = ItemInstance
+
+    def held_by(self, entity_id: str) -> list[ItemInstance]:
+        query = self._select().where(ItemInstance.owner_id == entity_id, ItemInstance.status == ItemInstance.STATUS_ACTIVE)
+        return list(self.session.scalars(query.order_by(ItemInstance.created_at)))
+
+    def at_location(self, location_id: str) -> list[ItemInstance]:
+        query = self._select().where(
+            ItemInstance.location_id == location_id, ItemInstance.status == ItemInstance.STATUS_ACTIVE
+        )
+        return list(self.session.scalars(query.order_by(ItemInstance.created_at)))
+
+    def active_ids_conflicting(self) -> list[ItemInstance]:
+        """Itens ativos sem dono e sem local, ou com os dois ao mesmo tempo (inconsistência)."""
+        query = self._select().where(
+            ItemInstance.status == ItemInstance.STATUS_ACTIVE,
+            or_(
+                (ItemInstance.owner_id.is_(None) & ItemInstance.location_id.is_(None)),
+                (ItemInstance.owner_id.is_not(None) & ItemInstance.location_id.is_not(None)),
+            ),
+        )
+        return list(self.session.scalars(query))
+
+
+class DiceRollRepository(CampaignScopedRepository[DiceRollRecord]):
+    model = DiceRollRecord
+
+    def record(self, expression: str, seed: int, result: int, context: dict[str, Any], turn_id: str | None) -> DiceRollRecord:
+        return self.add(DiceRollRecord(expression=expression, seed=seed, result=result, context=context, turn_id=turn_id))
+
+    def for_turn(self, turn_id: str) -> list[DiceRollRecord]:
+        query = self._select().where(DiceRollRecord.turn_id == turn_id).order_by(DiceRollRecord.created_at)
+        return list(self.session.scalars(query))
