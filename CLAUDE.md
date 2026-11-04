@@ -56,3 +56,4 @@ Ambiente do dono: Windows 11, PowerShell. O ambiente virtual fica em `backend/.v
 - Configuração: `.env` na RAIZ do projeto (copiado de `.env.example`); lido por `backend/app/config.py`
 - Frontend: `cd frontend && npm run dev`
 - Migrações: `cd backend && alembic upgrade head`
+- Medir desempenho (campanha grande, IA falsa): `cd backend && python scripts/benchmark_large_campaign.py 500 300`

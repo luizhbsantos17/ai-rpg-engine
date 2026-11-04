@@ -57,7 +57,7 @@ class Services:
     def _after_turn(self, campaign_id: str) -> None:
         """Tarefas depois de cada turno concluído: cópia automática e resumo da história."""
         try:
-            self.auto_backup.after_turn(campaign_id)
+            self.auto_backup.schedule(campaign_id)
         except Exception:  # falha na cópia (ex.: disco cheio) não impede o resumo nem estraga o turno
             logger.exception("Falha no snapshot automático da campanha %s", campaign_id)
         self.summaries.schedule(campaign_id)

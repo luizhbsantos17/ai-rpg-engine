@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.persistence.models.base import Base, CampaignScopedMixin, CreatedAtMixin, IdMixin
@@ -51,6 +51,8 @@ class Disguise(IdMixin, CampaignScopedMixin, CreatedAtMixin, Base):
 
 class NpcMemory(IdMixin, CampaignScopedMixin, CreatedAtMixin, Base):
     __tablename__ = "npc_memories"
+    # Testemunhas ganham lembranças a cada turno: a busca "mais importantes e recentes" usa este índice.
+    __table_args__ = (Index("ix_npc_memories_recall", "campaign_id", "npc_id", "importance", "created_at"),)
 
     npc_id: Mapped[str] = mapped_column(String(36), ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True)
     turn_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("turns.id", ondelete="SET NULL"))

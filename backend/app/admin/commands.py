@@ -16,7 +16,7 @@ from app.admin.parser import Command
 from app.admin.targets import AdminTargetError, by_name, resolve_target
 from app.engine.operations import OperationContext, OperationOutcome, apply_operations
 from app.engine.time import format_world_time
-from app.persistence.models import Entity, ItemInstance, Turn
+from app.persistence.models import Entity, ItemInstance
 from app.persistence.repositories import CampaignData
 from app.persistence.snapshots import (
     SnapshotError,
@@ -432,7 +432,7 @@ def find_inconsistencies(data: CampaignData) -> list[str]:
                 problems.append(f"Item '{item.definition_key}' sem definição.")
     if data.turns.find_processing() is not None:
         problems.append("Há uma jogada em andamento (ou travada).")
-    if data.turns.count() and data.entities.player() is None and any(t.status == Turn.STATUS_COMPLETED for t in data.turns.list_ordered()):
+    if data.entities.player() is None and data.turns.count_completed():
         problems.append("A campanha já tem jogadas, mas nenhum protagonista.")
     return problems
 

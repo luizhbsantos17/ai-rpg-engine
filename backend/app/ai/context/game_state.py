@@ -17,6 +17,7 @@ MAX_DEFINITIONS = 60
 MAX_SCENE_ENTITIES = 15
 MAX_ITEMS_PER_HOLDER = 20
 MAX_CANON_FACTS = 40
+MAX_ACTIVE_QUESTS = 20
 STATUS_LABELS = {"confirmed": "confirmado", "rumor": "rumor", "false": "crença falsa"}
 
 
@@ -65,12 +66,14 @@ def build_game_state(data: CampaignData) -> GameStateSnapshot:
     if quests:
         lines.append("")
         lines.append("Missões ativas (use quest.update com a chave):")
-        for quest in quests:
+        for quest in quests[:MAX_ACTIVE_QUESTS]:
             objectives = "; ".join(
                 f"{n}. {'[x]' if o['done'] else '[ ]'} {o['text']}" for n, o in enumerate(quest.objectives, 1)
             )
             hidden = " (OCULTA para o jogador)" if quest.hidden else ""
             lines.append(f"- {quest.key}: {quest.title}{hidden}" + (f" — {objectives}" if objectives else ""))
+        if len(quests) > MAX_ACTIVE_QUESTS:
+            lines.append(f"- ... e mais {len(quests) - MAX_ACTIVE_QUESTS} missões ativas.")
 
     player = data.entities.player()
     lines.append("")

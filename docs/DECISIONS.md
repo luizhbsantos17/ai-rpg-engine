@@ -253,3 +253,11 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
   manuais e os de segurança (antes de comandos destrutivos e de excluir) nunca são apagados pela rotação.
   Falha no backup é registrada no log e não estraga a jogada.
 - Motivo: DATABASE.md (snapshots periódicos) sem encher o disco.
+
+### D-049 — Desempenho de campanhas longas
+- Decisão: contas sobre o histórico inteiro são feitas pelo banco (`count_completed`, `completed_after`), não
+  carregando todos os turnos; índice `ix_npc_memories_recall` para "lembranças mais importantes" (testemunhas
+  ganham uma lembrança por turno); missões ativas no contexto da IA limitadas a 20 (como regras, fatos e cena
+  já eram). Snapshot automático roda em segundo plano, como o resumo (`services/background.py`), porque numa
+  campanha enorme leva ~1–1,5 s. Medição reproduzível: `scripts/benchmark_large_campaign.py`.
+- Motivo: SPEC 17.6 e 20 (muitos NPCs/eventos sem perder desempenho; a IA recebe só o que cabe).

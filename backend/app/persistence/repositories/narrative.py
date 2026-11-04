@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import or_, update
+from sqlalchemy import func, or_, select, update
 
 from app.persistence.models import AiRequest, Event, Message, Turn
 from app.persistence.repositories.base import CampaignScopedRepository
@@ -25,6 +25,18 @@ class TurnRepository(CampaignScopedRepository[Turn]):
 
     def list_ordered(self) -> list[Turn]:
         return list(self.session.scalars(self._select().order_by(Turn.number)))
+
+    def count_completed(self) -> int:
+        """Quantos turnos concluídos (contado pelo banco, sem carregar os turnos)."""
+        query = select(func.count()).select_from(Turn).where(
+            Turn.campaign_id == self.campaign_id, Turn.status == Turn.STATUS_COMPLETED)
+        return self.session.scalar(query) or 0
+
+    def completed_after(self, number: int, limit: int) -> list[Turn]:
+        """Os primeiros `limit` turnos concluídos depois do turno `number`, em ordem."""
+        query = (self._select().where(Turn.number > number, Turn.status == Turn.STATUS_COMPLETED)
+                 .order_by(Turn.number).limit(limit))
+        return list(self.session.scalars(query))
 
     def latest(self) -> Turn | None:
         return self.session.scalars(self._select().order_by(Turn.number.desc()).limit(1)).first()
@@ -76,6 +88,9 @@ class MessageRepository(CampaignScopedRepository[Message]):
         if limit is not None:
             query = query.limit(limit)
         return list(self.session.scalars(query))
+
+    def with_role(self, role: str) -> list[Message]:
+        return list(self.session.scalars(self._select().where(Message.role == role).order_by(Message.seq)))
 
     def recent(self, limit: int) -> list[Message]:
         """As `limit` mensagens mais recentes, em ordem cronológica."""

@@ -5,33 +5,44 @@
 ## Resumo
 | Etapa | Status |
 |---|---|
-| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-048) |
+| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-049) |
 | 1 — Fundação | **concluída** e verificada com Ollama real |
 | 2 — Motor de RPG | **concluída** e verificada com Ollama real |
 | 3 — Narrativa e mundo | **concluída** (teste de campanha simulada com reinício) |
 | 4 — Sistemas avançados | **concluída** (`tests/e2e/test_different_rule_systems.py`) |
 | 5 — Interface completa | **concluída** (testes de componentes; falta o dono olhar a tela) |
 | 6 — Imagens e administração | **concluída** (imagens: só a estrutura, desligada; gerador real pendente) |
-| 7 — Qualidade e expansão | **em andamento**: 7.1, 7.2 e 7.3 concluídas; faltam 7.4 e 7.5 |
+| 7 — Qualidade e expansão | **em andamento**: 7.1 a 7.4 concluídas; faltam 7.5 e 7.6 |
 
 ## Última tarefa concluída
-Etapa 7.2: teste real de ponta a ponta com o Ollama pela API (gerar → começar → 3 turnos → ficha/mapa → admin →
-snapshot → reiniciar o backend → 4º turno). Tudo funcionou; tempos em `docs/AI_PROVIDERS.md`.
-Antes: 7.1 (limites de segurança, D-047) e 7.3 (snapshot automático com rotação, D-048).
-Correção nesta etapa: falha no snapshot automático não impede mais o resumo da história daquele turno.
+Etapa 7.4: desempenho com campanha grande (D-049). Medição com `scripts/benchmark_large_campaign.py`
+(IA falsa; mede só motor e banco), 2.000 NPCs, 1.000 turnos, 12 mil eventos:
+- estado do jogo enviado à IA **não cresce**: ~1.900 tokens com 100 ou 2.000 NPCs; ~133 consultas, ~35–65 ms;
+- turno (sem a IA) caiu de ~152 ms para ~69 ms numa campanha de 1.000 turnos (índice das lembranças de NPC:
+  35,6 ms → 0,6 ms por turno); cópia automática deixou de carregar todos os turnos (25 → 6 ms);
+- abrir histórico ~50–70 ms; ficha ~5–9 ms; mapa/diário ~80 ms; exportar snapshot ~0,9–1,5 s (agora em segundo plano).
+Antes: 7.1 (segurança, D-047), 7.2 (teste real ponta a ponta com Ollama), 7.3 (snapshot automático, D-048).
 
-## Próxima tarefa: Etapa 7.4 — Desempenho com muitos NPCs/eventos
+## Próxima tarefa: Etapa 7.5 — Documentação final e preparação para hospedagem
 Critério (SPEC Parte 23): o projeto funciona de maneira consistente, com testes demonstrando os principais fluxos.
 Faltam:
-4. **Desempenho** com muitos NPCs/eventos: medir com campanha grande (centenas de NPCs, milhares de eventos),
-   conferir índices e se o contexto da IA continua dentro do orçamento de tokens.
 5. Documentação final (README, guia do jogador) e preparação para hospedagem (Dockerfile opcional, D-009).
+6. **Snapshots de versões antigas do programa**: hoje restaurar/importar exige a mesma versão do banco (D-045);
+   qualquer migração nova (como a 14 desta etapa) torna snapshots e exportações antigas impossíveis de restaurar.
+   Plano: restaurar o arquivo num banco temporário na versão dele, rodar as migrações nesse banco e então
+   importar. Hoje não afeta nada (o banco real está vazio e não há snapshots), mas precisa existir antes do
+   dono jogar de verdade.
 
 ## Arquivos modificados nesta sessão (Etapa 7)
 `backend/app/__init__.py`, `backend/app/admin/sessions.py`, `backend/app/config.py`,
-`backend/app/persistence/snapshots.py`, `backend/app/services/{auto_backup.py, startup.py}`,
-`backend/tests/integration/{test_security.py, test_auto_backup.py}`, `.env.example`,
-`docs/{AI_PROVIDERS.md, DECISIONS.md}`, `PROJECT_STATUS.md`, `CHANGELOG.md`.
+`backend/app/persistence/snapshots.py`, `backend/app/services/{auto_backup.py, startup.py, background.py,
+summaries.py, journal.py}`, `backend/app/persistence/repositories/narrative.py`,
+`backend/app/persistence/models/knowledge.py`, `backend/app/ai/context/game_state.py`,
+`backend/app/admin/commands.py`, `backend/alembic/versions/...db33890eefb9_indice_memorias_npc.py`,
+`backend/scripts/benchmark_large_campaign.py`,
+`backend/tests/{integration/test_security.py, integration/test_auto_backup.py,
+integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
+`docs/{AI_PROVIDERS.md, DECISIONS.md, DATABASE.md}`, `CLAUDE.md`, `PROJECT_STATUS.md`, `CHANGELOG.md`.
 
 ## Pendências menores
 - Combate sem ordem de iniciativa dedicada (funciona por testes + dano condicional + efeitos + morte).
@@ -40,7 +51,7 @@ Faltam:
 
 ## O que existe e funciona (com testes)
 - **Backend** (Python 3.13, Flask 3.1, SQLAlchemy 2.1, Alembic 1.20, Pydantic 2.14, httpx):
-  - 9 migrações, 22 tabelas + índice de busca FTS5; repositórios com filtro obrigatório por `campaign_id`;
+  - 14 migrações, 26 tabelas + índice de busca FTS5; repositórios com filtro obrigatório por `campaign_id`;
   - provedores `fake` (só testes) e `ollama` (streaming, JSON com esquema);
   - turno: preparação (1º turno) → intérprete → motor (30 operações) → narrador com fatos e "o que cada NPC sabe";
     idempotente, repetição segura, retomada após reiniciar;
@@ -67,7 +78,7 @@ Faltam:
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **322 passed**, 1 deselected (externo) |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **327 passed**, 1 deselected (externo) |
 | 2026-11-04 | frontend `npm test` (Vitest) | **43 passed** |
 | 2026-11-04 | frontend `npm run build` | ok |
 | 2026-11-04 | `pytest -m external` com Ollama real | **1 passed** |
@@ -75,6 +86,7 @@ Faltam:
 | 2026-11-04 | Etapa 2 com IA real (motor ligado) | ok: preparação, teste 1d20 rolado pelo motor, operação persistida; turno ~21 s |
 | 2026-11-04 | Etapa 3: campanha simulada (FakeProvider) com NPC, relação, missão, cânone, agendamento, tempo e reinício | ok (`tests/e2e/test_living_campaign.py`) |
 | 2026-11-04 | Geração de campanha com IA real | ok: 7–9 s; ingredientes usados; segredos só no banco |
+| 2026-11-04 | Etapa 7.4: `scripts/benchmark_large_campaign.py 2000 1000` | ok: contexto da IA ~1.900 tokens (fixo); turno sem IA ~69 ms |
 | 2026-11-04 | Etapa 7.2: fluxo completo pela API com IA real + reinício | ok: geração 14,6 s; 1º turno 86 s; depois 27–34 s; histórico, ficha e snapshot intactos após religar; `validate_world` sem inconsistências |
 
 **Não testado por mim**: a interface no navegador com os olhos (não tenho como ver a tela).

@@ -58,10 +58,13 @@ class JournalService:
         for summary in data.summaries.latest(50):
             entries.append({"kind": "summary", "turn": summary.to_turn, "text": summary.content,
                             "from_turn": summary.from_turn})
-        turn_numbers = {t.id: t.number for t in data.turns.list_ordered()}
-        notices = [m for m in data.messages.list_ordered() if m.role == Message.ROLE_SYSTEM
-                   and m.content.startswith(DIARY_TAGS)][-MAX_DIARY_NOTICES:]
+        notices = [m for m in data.messages.with_role(Message.ROLE_SYSTEM)
+                   if m.content.startswith(DIARY_TAGS)][-MAX_DIARY_NOTICES:]
+        turn_numbers = {}
         for message in notices:
+            if message.turn_id and message.turn_id not in turn_numbers:
+                turn = data.turns.get(message.turn_id)
+                turn_numbers[message.turn_id] = turn.number if turn else 0
             entries.append({"kind": "notice", "turn": turn_numbers.get(message.turn_id, 0), "text": message.content})
         return sorted(entries, key=lambda e: (e["turn"], e["kind"] != "summary"))
 
