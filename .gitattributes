@@ -1,0 +1,7 @@
+# Quebras de linha padronizadas (LF) no repositório e na pasta de trabalho.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary
+*.db binary
