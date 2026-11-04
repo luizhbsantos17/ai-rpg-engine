@@ -237,6 +237,20 @@ class EffectRemove(Operation):
     key: Key
 
 
+class RelationshipChange(Operation):
+    """Muda o que `source` sente/pensa de `target` (direcional). Sempre com o acontecimento que causou."""
+
+    op: Literal["relationship.change"]
+    source: Ref
+    target: Ref
+    changes: dict[Key, int | float] = Field(default_factory=dict, max_length=10)  # dimensão -> variação
+    add_labels: list[Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)]] = Field(
+        default_factory=list, max_length=5)
+    remove_labels: list[Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)]] = Field(
+        default_factory=list, max_length=5)
+    cause: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
+
+
 class EventRecord(Operation):
     """Acontecimento narrativo importante, sem mudança mecânica (SPEC 15.2)."""
 
@@ -251,7 +265,7 @@ AnyOperation = Annotated[
     | AttributeSet | AttributeModify | ResourceSpend | ResourceRestore
     | SkillGrant | SkillRevoke | SkillEvolve | SkillUse | ItemCreate | ItemTransfer | ItemDestroy
     | CheckRequest | CanonAssert | CanonAmend | TimeAdvance | EventSchedule | EffectApply | EffectRemove
-    | EventRecord,
+    | RelationshipChange | EventRecord,
     Field(discriminator="op"),
 ]
 
@@ -261,7 +275,7 @@ OPERATION_NAMES = (
     "attribute.set", "attribute.modify", "resource.spend", "resource.restore",
     "skill.grant", "skill.revoke", "skill.evolve", "skill.use", "item.create", "item.transfer", "item.destroy",
     "check.request", "canon.assert", "canon.amend", "time.advance", "event.schedule",
-    "effect.apply", "effect.remove", "event.record",
+    "effect.apply", "effect.remove", "relationship.change", "event.record",
 )
 
 

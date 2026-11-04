@@ -14,10 +14,12 @@ from app.engine.operations.handlers import (
     items,
     narrative,
     skills,
+    social,
     time,
 )
 
 HANDLERS = {
+    **social.HANDLERS,
     **time.HANDLERS,
     **effects.HANDLERS,
     **definitions.HANDLERS,

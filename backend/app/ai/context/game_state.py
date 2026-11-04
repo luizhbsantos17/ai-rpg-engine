@@ -81,6 +81,8 @@ def build_game_state(data: CampaignData) -> GameStateSnapshot:
         for entity in others[:MAX_SCENE_ENTITIES]:
             lines.append(f"- {aliases.get('e', entity.id)}: {entity.name} — {entity.kind}, {_status(entity)}")
             lines.extend("  " + line for line in _entity_details(data, entity, aliases))
+            if player is not None:
+                lines.extend("  " + line for line in _relationship_lines(data, entity, player))
     if location is not None:
         floor = data.items.at_location(location.id)[:MAX_ITEMS_PER_HOLDER]
         if floor:
@@ -112,6 +114,20 @@ def _entity_details(data: CampaignData, entity: Entity, aliases: _Aliases) -> li
             e.definition_key + (f" (até {format_world_time(e.ends_at)})" if e.ends_at is not None else "") for e in effects
         ))
     return details
+
+
+def _relationship_lines(data: CampaignData, other: Entity, player: Entity) -> list[str]:
+    lines = []
+    for source, target, label in ((other, player, "sente pelo protagonista"), (player, other, "protagonista sente")):
+        relationship = data.relationships.between(source.id, target.id)
+        if relationship is None:
+            continue
+        parts = [f"{k}={v}" for k, v in relationship.dimensions.items()]
+        if relationship.labels:
+            parts.append("rótulos: " + ", ".join(relationship.labels))
+        if parts:
+            lines.append(f"  {label}: " + "; ".join(parts))
+    return lines
 
 
 def _item(item, aliases: _Aliases) -> str:

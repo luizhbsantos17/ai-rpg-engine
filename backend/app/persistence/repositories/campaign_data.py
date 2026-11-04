@@ -19,6 +19,7 @@ from app.persistence.repositories.world import (
     EffectRepository,
     EntityRepository,
     ItemRepository,
+    RelationshipRepository,
     ScheduledEventRepository,
     SkillRepository,
 )
@@ -43,6 +44,7 @@ class CampaignData:
         self.canon = CanonRepository(session, campaign_id)
         self.schedule = ScheduledEventRepository(session, campaign_id)
         self.effects = EffectRepository(session, campaign_id)
+        self.relationships = RelationshipRepository(session, campaign_id)
 
     def campaign(self) -> Campaign:
         """A própria campanha (para o relógio do mundo). Permissão de dono já foi conferida antes."""

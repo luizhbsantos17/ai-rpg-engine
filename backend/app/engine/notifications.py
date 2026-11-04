@@ -100,6 +100,10 @@ def _applied_line(op: str, r: dict[str, Any]) -> str:
         return f"Fato do mundo estabelecido ({r['status']}): {r['statement']}"
     if op == "canon.amend":
         return f"Fato do mundo mudou: antes \"{r['previous']}\", agora \"{r['statement']}\"."
+    if op == "relationship.change":
+        parts = [f"{k} {c['delta']:+g} (agora {c['to']:g})" for k, c in r["changes"].items()]
+        parts += [f"+rótulo '{label}'" for label in r["added"]] + [f"-rótulo '{label}'" for label in r["removed"]]
+        return f"O que {r['source']} sente por {r['target']} mudou: {', '.join(parts)} — porque {r['cause']}."
     if op == "effect.apply":
         until = f" até {r['ends_text']}" if r.get("ends_text") else ""
         return f"{r['name']} está sob o efeito {r['effect']}{until}."

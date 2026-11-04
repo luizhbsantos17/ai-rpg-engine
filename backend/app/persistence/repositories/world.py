@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import or_
+from sqlalchemy import or_, select
 
 from app.persistence.models import (
     CanonFact,
@@ -15,9 +15,39 @@ from app.persistence.models import (
     EntityAttribute,
     EntitySkill,
     ItemInstance,
+    Relationship,
+    RelationshipEvent,
     ScheduledEvent,
 )
 from app.persistence.repositories.base import CampaignScopedRepository
+
+
+class RelationshipRepository(CampaignScopedRepository[Relationship]):
+    model = Relationship
+
+    def between(self, source_id: str, target_id: str) -> Relationship | None:
+        query = self._select().where(Relationship.source_id == source_id, Relationship.target_id == target_id)
+        return self.session.scalars(query).first()
+
+    def get_or_create(self, source_id: str, target_id: str) -> Relationship:
+        return self.between(source_id, target_id) or self.add(Relationship(source_id=source_id, target_id=target_id))
+
+    def involving(self, entity_id: str) -> list[Relationship]:
+        query = self._select().where(or_(Relationship.source_id == entity_id, Relationship.target_id == entity_id))
+        return list(self.session.scalars(query.order_by(Relationship.created_at)))
+
+    def record_change(self, relationship: Relationship, changes: dict, cause: str, turn_id, world_time: int) -> RelationshipEvent:
+        event = RelationshipEvent(relationship_id=relationship.id, changes=changes, cause=cause,
+                                  turn_id=turn_id, world_time=world_time, campaign_id=self.campaign_id)
+        self.session.add(event)
+        self.session.flush()
+        return event
+
+    def history(self, relationship_id: str) -> list[RelationshipEvent]:
+        query = select(RelationshipEvent).where(
+            RelationshipEvent.campaign_id == self.campaign_id, RelationshipEvent.relationship_id == relationship_id
+        )
+        return list(self.session.scalars(query.order_by(RelationshipEvent.created_at)))
 
 
 class ScheduledEventRepository(CampaignScopedRepository[ScheduledEvent]):

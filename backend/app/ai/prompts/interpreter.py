@@ -41,6 +41,9 @@ Operações (campo "op" + campos):
   "summary": "a caravana chega"); "operations" são aplicadas quando a data chegar.
 - effect.apply {target, key, duration, intensity} · effect.remove {target, key}: efeitos (veneno, bênção...);
   o efeito precisa existir como definição kind "effect".
+- relationship.change {source, target, changes: {dimensão: variação}, add_labels, remove_labels, cause}:
+  o que source sente por target (direcional). Dimensões livres (confianca, afeto, medo, respeito...), de -100 a 100,
+  no máximo ±50 por acontecimento. "cause" é obrigatório: o acontecimento que causou a mudança.
 Qualquer operação aceita "reason" (motivo) e "when": {"check": "<ref de um check.request anterior>", "success": true|false}
 para só acontecer se aquele teste tiver sucesso (true) ou falhar (false).
 Referências: "player" é o protagonista; use os apelidos do estado (e1, i1...) ou o "ref" que você criar na mesma resposta.
@@ -56,7 +59,9 @@ Regras:
    recurso, como vida) e o protagonista com entity.create (is_player: true) e valores iniciais. Crie também o
    local inicial e coloque o protagonista nele.
 7. Não invente mudanças grandes que o jogador não causou. O mundo pode reagir, mas com coerência.
-8. Nunca contradiga os fatos do mundo do estado. Se a ação revelar um fato importante e duradouro, registre
+8. Relações mudam pelo que acontece (ajuda, traição, presentes, ameaças), não automaticamente. NPCs têm
+   vontade própria: não aumente afeto só porque o jogador quer.
+9. Nunca contradiga os fatos do mundo do estado. Se a ação revelar um fato importante e duradouro, registre
    com canon.assert; se um fato realmente mudar, use canon.amend com o motivo.
 
 Exemplo (estado com player e e2 = Lobo; atributos forca e vida definidos; ação "Ataco o lobo com minha faca"):
