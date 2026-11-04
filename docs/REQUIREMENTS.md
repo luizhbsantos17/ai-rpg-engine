@@ -6,13 +6,13 @@ Status possíveis: `pendente`, `parcial`, `pronto` (só com teste executado).
 ## Funcionais
 | ID | Requisito | SPEC | Etapa | Status |
 |---|---|---|---|---|
-| RF-01 | Criar, listar, abrir e excluir campanhas independentes | 2.1, 15 | 1 | pendente |
-| RF-02 | Salvamento automático e retomada exata após reiniciar | 15 | 1 | pendente |
-| RF-03 | Turno de jogo com IA (entrada → narração) | 11, 17.5 | 1 | pendente |
-| RF-04 | Camada de provedores (local e externo) com troca sem mexer no motor | 17.1–17.2 | 1 | pendente |
+| RF-01 | Criar, listar, abrir e excluir campanhas independentes | 2.1, 15 | 1 | pronto |
+| RF-02 | Salvamento automático e retomada exata após reiniciar | 15 | 1 | pronto |
+| RF-03 | Turno de jogo com IA (entrada → narração) | 11, 17.5 | 1 | pronto |
+| RF-04 | Camada de provedores (local e externo) com troca sem mexer no motor | 17.1–17.2 | 1 | parcial (local pronto; externo na Etapa 2+) |
 | RF-05 | Entidades, atributos dinâmicos, habilidades, inventário persistentes | 5 | 2 | pendente |
-| RF-06 | Pipeline de operações estruturadas com validação | 17.5, 20 | 2 | pendente |
-| RF-07 | Testes com dados, modificadores e seeds registradas | 7.2 | 2 | pendente |
+| RF-06 | Pipeline de operações estruturadas com validação | 17.5, 20 | 2 | parcial (motor pronto; falta ligar à IA) |
+| RF-07 | Testes com dados, modificadores e seeds registradas | 7.2 | 2 | parcial (motor pronto; falta ligar à IA) |
 | RF-08 | Progressão sem teto fixo | 5.2 | 2 | pendente |
 | RF-09 | Geração aleatória de campanhas, com regenerar, personalizar e preservar elementos | 3 | 3 | pendente |
 | RF-10 | Geração de protagonista, reencarnação e turmas com indivíduos distintos | 4 | 3 | pendente |

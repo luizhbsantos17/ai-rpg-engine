@@ -1,94 +1,110 @@
 # PROJECT_STATUS
 
-Última atualização: 2026-11-04 (madrugada, sessão autônoma) — Etapa 1: subtarefas 1–6 e 8 concluídas; 7 (frontend) em andamento.
+Última atualização: 2026-11-04 (sessão autônoma da madrugada).
 
 ## Resumo
 | Etapa | Status |
 |---|---|
-| 0 — Planejamento e arquitetura | concluída; arquitetura revisada contra a SPEC (D-011 a D-016) |
-| 1 — Fundação | em andamento: subtarefas 1–6 e 8 concluídas (backend completo e testado); faltam 7, 9 e 10 |
-| 2 a 7 | não iniciadas |
+| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-024) |
+| 1 — Fundação | **concluída**: critério verificado com Ollama real (falta só o usuário olhar a interface no navegador) |
+| 2 — Motor de RPG | **em andamento**: dados, fórmulas, tabelas e pipeline de operações prontos; falta ligar à IA e à interface |
+| 3 a 7 | não iniciadas |
 
-## O que existe
-- Documentação completa em `docs/` (SPEC colada pelo usuário).
-- Repositório Git no ramo `main`.
-- `backend/`: `pyproject.toml`, ambiente virtual `backend/.venv` (Python 3.13.3, fora do Git),
-  pytest 9.2.0 com o marcador `external`.
-- `backend/app/config.py`: lê `.env` + variáveis de ambiente, valida valores (Flask 3.1.3, python-dotenv 1.2.4).
-- `backend/app/__init__.py`: fábrica `create_app`; `app/api/`: rota `GET /api/health` e erros em JSON.
-- `.env` local do usuário criado a partir do exemplo, com chave secreta aleatória (fora do Git).
-- Banco: SQLAlchemy 2.1.8 + Alembic 1.20.1; migração inicial `backend/alembic/versions/2026_11_03_2328-...`;
-  tabelas `users`, `campaigns`, `campaign_intro`, `turns`, `messages`, `events`, `ai_requests`.
-  O backend aplica as migrações sozinho ao iniciar e cria o usuário local.
-- Repositórios (`app/persistence/repositories/`) com filtro obrigatório por `campaign_id`.
-- Provedores (`app/providers/`): interface com streaming, `FakeProvider` (só testes), `OllamaProvider`.
-- Orquestrador de turno (`app/ai/orchestrator/turns.py`) idempotente, com recuperação de falhas.
-- API: `GET/POST /api/campaigns`, `GET /api/campaigns/<id>`, `GET /api/campaigns/<id>/history`,
-  `DELETE /api/campaigns/<id>` (exige o título), `POST /api/campaigns/<id>/turns` (SSE).
+## Última tarefa concluída
+Etapa 2.4 — pipeline de operações do motor (validar → aplicar em savepoint → registrar no log).
 
-## Ambiente do usuário (verificado em 2026-11-03)
-| Item | Encontrado | Situação |
+## Próxima tarefa: Etapa 2.5 — IA intérprete + turno em duas chamadas (D-013)
+1. `complete_json` nos provedores: pedir JSON, validar com Pydantic, reenviar o erro à IA (máx. N tentativas, D-008).
+2. Prompt do intérprete: recebe estado relevante (protagonista, entidades da cena, definições) e devolve
+   `{"operations": [...]}`; operações recusadas voltam com o motivo.
+3. Orquestrador: intérprete → `apply_operations` (na transação do turno, com os testes rolados pelo motor) →
+   narrador recebe os resultados reais → narração em streaming.
+4. Criação do protagonista e das regras iniciais da campanha (operações `definition.create`/`entity.create` geradas pela IA).
+5. API e interface: ficha do protagonista (atributos, recursos, habilidades, inventário) e mensagens `[SISTEMA]`
+   para operações aplicadas (nova habilidade, item recebido, teste rolado...).
+6. Testes: fluxo com FakeProvider roteirizando JSON válido/inválido; teste externo com Ollama.
+Critério da Etapa 2 (SPEC Parte 23): as operações do RPG modificam dados reais e persistentes.
+
+## O que existe e funciona (com testes)
+- **Backend** (`backend/`, Python 3.13, Flask 3.1, SQLAlchemy 2.1, Alembic 1.20, Pydantic 2.14, httpx):
+  - configuração por `.env` com validação; migrações automáticas ao iniciar; usuário local;
+  - banco SQLite (WAL, chaves estrangeiras, savepoints) com 2 migrações e 14 tabelas;
+  - repositórios com filtro obrigatório por `campaign_id` (+ testes guardiões no código-fonte);
+  - provedores `fake` (só testes) e `ollama` (real, com streaming);
+  - turno idempotente com recuperação de falhas e retomada após reiniciar;
+  - API de campanhas e turnos com SSE;
+  - **motor (Etapa 2, ainda não ligado ao turno)**: `engine/dice` (semente registrada, reproduzível),
+    `engine/expressions` (fórmulas sem `eval`, Decimal sem teto), `engine/rules` (definições abertas
+    versionadas, valores por tipo), `engine/operations` (18 operações primitivas validadas e registradas).
+- **Frontend** (`frontend/`, Vue 3.5, Vite 8, Pinia 4, Vue Router 5): lista/criação/exclusão de campanhas e
+  tela de jogo com narração em tempo real, falhas com "Tentar de novo". Build de produção ok.
+- **Atalhos**: `instalar.cmd` e `iniciar.cmd` (abre Ollama portátil, backend, frontend e navegador).
+
+## Ambiente do usuário (verificado em 2026-11-03/04)
+| Item | Situação |
+|---|---|
+| Windows 11 Pro, Ryzen 5 4600G (só GPU integrada), 13,8 GB RAM | IA local só com modelos pequenos/médios, em CPU |
+| Python 3.13.3 | ok |
+| Node.js | sistema: 20.11.1 (antigo, não usado); **projeto: 24.22.2 LTS portátil em `F:\Tools\node-v24.22.2-win-x64`** |
+| Ollama | **0.40.14 portátil em `F:\Tools\ollama`**, modelos em `F:\Tools\ollama-models` |
+| Modelo instalado | `qwen2.5:1.5b` (986 MB) |
+| Disco | C: ~3,3 GB livres (nada foi instalado no C:); F: ~21 GB livres após Node + Ollama + modelo |
+| Pastas no F:\Tools | `downloads\` (zips do Node e do Ollama, ~1,7 GB, podem ser apagados pelo usuário), `npm-cache\` |
+
+## Testes executados (resultados reais)
+| Data | O quê | Resultado |
 |---|---|---|
-| Sistema | Windows 11 Pro 64 bits (10.0.26200) | ok |
-| Python | 3.13.3 (também há 3.11) | ok (D-011) |
-| Git | 2.56.0 | ok |
-| Node / npm | 20.11.1 / 10.2.4 | **atualizar antes da subtarefa 7** (Node 20 está fora de suporte e é antigo para o Vite atual) |
-| Ollama | não instalado | **instalar antes da subtarefa 9**, fora do disco C: |
-| CPU | Ryzen 5 4600G (6 núcleos / 12 threads) | ok |
-| RAM | 13,8 GB visíveis | suficiente só para modelos locais pequenos |
-| Placa de vídeo | só a integrada (Radeon do 4600G), sem placa dedicada | IA local vai rodar no processador: lenta |
-| Disco | C: 3,3 GB livres de 111 GB (após limpeza; antes 0,6 GB); E: 10,7 GB; F: 25,1 GB | C: ainda apertado; Ollama e modelos vão no F: |
-| SQLite (do Python) | 3.49.1, com FTS5 e funções JSON | ok |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo, FakeProvider) | **186 passed**, 1 deselected (externo) |
+| 2026-11-04 | frontend `npm test` (Vitest) | **19 passed** |
+| 2026-11-04 | frontend `npm run build` | ok (109 kB JS / 7 kB CSS) |
+| 2026-11-04 | `pytest -m external` com Ollama real (`qwen2.5:1.5b`) | **1 passed** ("Pronto", 3 tokens, 4,2 s com carga) |
+| 2026-11-04 | manual: backend + Vite juntos, API pelo proxy, SSE, falha sem Ollama | ok: erro claro e repetível, sem duplicar mensagem |
+| 2026-11-04 | manual: `instalar.cmd` e `iniciar.cmd` | ok (portas 5000 e 5173 respondendo) |
+| 2026-11-04 | **critério da Etapa 1 com IA real**: criar campanha → 2 turnos → desligar backend → religar → 3º turno | ok: 3 turnos `completed`; no 3º a IA recebeu as 2 jogadas e narrações anteriores. Velocidade 25–28 tokens/s, 1º pedaço em 2,6–5 s, turno de 16–23 s |
 
-## Pendências da Etapa 0
-- [x] Usuário colar a especificação completa em `docs/SPEC.md`.
-- [x] Verificar o ambiente do usuário (tabela acima).
-- [ ] Pesquisar modelos e provedores atuais e preencher `docs/AI_PROVIDERS.md` com fonte e data
-  (fazer junto com a subtarefa 5; considerar que o hardware só roda modelos locais pequenos).
+**Não testado por mim**: a interface no navegador com os olhos (não tenho como ver a tela).
+Ver "Como testar" abaixo.
 
-## Próxima tarefa: Etapa 1, subtarefa 7 — frontend mínimo (Vue 3 + Vite)
-Critério de conclusão (SPEC Parte 23): criar uma campanha, interagir com a IA, salvar,
-fechar o programa, reabrir e continuar exatamente do mesmo ponto.
+## Problemas conhecidos
+- **Qualidade da narração com `qwen2.5:1.5b` é fraca** (repete frases, escreve falas do protagonista,
+  usa "-" no início de parágrafos). A integração funciona; o modelo é pequeno demais. Ver decisões pendentes.
+- 5 vulnerabilidades "moderadas" no `npm audit`, todas em dependência só de testes
+  (`@vue/test-utils` → `js-beautify` → `glob`/`minimatch`); não entram no programa. Reavaliar quando houver versão corrigida.
+- O motor de regras ainda não está ligado ao turno: o narrador é instruído a não inventar números.
 
-Subtarefas, nesta ordem:
-1. ~~Estrutura de pastas do backend, `pyproject.toml`, ambiente virtual, `pytest` rodando um teste vazio.~~ **Concluída.**
-2. ~~Configuração (`config.py` lendo `.env`) e fábrica da aplicação Flask com rota `/api/health`.~~ **Concluída.**
-3. ~~SQLAlchemy + Alembic + primeira migração: `users`, `campaigns`, `turns`, `messages`, `events`, `ai_requests`.~~ **Concluída.**
-4. ~~Repositórios com filtro obrigatório por `campaign_id` + teste de isolamento entre campanhas.~~ **Concluída.**
-5. ~~Camada de provedores: `base.py`, `fake.py`, `ollama.py` + testes com o fake.~~ **Concluída.**
-6. ~~Orquestrador mínimo de turno (entrada → contexto simples → IA → mensagem salva), idempotente pelo `turn_id`.~~ **Concluída.**
-7. Frontend mínimo: lista de campanhas, criar campanha, tela de chat com texto chegando aos poucos.
-8. ~~Teste de fluxo completo: criar → jogar 3 turnos (fake) → reiniciar app → retomar → histórico idêntico.~~ **Concluída.**
-9. Teste manual com Ollama real, registrado aqui com o resultado.
-10. Atualizar todos os documentos e o `README.md` com instruções reais de instalação.
+## Decisões pendentes (dependem do dono)
+1. **Modelo de IA para narrar**: baixar um maior? Opções medidas só em tamanho (desempenho não testado):
+   `qwen2.5:3b` (1,9 GB), `gemma3:4b` (3,4 GB), `qwen2.5:7b` (4,7 GB, provavelmente o limite desta RAM).
+   Ou usar um serviço externo (pode ter custo; precisa de pesquisa de preços e autorização).
+2. **Testar a GPU integrada** no Ollama (`OLLAMA_IGPU_ENABLE=1`)? Pode acelerar ou não; é só um teste.
+3. Apagar `F:\Tools\downloads` (zips já extraídos, ~1,7 GB)? Não apaguei por segurança.
+
+## Como testar (passo a passo para o dono)
+1. Dois cliques em `F:\Projetos\AI-RPG-Engine\iniciar.cmd`. Abrem 3 janelas pretas (Ollama, backend, frontend) e o navegador.
+2. Clique em **+ Nova campanha**, preencha título e premissa, **Criar e começar**.
+3. Clique em **Começar a história** ou escreva uma ação e aperte Enter. O texto deve aparecer aos poucos.
+4. Feche tudo (navegador e janelas pretas). Abra de novo com `iniciar.cmd`, clique em **Continuar**:
+   a história deve estar igual e continuar dali.
+
+## Arquivos principais modificados nesta sessão
+Backend: `app/config.py`, `app/persistence/**`, `app/providers/**`, `app/ai/**`, `app/services/**`, `app/api/**`,
+`app/engine/**`, `alembic/**`, `tests/**`. Frontend: `frontend/**`. Raiz: `instalar.cmd`, `iniciar.cmd`,
+`.gitattributes`, `.env.example`, `README.md`, `CLAUDE.md`. Docs: todos em `docs/`.
 
 ## Plano de testes (visão geral)
-- **Unitários**: validadores de operações, avaliador de fórmulas, dados com seed, interpretador de comandos.
-- **Integração**: pipeline de turno com `FakeProvider` e banco SQLite temporário.
-- **Fluxo completo**: campanhas simuladas do início à retomada (os 26 casos da SPEC Parte 22 viram testes ao longo das etapas).
-- **Externos** (`@pytest.mark.external`): provedores reais; não rodam por padrão.
-- Respostas inválidas da IA são roteirizadas no fake para testar a recuperação.
+- Unitários: dados, fórmulas, configuração, provedores, regras de arquitetura (guardiões).
+- Integração: banco, repositórios/isolamento, pipeline de operações, orquestrador, API.
+- Fluxo completo: criar → jogar → reiniciar → retomar (`tests/e2e`).
+- Externos (`-m external`): Ollama real.
+- Casos da SPEC Parte 22 já cobertos: 1, 2, 3, 4, 5, 6, 7, 8 (parcial: evolução de habilidades),
+  18 (falhas de provedor), 19 (respostas inválidas), 20 (consistência de regras), 24, 25 (parcial: dono), 26.
 
 ## Riscos principais
 | Risco | Mitigação |
 |---|---|
-| Escopo muito grande para uma pessoa | Etapas pequenas e executáveis; recusar avançar sem a anterior testada |
-| Modelos locais erram o formato JSON | Validação + reenvio com o erro (D-008); prompts curtos e esquemas simples |
-| Custo e lentidão com várias chamadas por turno | Uma chamada na Etapa 1, duas a partir da Etapa 2 (D-013); níveis de simulação; limite de gasto |
-| Contexto grande demais para a IA | Construtor de contexto com orçamento de tokens; resumos em camadas |
-| IA contradizer fatos antigos | Registro canônico consultado no contexto; validação de `canon.amend` |
-| Regras criadas pela IA quebrarem o motor | Esquemas por tipo de definição; avaliador de fórmulas seguro; testes |
-| Conteúdo adulto indisponível em provedores comerciais | Declarado por provedor e avisado na interface (D-007) |
-| Computador do usuário fraco para modelos locais | Verificar hardware antes; permitir provedor externo |
-
-## Testes executados
-| Data | Comando | Resultado |
-|---|---|---|
-| 2026-11-03 | `cd backend; .\.venv\Scripts\python.exe -m pytest` | 2 passed (Python 3.13.3, pytest 9.2.0) |
-| 2026-11-03 | mesmo comando, após subtarefa 2 | 22 passed |
-| 2026-11-03 | manual: servidor real (`flask --app app run`) + `GET /api/health` | HTTP 200 `{"env":"development","status":"ok","version":"0.1.0"}`; rota inexistente → HTTP 404 em JSON |
-| 2026-11-04 | `pytest` após subtarefas 3–6 e 8 | 101 passed, 1 deselected (o teste externo do Ollama, que não roda por padrão) |
-
-## Problemas conhecidos
-- Disco C: com 3,3 GB livres (2026-11-03). Dá para instalar o Node; Ollama e modelos devem ir para o F:.
-- Sem placa de vídeo dedicada: velocidade da IA local ainda não medida (será medida na subtarefa 9).
+| Escopo muito grande | Etapas pequenas e executáveis; nada marcado pronto sem teste |
+| Modelos locais erram o formato JSON | Validação + reenvio com o erro (D-008); operações recusadas uma a uma |
+| Qualidade da narração com modelo pequeno | Modelo maior ou provedor externo (decisão pendente) |
+| Lentidão com duas chamadas por turno (Etapa 2) | Intérprete curto (JSON); medir com Ollama real |
+| Contexto grande demais | Orçamento de tokens; resumos em camadas (Etapa 3) |
+| IA contradizer fatos antigos | Regras versionadas (pronto); registro canônico (Etapa 3) |
