@@ -39,6 +39,22 @@ def describe_for_narrator(outcomes: list[OperationOutcome]) -> list[str]:
     return [line for line in lines if line]
 
 
+NARRATOR_LEVELS = {"confirmed": "descobriu", "partial": "descobriu em parte (percebe que há algo oculto)",
+                   "estimated": "só estimou", "unknown": "não descobriu nada"}
+
+
+def _assessment_line(r: dict[str, Any]) -> str:
+    parts = []
+    for f in r["findings"]:
+        if f["level"] == "false":
+            parts.append(f"{f['field']}: ENGANADO, acredita em \"{f['value']}\" (verdade: \"{f['truth']}\")")
+        else:
+            value = f" = {f['value']}" if f["value"] is not None else ""
+            parts.append(f"{f['field']}: {NARRATOR_LEVELS[f['level']]}{value}")
+    detected = f" {r['target']} PERCEBEU a tentativa." if r["detected"] else ""
+    return f"Avaliação '{r['label']}' de {r['observer']} sobre {r['target']} (total {r['total']}): " + "; ".join(parts) + "." + detected
+
+
 def _nested(outcomes: list[dict[str, Any]]) -> list[OperationOutcome]:
     return [OperationOutcome(**o) for o in outcomes]
 
@@ -100,6 +116,14 @@ def _applied_line(op: str, r: dict[str, Any]) -> str:
         return f"Fato do mundo estabelecido ({r['status']}): {r['statement']}"
     if op == "canon.amend":
         return f"Fato do mundo mudou: antes \"{r['previous']}\", agora \"{r['statement']}\"."
+    if op == "knowledge.assess":
+        return _assessment_line(r)
+    if op == "disguise.apply":
+        if r["falsified"]:
+            return f"{r['name']} passa a mostrar '{r['field']}' FALSO como \"{r['presented_value']}\" (força {r['power']})."
+        return f"{r['name']} passa a ocultar '{r['field']}' (força {r['power']})."
+    if op == "disguise.remove":
+        return f"{r['name']} deixou de ocultar '{r['field']}'."
     if op == "quest.create":
         hidden = " (oculta: o jogador ainda não sabe)" if r["hidden"] else ""
         return f"Nova missão{hidden}: {r['title']}."
@@ -139,6 +163,24 @@ def player_notices(outcomes: list[OperationOutcome], player_id: str | None) -> l
         if notice:
             notices.append(notice)
     return notices
+
+
+# O que o JOGADOR vê: informação falsa aparece como confirmada (ele não sabe que foi enganado).
+PLAYER_LEVELS = {"confirmed": "confirmado", "false": "confirmado", "partial": "parcial", "estimated": "estimado"}
+
+
+def _assessment_notice(r: dict[str, Any], player_id: str) -> PlayerNotice | None:
+    if r["observer_id"] == player_id:
+        parts = []
+        for f in r["findings"]:
+            if f["level"] == "unknown":
+                parts.append(f"{f['field']}: não descoberto")
+            else:
+                parts.append(f"{f['field']} = {f['value']} ({PLAYER_LEVELS[f['level']]})")
+        return PlayerNotice("ANÁLISE", f"{r['target']}: " + "; ".join(parts) + ".")
+    if r["target_id"] == player_id and r["detected"]:
+        return PlayerNotice("ALERTA", f"Você sentiu que {r['observer']} tentou avaliá-lo.")
+    return None
 
 
 QUEST_STATUS_TEXT = {"completed": "Missão concluída", "failed": "Missão falhou", "abandoned": "Missão abandonada",
@@ -182,6 +224,11 @@ def _player_notice(op: str, r: dict[str, Any], player_id: str) -> PlayerNotice |
                                      f"(dificuldade {r['difficulty']}) → {verdict}.")
     if op in ("quest.create", "quest.update"):
         return _quest_notice(op, r)
+    if op == "knowledge.assess":
+        return _assessment_notice(r, player_id)
+    if op in ("disguise.apply", "disguise.remove") and mine:
+        verb = "ativa" if op == "disguise.apply" else "desfeita"
+        return PlayerNotice("SISTEMA", f"Ocultação {verb}: {r['field']}.")
     if not mine and op not in ("item.create", "item.transfer"):
         return None
     if op == "effect.apply":

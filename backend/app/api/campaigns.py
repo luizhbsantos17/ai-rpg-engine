@@ -71,6 +71,13 @@ def character_sheet(campaign_id: str):
     return services.sheets.sheet(services.local_user_id, campaign_id)
 
 
+@bp.get("/campaigns/<campaign_id>/known")
+def known_characters(campaign_id: str):
+    """O que o protagonista sabe sobre outros personagens (nunca o estado verdadeiro deles)."""
+    services = get_services()
+    return services.known.known(services.local_user_id, campaign_id)
+
+
 @bp.delete("/campaigns/<campaign_id>")
 def delete_campaign(campaign_id: str):
     services = get_services()

@@ -5,6 +5,7 @@ o log de eventos e para a IA narrar. Se a operação for inválida: `raise Opera
 """
 
 from app.engine.operations.handlers import (
+    assessment,
     attributes,
     canon,
     checks,
@@ -21,6 +22,7 @@ from app.engine.operations.handlers import (
 )
 
 HANDLERS = {
+    **assessment.HANDLERS,
     **social.HANDLERS,
     **knowledge.HANDLERS,
     **quests.HANDLERS,

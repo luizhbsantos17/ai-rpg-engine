@@ -263,6 +263,38 @@ class KnowledgeRecord(Operation):
     source: Literal["presenciou", "ouviu", "descobriu", "contaram", "deduziu", "avaliou", "ja_sabia"] = "descobriu"
 
 
+FieldName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+
+
+class DisguiseApply(Operation):
+    """Esconde (sem presented_value) ou falsifica (com presented_value) uma informação da entidade."""
+
+    op: Literal["disguise.apply"]
+    entity: Ref
+    field: FieldName  # chave de atributo, "skills", "identity" ou "*" (tudo)
+    presented_value: Annotated[str, StringConstraints(max_length=500)] | None = None
+    power: Number = 5  # força da ocultação (número ou fórmula com atributos da entidade)
+
+
+class DisguiseRemove(Operation):
+    op: Literal["disguise.remove"]
+    entity: Ref
+    field: FieldName
+
+
+class KnowledgeAssess(Operation):
+    """Avaliação: o observador tenta descobrir informações do alvo. O MOTOR rola contra a ocultação."""
+
+    op: Literal["knowledge.assess"]
+    observer: Ref
+    target: Ref
+    label: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)] = "Avaliação"
+    fields: list[FieldName] = Field(min_length=1, max_length=12)  # chaves de atributo, "skills", "identity"
+    power: Number = 0  # poder de avaliação (número ou fórmula, ex.: "skills.avaliacao * 3")
+    dice: Annotated[str, StringConstraints(max_length=100)] = "1d20"
+    detection: Number | None = None  # chance de o alvo perceber (número ou fórmula com atributos do alvo)
+
+
 class MemoryRecord(Operation):
     """Uma lembrança na memória individual de um personagem."""
 
@@ -309,7 +341,8 @@ AnyOperation = Annotated[
     | AttributeSet | AttributeModify | ResourceSpend | ResourceRestore
     | SkillGrant | SkillRevoke | SkillEvolve | SkillUse | ItemCreate | ItemTransfer | ItemDestroy
     | CheckRequest | CanonAssert | CanonAmend | TimeAdvance | EventSchedule | EffectApply | EffectRemove
-    | RelationshipChange | KnowledgeRecord | MemoryRecord | QuestCreate | QuestUpdate | EventRecord,
+    | RelationshipChange | KnowledgeRecord | MemoryRecord | QuestCreate | QuestUpdate
+    | DisguiseApply | DisguiseRemove | KnowledgeAssess | EventRecord,
     Field(discriminator="op"),
 ]
 
@@ -320,7 +353,7 @@ OPERATION_NAMES = (
     "skill.grant", "skill.revoke", "skill.evolve", "skill.use", "item.create", "item.transfer", "item.destroy",
     "check.request", "canon.assert", "canon.amend", "time.advance", "event.schedule",
     "effect.apply", "effect.remove", "relationship.change", "knowledge.record", "memory.record", "quest.create",
-    "quest.update", "event.record",
+    "quest.update", "disguise.apply", "disguise.remove", "knowledge.assess", "event.record",
 )
 
 

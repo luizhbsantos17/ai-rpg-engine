@@ -51,6 +51,11 @@ Operações (campo "op" + campos):
 - quest.create {key, title, kind: main|side|optional|dynamic, description, giver, objectives: [textos], hidden}
 - quest.update {key, status: completed|failed|abandoned|active, complete_objectives: [números], add_objectives, reveal}
   Missões surgem de NPCs, conversas e acontecimentos; podem falhar. "hidden": true = o jogador ainda não sabe.
+- knowledge.assess {observer, target, label, fields: [chaves de atributo, "skills", "identity"], power, detection}:
+  avaliar alguém (habilidade de análise). O motor rola contra a ocultação do alvo; o resultado pode ser certo,
+  aproximado, nada, ou FALSO se o alvo falsifica. "power": poder de quem avalia (ex.: "skills.avaliacao * 3").
+- disguise.apply {entity, field, presented_value, power} · disguise.remove {entity, field}: ocultar uma
+  informação (sem presented_value) ou mostrar um valor falso (com presented_value). field "*" = tudo.
 Qualquer operação aceita "reason" (motivo) e "when": {"check": "<ref de um check.request anterior>", "success": true|false}
 para só acontecer se aquele teste tiver sucesso (true) ou falhar (false).
 Referências: "player" é o protagonista; use os apelidos do estado (e1, i1...) ou o "ref" que você criar na mesma resposta.

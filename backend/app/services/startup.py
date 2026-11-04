@@ -16,6 +16,7 @@ from app.providers import AIProvider
 from app.providers.registry import build_provider
 from app.services.campaigns import CampaignService
 from app.services.generation import CampaignGenerationService
+from app.services.known import KnownCharactersService
 from app.services.sheet import CharacterSheetService
 from app.services.summaries import SummaryService
 
@@ -35,6 +36,7 @@ class Services:
         self.local_user_id = local_user_id
         self.campaigns = CampaignService(db)
         self.sheets = CharacterSheetService(db)
+        self.known = KnownCharactersService(db)
         self.summaries = SummaryService(db, provider, settings)
         self.generation = CampaignGenerationService(db, provider, settings)
         self.turns = TurnOrchestrator(db, provider, settings, on_turn_completed=self.summaries.schedule)

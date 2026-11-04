@@ -9,14 +9,19 @@
 | 1 — Fundação | **concluída** e verificada com Ollama real |
 | 2 — Motor de RPG | **concluída** e verificada com Ollama real |
 | 3 — Narrativa e mundo | **concluída**: critério verificado por teste de campanha simulada com reinício |
-| 4 — Sistemas avançados | não iniciada (plano abaixo) |
+| 4 — Sistemas avançados | **em andamento**: 4.1 backend concluído (avaliação/ocultação/falsificação); falta o painel na interface |
 | 5 a 7 | não iniciadas |
 
 ## Última tarefa concluída
 Etapa 3 completa: cânone, relógio/agendamentos/efeitos, relacionamentos, conhecimento/memória,
 missões, memória em camadas (resumos + busca), geração aleatória de campanhas, turmas, teste de fluxo.
 
-## Próxima tarefa: Etapa 4 — Sistemas avançados
+## Próxima tarefa: Etapa 4.1 (interface) — painel "Personagens conhecidos" usando `GET /api/campaigns/<id>/known`; depois 4.2
+
+Feito em 4.1 (backend, testado): tabela `disguises` (migração 10), operações `disguise.apply/remove` e
+`knowledge.assess` (regra em `app/engine/operations/handlers/assessment.py`), avisos `[ANÁLISE]`, rota `/known`.
+
+## Plano da Etapa 4 — Sistemas avançados
 Critério (SPEC Parte 23): campanhas diferentes conseguem usar sistemas de regras significativamente diferentes.
 Subtarefas planejadas, nesta ordem:
 1. **Avaliação, ocultação e falsificação** (SPEC 6): tabela `disguises`; operações `disguise.apply/remove` e
@@ -60,7 +65,7 @@ Subtarefas planejadas, nesta ordem:
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **257 passed**, 1 deselected (externo) |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **265 passed**, 1 deselected (externo) |
 | 2026-11-04 | frontend `npm test` (Vitest) | **32 passed** |
 | 2026-11-04 | frontend `npm run build` | ok |
 | 2026-11-04 | `pytest -m external` com Ollama real | **1 passed** |

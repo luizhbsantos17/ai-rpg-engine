@@ -1,5 +1,5 @@
 // Mensagens de sistema chegam como "[TAG] texto"; a interface mostra a etiqueta separada.
-const TONES = { ALERTA: 'alert', MISSÃO: 'alert', FALHA: 'error', ERRO: 'error' }
+const TONES = { ALERTA: 'alert', MISSÃO: 'alert', ANÁLISE: 'info', FALHA: 'error', ERRO: 'error' }
 
 export function parseNotice(content) {
   const match = /^\[([A-ZÀ-Ú]+)\]\s*(.*)$/s.exec(content ?? '')

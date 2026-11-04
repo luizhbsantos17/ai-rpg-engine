@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.persistence.models.base import Base, CampaignScopedMixin, CreatedAtMixin, IdMixin
@@ -30,6 +30,23 @@ class Knowledge(IdMixin, CampaignScopedMixin, Base):
     level: Mapped[str] = mapped_column(String(20), nullable=False)
     source: Mapped[str] = mapped_column(String(20), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False, default=utc_now, onupdate=utc_now)
+
+
+class Disguise(IdMixin, CampaignScopedMixin, CreatedAtMixin, Base):
+    """Ocultação/falsificação de uma informação de uma entidade (SPEC 6.3).
+
+    `field`: chave de atributo, "skills", "identity" ou "*" (tudo). `presented_value` nulo = só esconde;
+    preenchido = mostra um valor FALSO. `power` é a força da ocultação contra avaliações.
+    """
+
+    __tablename__ = "disguises"
+    __table_args__ = (UniqueConstraint("entity_id", "field"),)
+
+    entity_id: Mapped[str] = mapped_column(String(36), ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True)
+    field: Mapped[str] = mapped_column(String(100), nullable=False)
+    presented_value: Mapped[str | None] = mapped_column(Text)
+    power: Mapped[str] = mapped_column(String(100), nullable=False, default="0")
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
 class NpcMemory(IdMixin, CampaignScopedMixin, CreatedAtMixin, Base):

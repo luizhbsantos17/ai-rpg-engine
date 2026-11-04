@@ -10,6 +10,7 @@ from app.persistence.models import (
     CanonFact,
     Definition,
     DiceRollRecord,
+    Disguise,
     Effect,
     Entity,
     EntityAttribute,
@@ -38,6 +39,28 @@ class QuestRepository(CampaignScopedRepository[Quest]):
         if only_active:
             query = query.where(Quest.status == "active")
         return list(self.session.scalars(query.order_by(Quest.created_at)))
+
+
+class DisguiseRepository(CampaignScopedRepository[Disguise]):
+    model = Disguise
+
+    def active_for(self, entity_id: str) -> list[Disguise]:
+        query = self._select().where(Disguise.entity_id == entity_id, Disguise.active.is_(True))
+        return list(self.session.scalars(query.order_by(Disguise.field)))
+
+    def for_field(self, entity_id: str, field: str) -> Disguise | None:
+        """Ocultação que vale para o campo: a específica dele ou a geral ("*")."""
+        active = {d.field: d for d in self.active_for(entity_id)}
+        return active.get(field) or active.get("*")
+
+    def upsert(self, entity_id: str, field: str, presented_value: str | None, power: str) -> Disguise:
+        query = self._select().where(Disguise.entity_id == entity_id, Disguise.field == field)
+        disguise = self.session.scalars(query).first()
+        if disguise is None:
+            return self.add(Disguise(entity_id=entity_id, field=field, presented_value=presented_value, power=power))
+        disguise.presented_value, disguise.power, disguise.active = presented_value, power, True
+        self.session.flush()
+        return disguise
 
 
 class KnowledgeRepository(CampaignScopedRepository[Knowledge]):

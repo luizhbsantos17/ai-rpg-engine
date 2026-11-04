@@ -130,6 +130,12 @@ def _entity_details(data: CampaignData, entity: Entity, aliases: _Aliases) -> li
     items = data.items.held_by(entity.id)[:MAX_ITEMS_PER_HOLDER]
     if items:
         details.append("  itens: " + ", ".join(_item(i, aliases) for i in items))
+    disguises = data.disguises.active_for(entity.id)
+    if disguises:
+        details.append("  ocultações: " + ", ".join(
+            f"{d.field} falsificado como \"{d.presented_value}\" (força {d.power})" if d.presented_value is not None
+            else f"{d.field} oculto (força {d.power})" for d in disguises
+        ))
     effects = data.effects.active_for(entity.id)
     if effects:
         details.append("  efeitos: " + ", ".join(
