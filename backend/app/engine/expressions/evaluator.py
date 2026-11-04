@@ -25,7 +25,7 @@ MAX_LENGTH = 500
 MAX_NODES = 300
 MAX_DEPTH = 40
 MAX_EXPONENT = 1000
-PRECISION = 50
+PRECISION = 100  # igual ao motor (operations/pipeline.py)
 
 Value = Decimal | bool | str
 
