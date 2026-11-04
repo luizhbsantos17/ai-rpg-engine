@@ -106,7 +106,22 @@ Docker é opcional nesta fase (facilita a hospedagem futura, mas complica a inst
 | `app/ai/structured.py` | JSON com esquema + validação + reenvio do erro |
 | `app/ai/context/game_state.py` | regras, ficha do protagonista e cena para o intérprete (apelidos e1, i1...) |
 | `app/ai/orchestrator/mechanics.py` | preparação da campanha → intérprete → motor → resumo guardado no turno |
-| `app/services/sheet.py` | ficha do protagonista para a interface |
+| `app/services/sheet.py` | ficha do protagonista (+ tempo do mundo, efeitos, missões visíveis) |
+
+### 3.2.2. Módulos da Etapa 3 (narrativa e mundo)
+| Módulo | Responsabilidade |
+|---|---|
+| `app/engine/time.py` | durações ("4h", "2d") e formato do relógio do mundo |
+| `app/engine/witness.py` | memória das testemunhas e notas "o que cada NPC presente sabe" para o narrador |
+| `app/persistence/repositories/memory.py` | resumos e busca FTS5 no passado (por campanha) |
+| `app/services/summaries.py` | resumidor a cada N turnos, em segundo plano |
+| `app/services/generation.py` + `app/ai/prompts/generator.py` | geração aleatória de campanhas (rascunho, manter campos, ingredientes) |
+| `app/ai/schemas/setup.py` | preparação: atributos, protagonista, local, fatos iniciais (incl. morte), companheiros |
+
+Contexto da IA por turno (o banco guarda tudo; vai só o necessário): regras do papel; campanha (título,
+premissa, segredos do mestre); fatos canônicos; últimos resumos; trechos antigos achados pela busca;
+estado da cena (tempo, protagonista, presentes com personalidade/objetivo/relação/conhecimento, missões);
+histórico recente; ação atual; e, para o narrador, os resultados reais do motor e o que cada NPC presente sabe.
 
 ### 3.3. API HTTP (Etapa 1)
 | Método e endereço | O que faz |
@@ -117,7 +132,10 @@ Docker é opcional nesta fase (facilita a hospedagem futura, mas complica a inst
 | `GET /api/campaigns/<id>` | dados visíveis da campanha (nunca os segredos do mestre) |
 | `GET /api/campaigns/<id>/history?after_seq=n` | turnos e mensagens, para retomar exatamente |
 | `DELETE /api/campaigns/<id>` | exclui: exige `{confirm_title}` igual ao título |
-| `GET /api/campaigns/<id>/sheet` | ficha do protagonista (`{"character": null}` antes da preparação) |
+| `GET /api/campaigns/<id>/sheet` | ficha do protagonista, tempo do mundo e missões visíveis |
+| `POST /api/campaigns/generate` | gera (ou gera de novo: `draft_id`, `keep`) campanha aleatória como rascunho |
+| `PATCH /api/campaigns/<id>` | ajusta título/premissa/gêneros de um rascunho |
+| `POST /api/campaigns/<id>/start` | começa o rascunho (passa a aceitar jogadas) |
 | `POST /api/campaigns/<id>/turns` | joga: `{turn_id (UUID do frontend), input}` → stream SSE |
 
 Eventos do stream do turno: `turn` (turno registrado + mensagem do jogador), `mechanics` (avisos
@@ -234,11 +252,12 @@ dela vira, por exemplo, `effect.apply` + `attribute.modify` + `knowledge.record`
 
 O catálogo pode crescer, mas cada verbo novo exige validador e testes.
 
-**Implementado na Etapa 2** (`app/engine/operations/`): `definition.create/amend`, `entity.create/update/
-remove/move`, `attribute.set/modify`, `resource.spend/restore`, `skill.grant/revoke/evolve/use`,
-`item.create/transfer/destroy`, `check.request`, `event.record`. Ficam para as próximas etapas:
-`effect.*` e `time.advance` (Etapa 3/4), `relationship.change`, `knowledge.record`, `canon.*`, `quest.*`,
-`event.schedule` (Etapa 3).
+**Implementado** (`app/engine/operations/`, 30 operações):
+- Etapa 2: `definition.create/amend`, `entity.create/update/remove/move`, `attribute.set/modify`,
+  `resource.spend/restore`, `skill.grant/revoke/evolve/use`, `item.create/transfer/destroy`, `check.request`,
+  `event.record`.
+- Etapa 3: `canon.assert/amend`, `time.advance`, `event.schedule`, `effect.apply/remove`,
+  `relationship.change`, `knowledge.record`, `memory.record`, `quest.create/update`.
 
 Regras do pipeline: cada operação é aplicada num *savepoint* (se for recusada, só ela é desfeita, inclusive
 apelidos `ref`); toda operação aceita `reason` e `when` (condição sobre um teste anterior, D-025); toda

@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [0.3.0] — Etapa 3 (concluída)
+- Registro canônico versionado (fatos confirmados, rumores, crenças falsas); fatos iniciais e regras de morte.
+- Relógio do mundo (`time.advance`), acontecimentos agendados com operações, efeitos com duração.
+- Relacionamentos direcionais multidimensionais com causa e histórico.
+- Conhecimento por observador e memória individual; testemunhas lembram o que viram.
+- Missões (principais, secundárias, ocultas, falháveis) e diário na interface.
+- Memória em camadas: resumos em segundo plano + busca FTS5 no passado, no contexto da IA.
+- Geração aleatória de campanhas com rascunho no servidor, manter campos, ingredientes do motor; tela nova.
+- Turmas/grupos com personalidade, objetivo, laço e atributos próprios.
+- Testado com Ollama real: geração de campanha em 7–9 s.
+
 ## [0.2.0] — Etapa 2 (concluída)
 - Turno em duas fases (D-013): preparação da campanha (1º turno), intérprete com JSON validado e reenvio
   do erro, motor aplica operações, narrador recebe os fatos; repetição segura via `turns.mechanics`.

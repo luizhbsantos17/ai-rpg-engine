@@ -149,3 +149,38 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
 ### D-030 — `skill.use` cobra custos de forma atômica
 - Decisão: usar habilidade é uma operação; o motor cobra todos os custos declarados na definição (número ou
   fórmula com `level` e atributos) ou nenhum. Recarga (cooldown) fica para a Etapa 4 (depende do relógio do mundo).
+
+### D-031 — Escala comum das relações
+- Decisão: dimensões de relacionamento vão de -100 a 100 e mudam no máximo ±50 por acontecimento; toda
+  mudança exige a causa (`cause`). Dimensões e rótulos são livres.
+- Motivo: uma escala comum deixa a IA consistente entre turnos; o limite por acontecimento evita "amor eterno"
+  num único gesto (SPEC 9.1: relações não são recompensas automáticas).
+
+### D-032 — Memória das testemunhas sem chamada à IA
+- Decisão: ao fim das mecânicas de cada turno, os NPCs ativos no mesmo local do protagonista ganham uma
+  lembrança curta (ação do jogador + resultados). NPCs longe não ficam sabendo.
+- Motivo: SPEC 8.2 (só sabe o que presenciou) sem custo extra; lembranças especiais usam `memory.record`.
+
+### D-033 — Busca no passado com FTS5 do SQLite
+- Decisão: tabela virtual `memory_fts` (criada à mão na migração; `unicode61 remove_diacritics 2`), acessada só
+  por `MemorySearchRepository`, sempre filtrada por `campaign_id`; apagar campanha limpa o índice.
+- Limitação: específico do SQLite. Na troca por PostgreSQL, o repositório precisa de outra implementação
+  (ex.: `tsvector`). Embeddings ficam como melhoria futura (ARCHITECTURE §7).
+
+### D-034 — Resumos em segundo plano
+- Decisão: a cada `AI_SUMMARY_EVERY` turnos (padrão 8) um resumo é gerado numa thread depois do turno; com
+  `APP_ENV=test` roda na hora (testes determinísticos). Falha da IA só adia o resumo.
+
+### D-035 — Campanha gerada nasce como rascunho no servidor
+- Decisão: `POST /api/campaigns/generate` cria uma campanha com status `draft`; segredos ficam em
+  `campaign_intro.gm_secret` e nunca vão para o navegador (nem nas respostas da API). Gerar de novo atualiza o
+  mesmo rascunho, preservando os campos marcados; jogadas só depois de `start`.
+- Ingredientes de inspiração sorteados pelo motor (semente registrada) para variedade; a IA pode ignorá-los.
+
+### D-036 — Agendamentos são segredo do mestre
+- Decisão: `event.schedule` não é narrado nem mostrado ao jogador; apelidos da lista viram ids ao agendar;
+  operações agendadas não podem avançar o tempo; cada agendamento dispara uma única vez, em ordem de data.
+
+### D-037 — Fatos canônicos versionados por chave
+- Decisão: `canon.assert` recusa chave já existente; `canon.amend` exige motivo e cria versão nova (a antiga
+  fica com `is_current=false`). Status: confirmado, rumor ou crença falsa.

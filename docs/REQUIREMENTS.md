@@ -14,13 +14,13 @@ Status possíveis: `pendente`, `parcial`, `pronto` (só com teste executado).
 | RF-06 | Pipeline de operações estruturadas com validação | 17.5, 20 | 2 | pronto (qualidade das escolhas depende do modelo) |
 | RF-07 | Testes com dados, modificadores e seeds registradas | 7.2 | 2 | pronto |
 | RF-08 | Progressão sem teto fixo | 5.2 | 2 | parcial (atributos e níveis sem teto; regras de progressão próprias na Etapa 4) |
-| RF-09 | Geração aleatória de campanhas, com regenerar, personalizar e preservar elementos | 3 | 3 | pendente |
-| RF-10 | Geração de protagonista, reencarnação e turmas com indivíduos distintos | 4 | 3 | pendente |
-| RF-11 | Registro canônico com versões (sem sobrescrever o passado) | 3.4 | 3 | pendente |
-| RF-12 | NPCs com memória individual, objetivos e autonomia | 8 | 3 | pendente |
-| RF-13 | Relacionamentos multidimensionais e romance | 9 | 3 | pendente |
-| RF-14 | Missões tradicionais e emergentes | 10.1 | 3 | pendente |
-| RF-15 | Relógio do mundo sem avanço offline; eventos mundiais | 10.2–10.3 | 3–4 | pendente |
+| RF-09 | Geração aleatória de campanhas, com regenerar, personalizar e preservar elementos | 3 | 3 | pronto |
+| RF-10 | Geração de protagonista, reencarnação e turmas com indivíduos distintos | 4 | 3 | parcial (protagonista e turma prontos; reencarnação detalhada depende da premissa) |
+| RF-11 | Registro canônico com versões (sem sobrescrever o passado) | 3.4 | 3 | pronto |
+| RF-12 | NPCs com memória individual, objetivos e autonomia | 8 | 3 | parcial (memória, conhecimento, personalidade e objetivos prontos; simulação fora de cena na Etapa 4) |
+| RF-13 | Relacionamentos multidimensionais e romance | 9 | 3 | pronto (dimensões livres incluem afeto/ciúme; romance é narrativo) |
+| RF-14 | Missões tradicionais e emergentes | 10.1 | 3 | pronto |
+| RF-15 | Relógio do mundo sem avanço offline; eventos mundiais | 10.2–10.3 | 3–4 | parcial (relógio e agendamentos prontos; eventos mundiais autônomos na Etapa 4) |
 | RF-16 | Combate híbrido (narrativo + mecânico) | 7.1 | 4 | pendente |
 | RF-17 | Avaliação, ocultação e falsificação de informações | 6 | 4 | pendente |
 | RF-18 | Regras de morte por universo | 7.4 | 4 | pendente |

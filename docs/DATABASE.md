@@ -25,7 +25,9 @@ Implementadas na Etapa 1 (migração `2026_11_03_2328-32791f394f68`): `users`, `
 Etapa 2 (migração `2026_11_03_2353-f2dd50ffa852`): `definitions`, `entities`, `entity_attributes`,
 `entity_skills`, `item_instances`, `effects`, `dice_rolls`; e (`2026_11_04_0016-d35448393fd0`)
 `turns.mechanics` (resumo das mecânicas aplicadas no turno, para repetição segura).
-As demais tabelas abaixo são o plano das próximas etapas. `world_clock` = minutos do mundo desde o início da campanha (inteiro).
+Etapa 3 (migrações 4 a 9): `canon_facts`, `scheduled_events`, `relationships`, `relationship_events`,
+`knowledge`, `npc_memories`, `quests`, `summaries` e a tabela virtual FTS5 `memory_fts` (busca no passado,
+criada à mão; D-033). As demais tabelas abaixo são o plano das próximas etapas. `world_clock` = minutos do mundo desde o início da campanha (inteiro).
 `ai_requests.request_messages` guarda as mensagens enviadas à IA (para `/debug show_context`).
 
 ### Definições (o "sistema de RPG" de cada campanha)
