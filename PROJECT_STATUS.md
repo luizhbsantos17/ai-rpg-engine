@@ -8,24 +8,24 @@
 | 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-030) |
 | 1 — Fundação | **concluída** e verificada com Ollama real (falta só o usuário olhar a interface) |
 | 2 — Motor de RPG | **concluída**: critério verificado com Ollama real (operações alteram dados reais e persistentes) |
-| 3 — Narrativa e mundo | **em andamento**: 3.1 (registro canônico) e 3.2 (relógio, agendamentos, efeitos) concluídas |
+| 3 — Narrativa e mundo | **em andamento**: 3.1 a 3.5 concluídas (cânone, relógio, relacionamentos, conhecimento/memória, missões) |
 | 4 a 7 | não iniciadas |
 
 ## Última tarefa concluída
-Etapa 3.2 — relógio do mundo (`time.advance`), acontecimentos agendados (`event.schedule`), efeitos com duração.
+Etapa 3.5 — missões (`quest.create`/`quest.update`, ocultas, diário na interface).
 
-## Próxima tarefa: Etapa 3.3 — Relacionamentos
+## Próxima tarefa: Etapa 3.6 — Memória em camadas (resumos + busca FTS5)
 Critério da Etapa 3 (SPEC Parte 23): a campanha possui continuidade narrativa e acontecimentos persistentes.
 Subtarefas:
 1. ~~**Registro canônico**~~ **Concluída**: `canon_facts` versionado; `canon.assert`/`canon.amend`; fatos no
    contexto do intérprete e do narrador; preparação registra fatos iniciais e regras de morte.
 2. ~~**Relógio do mundo**~~ **Concluída**: `time.advance`, `event.schedule` (operações aplicadas ao vencer),
    `effect.apply`/`effect.remove` com expiração; tempo e efeitos na ficha.
-3. **Relacionamentos** (SPEC 9): `relationships` (direcional, várias dimensões) + `relationship_events`;
+3. ~~**Relacionamentos**~~ **Concluída** (SPEC 9): `relationships` (direcional, várias dimensões) + `relationship_events`;
    operação `relationship.change` sempre com o acontecimento que causou.
-4. **Conhecimento e memória de NPCs** (SPEC 6.5 e 8.2): `knowledge` + `npc_memories`; `knowledge.record`;
+4. ~~**Conhecimento e memória de NPCs**~~ **Concluída** (SPEC 6.5 e 8.2; testemunhas lembram automaticamente): `knowledge` + `npc_memories`; `knowledge.record`;
    NPCs presentes numa cena guardam memória do que viram; contexto de NPC só com o que ele sabe.
-5. **Missões** (SPEC 10.1): `quests` + `quest.create` / `quest.update`; painel na interface.
+5. ~~**Missões**~~ **Concluída** (SPEC 10.1): `quests` + `quest.create` / `quest.update`; painel na interface.
 6. **Memória em camadas** (SPEC 15.1): `summaries` por cena/arco gerados pela IA "resumidora"; busca FTS5 em
    eventos e resumos para recuperar fatos antigos sem mandar o histórico inteiro.
 7. **Geração de campanhas** (SPEC 3): campanha aleatória pela IA, gerar de novo, preservar elementos,
@@ -62,8 +62,8 @@ Subtarefas:
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo, FakeProvider) | **230 passed**, 1 deselected (externo) |
-| 2026-11-04 | frontend `npm test` (Vitest) | **27 passed** |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo, FakeProvider) | **242 passed**, 1 deselected (externo) |
+| 2026-11-04 | frontend `npm test` (Vitest) | **29 passed** |
 | 2026-11-04 | frontend `npm run build` | ok (113 kB JS / 10 kB CSS) |
 | 2026-11-04 | `pytest -m external` com Ollama real (`qwen2.5:1.5b`) | **1 passed** |
 | 2026-11-04 | manual: `instalar.cmd`, `iniciar.cmd`, backend + Vite pelo proxy | ok |
