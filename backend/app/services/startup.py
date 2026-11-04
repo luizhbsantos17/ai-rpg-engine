@@ -16,6 +16,7 @@ from app.persistence.migrations import upgrade_to_head
 from app.persistence.repositories.narrative import fail_interrupted_turns
 from app.providers import AIProvider
 from app.providers.registry import build_provider
+from app.services.auto_backup import AutoBackupService
 from app.services.campaign_settings import CampaignSettingsService
 from app.services.campaigns import CampaignService
 from app.services.generation import CampaignGenerationService
@@ -50,7 +51,13 @@ class Services:
         self.images = ImageService(db, build_image_provider(settings), settings.data_dir)
         self.summaries = SummaryService(db, provider, settings)
         self.generation = CampaignGenerationService(db, provider, settings)
-        self.turns = TurnOrchestrator(db, provider, settings, on_turn_completed=self.summaries.schedule)
+        self.auto_backup = AutoBackupService(db, settings)
+        self.turns = TurnOrchestrator(db, provider, settings, on_turn_completed=self._after_turn)
+
+    def _after_turn(self, campaign_id: str) -> None:
+        """Tarefas depois de cada turno concluído: cópia automática e resumo da história."""
+        self.auto_backup.after_turn(campaign_id)
+        self.summaries.schedule(campaign_id)
 
 
 def initialize_services(flask_app: Flask, settings: Settings) -> Services:

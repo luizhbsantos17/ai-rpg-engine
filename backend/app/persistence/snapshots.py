@@ -137,6 +137,19 @@ def list_snapshots(data_dir: Path, campaign_id: str) -> list[dict[str, Any]]:
     return items
 
 
+AUTO_LABEL_PREFIX = "automatico"
+
+
+def prune_automatic(data_dir: Path, campaign_id: str, keep: int) -> int:
+    """Apaga snapshots AUTOMÁTICOS antigos, mantendo os `keep` mais recentes. Manuais nunca são apagados."""
+    automatic = [s for s in list_snapshots(data_dir, campaign_id) if s["label"].startswith(AUTO_LABEL_PREFIX)]
+    removed = 0
+    for old in automatic[keep:]:
+        (snapshot_dir(data_dir, campaign_id) / f"{old['id']}.json").unlink(missing_ok=True)
+        removed += 1
+    return removed
+
+
 def read_snapshot(data_dir: Path, campaign_id: str, snapshot_id: str) -> dict[str, Any]:
     if not snapshot_id or any(ch in snapshot_id for ch in "/\\.."):
         raise SnapshotError("Identificador de snapshot inválido.")

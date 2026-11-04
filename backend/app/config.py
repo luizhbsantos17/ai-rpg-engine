@@ -49,6 +49,7 @@ class Settings:
     ai_json_attempts: int  # tentativas quando a IA devolve JSON inválido (D-008)
     ai_summary_every: int  # a cada quantos turnos a IA resume a história (0 = nunca)
     ai_simulation_minutes: int  # tempo mínimo passado num turno para simular o mundo fora de cena (0 = nunca)
+    auto_snapshot_every: int  # snapshot automático da campanha a cada N turnos concluídos (0 = nunca)
     ai_spend_limit_per_session: Decimal
     image_provider: str
     # Segredos: repr=False impede que apareçam em logs ou mensagens de erro.
@@ -117,6 +118,7 @@ def load_settings(
         ai_summary_every=_parse_number("AI_SUMMARY_EVERY", get("AI_SUMMARY_EVERY", "8"), int, 0, 100),
         ai_simulation_minutes=_parse_number("AI_SIMULATION_MINUTES", get("AI_SIMULATION_MINUTES", "360"), int,
                                             0, 10_000_000),
+        auto_snapshot_every=_parse_number("AUTO_SNAPSHOT_EVERY", get("AUTO_SNAPSHOT_EVERY", "20"), int, 0, 10_000),
         ai_spend_limit_per_session=_parse_spend_limit(get("AI_SPEND_LIMIT_PER_SESSION", "0")),
         image_provider=image_provider,
         secret_key=secret_key or DEV_SECRET_KEY,
