@@ -34,6 +34,8 @@ Operações (campo "op" + campos):
 - check.request {ref, actor, target, label, dice: "1d20", modifier, difficulty, critical_success, critical_failure}
   modifier e difficulty: número ou fórmula com atributos (ex.: "forca - target.defesa", "skills.esgrima * 2").
 - event.record {summary, entities}: acontecimento importante sem mudança mecânica.
+- canon.assert {key, subject, statement, status: confirmed|rumor|false}: registra um fato duradouro do mundo.
+- canon.amend {key, statement, status, reason}: muda um fato registrado (exige reason).
 Qualquer operação aceita "reason" (motivo) e "when": {"check": "<ref de um check.request anterior>", "success": true|false}
 para só acontecer se aquele teste tiver sucesso (true) ou falhar (false).
 Referências: "player" é o protagonista; use os apelidos do estado (e1, i1...) ou o "ref" que você criar na mesma resposta.
@@ -49,6 +51,8 @@ Regras:
    recurso, como vida) e o protagonista com entity.create (is_player: true) e valores iniciais. Crie também o
    local inicial e coloque o protagonista nele.
 7. Não invente mudanças grandes que o jogador não causou. O mundo pode reagir, mas com coerência.
+8. Nunca contradiga os fatos do mundo do estado. Se a ação revelar um fato importante e duradouro, registre
+   com canon.assert; se um fato realmente mudar, use canon.amend com o motivo.
 
 Exemplo (estado com player e e2 = Lobo; atributos forca e vida definidos; ação "Ataco o lobo com minha faca"):
 {"intent": "atacar o lobo com a faca", "operations": [

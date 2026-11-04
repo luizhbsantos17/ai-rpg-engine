@@ -182,6 +182,25 @@ class CheckRequest(Operation):
     critical_failure: Number | None = None  # resultado natural máximo para falha crítica (ex.: 1)
 
 
+class CanonAssert(Operation):
+    """Registra um fato do mundo (regra, história, quem governa...). Não pode contradizer em silêncio."""
+
+    op: Literal["canon.assert"]
+    key: Key
+    subject: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+    statement: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
+    status: Literal["confirmed", "rumor", "false"] = "confirmed"
+
+
+class CanonAmend(Operation):
+    """Muda um fato já registrado: cria nova versão; exige motivo (reason)."""
+
+    op: Literal["canon.amend"]
+    key: Key
+    statement: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)] | None = None
+    status: Literal["confirmed", "rumor", "false"] | None = None
+
+
 class EventRecord(Operation):
     """Acontecimento narrativo importante, sem mudança mecânica (SPEC 15.2)."""
 
@@ -195,7 +214,7 @@ AnyOperation = Annotated[
     DefinitionCreate | DefinitionAmend | EntityCreate | EntityUpdate | EntityRemove | EntityMove
     | AttributeSet | AttributeModify | ResourceSpend | ResourceRestore
     | SkillGrant | SkillRevoke | SkillEvolve | SkillUse | ItemCreate | ItemTransfer | ItemDestroy
-    | CheckRequest | EventRecord,
+    | CheckRequest | CanonAssert | CanonAmend | EventRecord,
     Field(discriminator="op"),
 ]
 
@@ -204,7 +223,7 @@ OPERATION_NAMES = (
     "definition.create", "definition.amend", "entity.create", "entity.update", "entity.remove", "entity.move",
     "attribute.set", "attribute.modify", "resource.spend", "resource.restore",
     "skill.grant", "skill.revoke", "skill.evolve", "skill.use", "item.create", "item.transfer", "item.destroy",
-    "check.request", "event.record",
+    "check.request", "canon.assert", "canon.amend", "event.record",
 )
 
 

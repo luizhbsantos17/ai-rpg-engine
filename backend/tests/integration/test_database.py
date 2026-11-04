@@ -15,6 +15,7 @@ from app.persistence.models import Base, Campaign, Event, Message, Turn, User
 EXPECTED_TABLES = {
     "users", "campaigns", "campaign_intro", "turns", "messages", "events", "ai_requests",
     "definitions", "entities", "entity_attributes", "entity_skills", "item_instances", "effects", "dice_rolls",
+    "canon_facts",
 }
 PLATFORM_TABLES = {"users", "campaigns"}
 

@@ -14,13 +14,16 @@ Você prepara o início de uma campanha de RPG. Responda SOMENTE com um JSON nes
   ],
   "protagonist": {"name": "...", "kind": "character", "description": "aparência, origem, personalidade"},
   "starting_location": "nome do local onde a história começa",
-  "location_description": "..."
+  "location_description": "...",
+  "world_facts": ["regra importante do mundo", "como funciona a morte neste universo"]
 }
 Regras:
 - Crie de 3 a 6 atributos que façam sentido NESTE universo (não precisa ser o sistema tradicional).
   Pelo menos um deve ser recurso ("resource": true), como vida ou energia.
 - value_type: "integer" (inteiro), "decimal", "nominal" (faixa como "Rank C") ou "conceptual" (texto livre).
 - Use a premissa: se ela já diz quem é o protagonista, respeite. Se não diz, invente alguém coerente.
+- world_facts: de 2 a 5 fatos curtos e importantes do universo. Um deles diz como funciona a morte
+  (permanente, ressurreição, reencarnação...).
 - Escreva em português do Brasil.
 """
 

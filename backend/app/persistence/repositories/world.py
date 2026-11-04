@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy import or_
 
 from app.persistence.models import (
+    CanonFact,
     Definition,
     DiceRollRecord,
     Entity,
@@ -52,6 +53,34 @@ class DefinitionRepository(CampaignScopedRepository[Definition]):
                 data=data, supersedes_id=previous.id, created_by=created_by,
             )
         )
+
+
+class CanonRepository(CampaignScopedRepository[CanonFact]):
+    model = CanonFact
+
+    def current(self, key: str) -> CanonFact | None:
+        query = self._select().where(CanonFact.key == key, CanonFact.is_current.is_(True))
+        return self.session.scalars(query).first()
+
+    def list_current(self, limit: int | None = None) -> list[CanonFact]:
+        query = self._select().where(CanonFact.is_current.is_(True)).order_by(CanonFact.created_at.desc())
+        if limit is not None:
+            query = query.limit(limit)
+        return list(reversed(list(self.session.scalars(query))))
+
+    def history(self, key: str) -> list[CanonFact]:
+        return list(self.session.scalars(self._select().where(CanonFact.key == key).order_by(CanonFact.version)))
+
+    def assert_fact(self, key: str, subject: str, statement: str, status: str, created_by: str) -> CanonFact:
+        return self.add(CanonFact(key=key, subject=subject, statement=statement, status=status, created_by=created_by))
+
+    def amend(self, previous: CanonFact, statement: str, status: str, reason: str, created_by: str) -> CanonFact:
+        previous.is_current = False
+        self.session.flush()
+        return self.add(CanonFact(
+            key=previous.key, subject=previous.subject, statement=statement, status=status,
+            version=previous.version + 1, supersedes_id=previous.id, reason=reason, created_by=created_by,
+        ))
 
 
 class EntityRepository(CampaignScopedRepository[Entity]):

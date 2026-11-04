@@ -81,6 +81,10 @@ def _applied_line(op: str, r: dict[str, Any]) -> str:
         return f"{r['item']} ×{r['destroyed']} foi destruído."
     if op == "event.record":
         return f"Acontecimento: {r['summary']}"
+    if op == "canon.assert":
+        return f"Fato do mundo estabelecido ({r['status']}): {r['statement']}"
+    if op == "canon.amend":
+        return f"Fato do mundo mudou: antes \"{r['previous']}\", agora \"{r['statement']}\"."
     if op in ("definition.create", "definition.amend"):
         return ""  # regras não precisam ser narradas
     return f"{op} aplicado."

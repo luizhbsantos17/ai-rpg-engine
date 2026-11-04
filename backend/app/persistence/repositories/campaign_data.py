@@ -12,6 +12,7 @@ from app.persistence.repositories.narrative import (
 )
 from app.persistence.repositories.world import (
     AttributeRepository,
+    CanonRepository,
     DefinitionRepository,
     DiceRollRepository,
     EntityRepository,
@@ -36,6 +37,7 @@ class CampaignData:
         self.skills = SkillRepository(session, campaign_id)
         self.items = ItemRepository(session, campaign_id)
         self.dice_rolls = DiceRollRepository(session, campaign_id)
+        self.canon = CanonRepository(session, campaign_id)
 
     def savepoint(self):
         """Transação interna: se a operação falhar, desfaz só ela (o resto do turno continua)."""

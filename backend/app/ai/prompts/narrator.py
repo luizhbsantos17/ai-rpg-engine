@@ -55,6 +55,13 @@ class CampaignBrief:
     genre_tags: list[str] = field(default_factory=list)
     player_visible: dict[str, Any] = field(default_factory=dict)
     gm_secret: dict[str, Any] = field(default_factory=dict)
+    canon: list[tuple[str, str]] = field(default_factory=list)  # (status, afirmação) do registro canônico
+
+
+CANON_LABELS = {
+    "rumor": "(rumor: pode ou não ser verdade) ",
+    "false": "(crença FALSA: muitos acreditam, mas não é verdade; não revele) ",
+}
 
 
 def build_narrator_system_prompt(brief: CampaignBrief, mechanics: bool = False) -> str:
@@ -68,4 +75,7 @@ def build_narrator_system_prompt(brief: CampaignBrief, mechanics: bool = False) 
     if brief.gm_secret:
         lines.append("- Segredos do mestre (NUNCA revele diretamente; deixe que sejam descobertos):")
         lines.extend(f"  - {key}: {value}" for key, value in brief.gm_secret.items())
+    if brief.canon:
+        lines.append("- Fatos estabelecidos do mundo (respeite; não contradiga):")
+        lines.extend(f"  - {CANON_LABELS.get(status, '')}{statement}" for status, statement in brief.canon)
     return "\n".join(lines)

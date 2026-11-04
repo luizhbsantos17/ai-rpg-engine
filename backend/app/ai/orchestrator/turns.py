@@ -55,6 +55,7 @@ logger = logging.getLogger(__name__)
 MAX_INPUT_CHARS = 4000
 HISTORY_FETCH_LIMIT = 60
 RECENT_FOR_INTERPRETER = 4
+CANON_IN_CONTEXT = 40
 NARRATOR_ROLE = "narrator"
 INTERRUPTED_MESSAGE = "Jogada interrompida antes do fim (conexão encerrada). Tente de novo."
 INTERNAL_ERROR_MESSAGE = "Erro interno ao processar a jogada. Tente de novo; se persistir, veja o log do servidor."
@@ -121,6 +122,7 @@ class TurnOrchestrator:
                     genre_tags=list(campaign.genre_tags),
                     player_visible=dict(campaign.intro.player_visible) if campaign.intro else {},
                     gm_secret=dict(campaign.intro.gm_secret) if campaign.intro else {},
+                    canon=[(f.status, f.statement) for f in data.canon.list_current(CANON_IN_CONTEXT)],
                 )
                 mechanics = None
                 if self.settings.ai_mechanics:

@@ -15,6 +15,8 @@ from app.persistence.repositories import CampaignData
 MAX_DEFINITIONS = 60
 MAX_SCENE_ENTITIES = 15
 MAX_ITEMS_PER_HOLDER = 20
+MAX_CANON_FACTS = 40
+STATUS_LABELS = {"confirmed": "confirmado", "rumor": "rumor", "false": "crença falsa"}
 
 
 @dataclass
@@ -51,6 +53,12 @@ def build_game_state(data: CampaignData) -> GameStateSnapshot:
             lines.append(f"- ... e mais {len(definitions) - MAX_DEFINITIONS} definições.")
     else:
         lines.append("Nenhuma regra definida ainda (nenhum atributo, habilidade ou item).")
+
+    facts = data.canon.list_current(MAX_CANON_FACTS)
+    if facts:
+        lines.append("")
+        lines.append("Fatos do mundo já estabelecidos (não contradiga; para mudar use canon.amend):")
+        lines.extend(f"- [{STATUS_LABELS.get(f.status, f.status)}] {f.key}: {f.statement}" for f in facts)
 
     player = data.entities.player()
     lines.append("")

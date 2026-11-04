@@ -35,6 +35,8 @@ class CampaignSetup(BaseModel):
     protagonist: SetupProtagonist
     starting_location: str = Field(min_length=1, max_length=200)
     location_description: str = Field(default="", max_length=2000)
+    world_facts: list[str] = Field(default_factory=list, max_length=8,
+                                   description="fatos importantes do mundo, incluindo como funciona a morte")
 
     def to_operations(self) -> list[dict[str, Any]]:
         operations: list[dict[str, Any]] = []
@@ -53,6 +55,10 @@ class CampaignSetup(BaseModel):
             values[key] = attribute.initial_value
         operations.append({"op": "entity.create", "ref": "local_inicial", "kind": "location",
                            "name": self.starting_location, "data": {"description": self.location_description}})
+        facts = [fact.strip() for fact in self.world_facts if fact.strip()]
+        for index, fact in enumerate(facts, start=1):
+            operations.append({"op": "canon.assert", "key": f"mundo_{index}", "subject": "mundo",
+                               "statement": fact[:2000], "reason": "fato inicial do universo"})
         operations.append({"op": "entity.create", "ref": "protagonista", "kind": self.protagonist.kind or "character",
                            "name": self.protagonist.name, "is_player": True, "location": "local_inicial",
                            "data": {"description": self.protagonist.description}, "attributes": values})
