@@ -63,6 +63,8 @@ class EntityCreate(Operation):
     is_player: bool = False
     data: dict[str, Any] = Field(default_factory=dict)
     attributes: dict[Key, Number | AttributeValue] = Field(default_factory=dict)
+    # Nível de simulação (SPEC 8.4): 1 = relevante (a IA simula fora de cena), 2 = distante, 3 = dormente.
+    sim_tier: int | None = Field(default=None, ge=0, le=3)
 
 
 class EntityUpdate(Operation):
@@ -71,6 +73,7 @@ class EntityUpdate(Operation):
     name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)] | None = None
     status: Literal["active", "dead"] | None = None
     data: dict[str, Any] = Field(default_factory=dict)  # mesclado ao que já existe
+    sim_tier: int | None = Field(default=None, ge=0, le=3)
 
 
 class EntityRemove(Operation):

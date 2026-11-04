@@ -20,6 +20,7 @@ from app.ai.prompts.interpreter import build_interpreter_messages
 from app.ai.prompts.narrator import CampaignBrief
 from app.ai.prompts.setup import build_setup_messages
 from app.ai.schemas.interpreter import InterpreterOutput
+from app.ai.orchestrator.simulation import WorldSimulation
 from app.ai.schemas.setup import CampaignSetup
 from app.ai.structured import StructuredResult, request_structured
 from app.config import Settings
@@ -68,6 +69,7 @@ class MechanicsPhase:
         self.db = db
         self.provider = provider
         self.settings = settings
+        self.simulation = WorldSimulation(db, provider, settings)
 
     def run(self, campaign_id: str, turn_id: str, model: str, mechanics: MechanicsInput) -> MechanicsResult:
         """Erros do provedor (conexão, tempo esgotado) sobem; JSON inválido não interrompe o turno."""
@@ -103,7 +105,22 @@ class MechanicsPhase:
             operations = interpretation.value.operations
         else:
             summary["interpreter_error"] = interpretation.attempts[-1].error
-        return self._apply_and_save(campaign_id, turn_id, mechanics, operations, aliases, outcomes, summary)
+        result = self._apply_and_save(campaign_id, turn_id, mechanics, operations, aliases, outcomes, summary)
+        self._simulate_world_if_time_passed(campaign_id, turn_id, model, mechanics, result.summary)
+        return result
+
+    def _simulate_world_if_time_passed(self, campaign_id, turn_id, model, mechanics: MechanicsInput, summary) -> None:
+        elapsed = sum(o["result"].get("minutes", 0) for o in summary["outcomes"]
+                      if o["op"] == "time.advance" and o["status"] == "applied")
+        if not self.simulation.should_run(elapsed):
+            return
+        simulated = self.simulation.run(campaign_id, turn_id, model, mechanics.brief, elapsed, mechanics.campaign_seed)
+        summary["simulation"] = simulated
+        with self.db.transaction() as session:
+            turn = CampaignData(session, campaign_id).turns.get(turn_id)
+            if turn is not None:
+                turn.mechanics = dict(summary)  # objeto novo: o JSON é regravado
+                session.flush()
 
     # ---------- partes com banco (transações curtas) ----------
 

@@ -24,7 +24,8 @@ Operações (campo "op" + campos):
   Item: data {name, description, stackable}.
 - definition.amend {kind, key, data, reason}: muda uma regra (nova versão; exige reason).
 - entity.create {ref, kind, name, location, is_player, attributes: {chave: valor ou {"value": x, "max": y}}}
-- entity.update {entity, name, status: active|dead, data} · entity.move {entity, to} · entity.remove {entity}
+- entity.update {entity, name, status: active|dead, data, sim_tier} · entity.move {entity, to} · entity.remove {entity}
+  sim_tier: 1 = personagem importante (age sozinho quando o tempo passa), 2 = distante, 3 = dormente.
 - attribute.set {entity, key, value, max} · attribute.modify {entity, key, delta}  (delta: número ou fórmula)
 - resource.spend {entity, key, amount} · resource.restore {entity, key, amount}
 - skill.grant {entity, key, level} · skill.evolve {entity, key, levels} · skill.revoke {entity, key}

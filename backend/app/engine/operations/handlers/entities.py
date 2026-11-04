@@ -9,16 +9,19 @@ from app.engine.operations.schemas import EntityCreate, EntityMove, EntityRemove
 from app.persistence.models import Entity
 
 MAX_LOCATION_DEPTH = 50
+DEFAULT_SIM_TIER = 2
 
 
 def entity_create(op: EntityCreate, ctx: OperationContext) -> dict:
     if op.is_player and ctx.data.entities.player() is not None:
         raise OperationRejected("A campanha já tem um protagonista.")
     location = ctx.entity(op.location) if op.location else None
+    # Padrão: protagonista em cena (0); os demais "distantes" (2) até a IA marcá-los como relevantes (1).
+    sim_tier = op.sim_tier if op.sim_tier is not None else (0 if op.is_player else DEFAULT_SIM_TIER)
     entity = ctx.data.entities.add(
         Entity(
             kind=op.kind, name=op.name, is_player=op.is_player, data=dict(op.data),
-            location_id=location.id if location else None,
+            location_id=location.id if location else None, sim_tier=sim_tier,
         )
     )
     ctx.register_ref(op.ref, entity.id)
@@ -38,6 +41,9 @@ def entity_update(op: EntityUpdate, ctx: OperationContext) -> dict:
     if op.data:
         entity.data = {**entity.data, **op.data}
         changes["data"] = sorted(op.data)
+    if op.sim_tier is not None and op.sim_tier != entity.sim_tier:
+        changes["sim_tier"] = {"from": entity.sim_tier, "to": op.sim_tier}
+        entity.sim_tier = op.sim_tier
     if not changes:
         raise OperationRejected("entity.update sem nenhuma mudança.")
     ctx.data.session.flush()

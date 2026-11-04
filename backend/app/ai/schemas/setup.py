@@ -115,7 +115,7 @@ class CampaignSetup(BaseModel):
                                       "goal": companion.goal}.items() if v}
             operations.append({"op": "entity.create", "ref": ref, "kind": companion.kind or "character",
                                "name": companion.name, "location": "local_inicial", "data": data,
-                               "attributes": attributes})
+                               "attributes": attributes, "sim_tier": 1})  # companheiros são relevantes
             if companion.bond.strip():
                 operations.append({"op": "relationship.change", "source": ref, "target": "protagonista",
                                    "add_labels": [companion.bond.strip()], "cause": "como tudo começou"})

@@ -26,7 +26,7 @@ def make_settings(tmp_path, template, **extra):
     data_dir.mkdir(exist_ok=True)
     shutil.copy(template, data_dir / "rpg.db")
     environ = {"APP_ENV": "test", "DATA_DIR": str(data_dir), "AI_PROVIDER": "fake", "AI_MODEL": "fake-model",
-               "AI_MECHANICS": "false", **extra}
+               "AI_MECHANICS": "false", "AI_SIMULATION_MINUTES": "0", **extra}
     # env_file=None: os testes nunca leem o .env real do usuário.
     return load_settings(environ=environ, env_file=None)
 
