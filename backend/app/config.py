@@ -23,6 +23,8 @@ VALID_ENVS = ("development", "test", "production")
 PLACEHOLDER_VALUES = frozenset({"troque-por-um-texto-aleatorio-longo", "troque-esta-senha"})
 DEV_SECRET_KEY = "dev-only-insecure-secret-key"
 SQLITE_PREFIX = "sqlite:///"
+# "fake" (respostas roteirizadas) só é aceito em APP_ENV=test: nunca simula IA de verdade.
+AI_PROVIDERS = ("ollama", "fake")
 
 
 class ConfigError(Exception):
@@ -36,6 +38,12 @@ class Settings:
     database_url: str
     ollama_base_url: str
     openai_compat_base_url: str | None
+    ai_provider: str
+    ai_model: str | None  # None: usa o primeiro modelo instalado no provedor
+    ai_temperature: float
+    ai_max_output_tokens: int
+    ai_context_window: int
+    ai_timeout_seconds: float
     ai_spend_limit_per_session: Decimal
     image_provider: str
     # Segredos: repr=False impede que apareçam em logs ou mensagens de erro.
@@ -69,6 +77,12 @@ def load_settings(
         get("DATABASE_URL") or SQLITE_PREFIX + (data_dir / "rpg.db").as_posix()
     )
 
+    ai_provider = get("AI_PROVIDER", "ollama")
+    if ai_provider not in AI_PROVIDERS:
+        raise ConfigError(f"AI_PROVIDER={ai_provider!r} inválido. Use um de: {', '.join(AI_PROVIDERS)}.")
+    if ai_provider == "fake" and app_env != "test":
+        raise ConfigError("AI_PROVIDER=fake só pode ser usado nos testes automatizados (APP_ENV=test).")
+
     secret_key = get("APP_SECRET_KEY")
     admin_password = get("ADMIN_PASSWORD")
     if app_env == "production":
@@ -81,6 +95,12 @@ def load_settings(
         database_url=database_url,
         ollama_base_url=get("OLLAMA_BASE_URL", "http://localhost:11434"),
         openai_compat_base_url=get("OPENAI_COMPAT_BASE_URL"),
+        ai_provider=ai_provider,
+        ai_model=get("AI_MODEL"),
+        ai_temperature=_parse_number("AI_TEMPERATURE", get("AI_TEMPERATURE", "0.8"), float, 0, 2),
+        ai_max_output_tokens=_parse_number("AI_MAX_OUTPUT_TOKENS", get("AI_MAX_OUTPUT_TOKENS", "1024"), int, 16, 1_000_000),
+        ai_context_window=_parse_number("AI_CONTEXT_WINDOW", get("AI_CONTEXT_WINDOW", "8192"), int, 512, 10_000_000),
+        ai_timeout_seconds=_parse_number("AI_TIMEOUT_SECONDS", get("AI_TIMEOUT_SECONDS", "600"), float, 1, 86_400),
         ai_spend_limit_per_session=_parse_spend_limit(get("AI_SPEND_LIMIT_PER_SESSION", "0")),
         image_provider=get("IMAGE_PROVIDER", "none"),
         secret_key=secret_key or DEV_SECRET_KEY,
@@ -116,6 +136,16 @@ def _parse_spend_limit(raw: str) -> Decimal:
     if not limit.is_finite() or limit < 0:
         raise ConfigError("AI_SPEND_LIMIT_PER_SESSION deve ser um número maior ou igual a 0.")
     return limit
+
+
+def _parse_number(name: str, raw: str, kind: type, minimum: float, maximum: float):
+    try:
+        value = kind(raw)
+    except ValueError:
+        raise ConfigError(f"{name}={raw!r} não é um número válido.") from None
+    if not minimum <= value <= maximum:
+        raise ConfigError(f"{name} deve estar entre {minimum} e {maximum}.")
+    return value
 
 
 def _require_real_secret(name: str, value: str | None) -> None:
