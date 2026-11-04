@@ -21,6 +21,7 @@ from app.persistence.repositories.world import (
     ItemRepository,
     KnowledgeRepository,
     NpcMemoryRepository,
+    QuestRepository,
     RelationshipRepository,
     ScheduledEventRepository,
     SkillRepository,
@@ -49,6 +50,7 @@ class CampaignData:
         self.relationships = RelationshipRepository(session, campaign_id)
         self.knowledge = KnowledgeRepository(session, campaign_id)
         self.memories = NpcMemoryRepository(session, campaign_id)
+        self.quests = QuestRepository(session, campaign_id)
 
     def campaign(self) -> Campaign:
         """A própria campanha (para o relógio do mundo). Permissão de dono já foi conferida antes."""

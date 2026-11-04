@@ -17,11 +17,27 @@ from app.persistence.models import (
     ItemInstance,
     Knowledge,
     NpcMemory,
+    Quest,
     Relationship,
     RelationshipEvent,
     ScheduledEvent,
 )
 from app.persistence.repositories.base import CampaignScopedRepository
+
+
+class QuestRepository(CampaignScopedRepository[Quest]):
+    model = Quest
+
+    def by_key(self, key: str) -> Quest | None:
+        return self.session.scalars(self._select().where(Quest.key == key)).first()
+
+    def list(self, include_hidden: bool = True, only_active: bool = False) -> list[Quest]:
+        query = self._select()
+        if not include_hidden:
+            query = query.where(Quest.hidden.is_(False))
+        if only_active:
+            query = query.where(Quest.status == "active")
+        return list(self.session.scalars(query.order_by(Quest.created_at)))
 
 
 class KnowledgeRepository(CampaignScopedRepository[Knowledge]):

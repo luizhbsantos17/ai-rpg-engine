@@ -14,6 +14,7 @@ export const usePlayStore = defineStore('play', {
     campaign: null,
     character: null, // ficha do protagonista (null até a campanha ser preparada)
     worldTime: null, // "dia 1, 08:00"
+    quests: [], // missões visíveis ao jogador
     messages: [],
     turns: {},
     loading: false,
@@ -35,6 +36,7 @@ export const usePlayStore = defineStore('play', {
         this.campaign = history.campaign
         this.character = sheet.character
         this.worldTime = sheet.world_time ?? null
+        this.quests = sheet.quests ?? []
         this.messages = history.messages
         this.turns = Object.fromEntries(history.turns.map((t) => [t.id, t]))
         // Ao reabrir, se a última jogada falhou, oferece repetir (D-012).
@@ -64,6 +66,7 @@ export const usePlayStore = defineStore('play', {
         const sheet = await api.getSheet(this.campaign.id)
         this.character = sheet.character
         this.worldTime = sheet.world_time ?? null
+        this.quests = sheet.quests ?? []
       } catch {
         // a ficha é complementar: se falhar, a história continua
       }

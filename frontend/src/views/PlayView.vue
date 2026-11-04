@@ -3,6 +3,7 @@ import { nextTick, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import CharacterSheet from '../components/CharacterSheet.vue'
+import QuestLog from '../components/QuestLog.vue'
 import NarrationBlock from '../components/NarrationBlock.vue'
 import PlayerAction from '../components/PlayerAction.vue'
 import SystemNotice from '../components/SystemNotice.vue'
@@ -89,7 +90,10 @@ watch(
         <SystemNotice v-if="play.notice" tone="alert" tag="AVISO">{{ play.notice }}</SystemNotice>
         <div ref="bottom"></div>
       </div>
-      <CharacterSheet class="sheet-panel" :class="{ open: sheetOpen }" :character="play.character" :world-time="play.worldTime" />
+      <div class="sheet-panel" :class="{ open: sheetOpen }">
+        <CharacterSheet :character="play.character" :world-time="play.worldTime" />
+        <QuestLog :quests="play.quests" />
+      </div>
       </div>
 
       <div class="input-bar">

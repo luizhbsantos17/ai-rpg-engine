@@ -48,6 +48,9 @@ Operações (campo "op" + campos):
   source: presenciou|ouviu|descobriu|contaram|deduziu|avaliou}: o que alguém passou a saber (ou acreditar).
 - memory.record {entity, content, importance 1-5}: lembrança marcante de um personagem.
   (Quem está na cena já guarda sozinho o que viu; use só para algo especial, como um segredo contado.)
+- quest.create {key, title, kind: main|side|optional|dynamic, description, giver, objectives: [textos], hidden}
+- quest.update {key, status: completed|failed|abandoned|active, complete_objectives: [números], add_objectives, reveal}
+  Missões surgem de NPCs, conversas e acontecimentos; podem falhar. "hidden": true = o jogador ainda não sabe.
 Qualquer operação aceita "reason" (motivo) e "when": {"check": "<ref de um check.request anterior>", "success": true|false}
 para só acontecer se aquele teste tiver sucesso (true) ou falhar (false).
 Referências: "player" é o protagonista; use os apelidos do estado (e1, i1...) ou o "ref" que você criar na mesma resposta.

@@ -39,6 +39,8 @@ class CharacterSheetService:
                     "items": [_item(data, i) for i in data.items.held_by(player.id)],
                     "effects": [_effect(data, e) for e in data.effects.active_for(player.id)],
                 },
+                # Só missões visíveis: as ocultas continuam segredo até serem reveladas.
+                "quests": [_quest(q) for q in data.quests.list(include_hidden=False)],
                 "world_time": format_world_time(data.campaign().world_clock),
             }
 
@@ -72,6 +74,11 @@ def _skill(data: CampaignData, skill) -> dict[str, Any]:
         "level": skill.level,
         "max_level": definition.get("max_level"),
     }
+
+
+def _quest(quest) -> dict[str, Any]:
+    return {"key": quest.key, "title": quest.title, "kind": quest.kind, "status": quest.status,
+            "description": quest.description, "objectives": [dict(o) for o in quest.objectives]}
 
 
 def _effect(data: CampaignData, effect) -> dict[str, Any]:

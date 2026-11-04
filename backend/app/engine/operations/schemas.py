@@ -272,6 +272,29 @@ class MemoryRecord(Operation):
     importance: int = Field(default=2, ge=1, le=5)
 
 
+QuestText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
+
+
+class QuestCreate(Operation):
+    op: Literal["quest.create"]
+    key: Key
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+    kind: Literal["main", "side", "optional", "dynamic"] = "side"
+    description: Annotated[str, StringConstraints(max_length=2000)] = ""
+    giver: Ref | None = None
+    objectives: list[QuestText] = Field(default_factory=list, max_length=12)
+    hidden: bool = False
+
+
+class QuestUpdate(Operation):
+    op: Literal["quest.update"]
+    key: Key
+    status: Literal["active", "completed", "failed", "abandoned"] | None = None
+    complete_objectives: list[int] = Field(default_factory=list, max_length=12)  # números (1, 2...) dos objetivos
+    add_objectives: list[QuestText] = Field(default_factory=list, max_length=6)
+    reveal: bool = False  # missão oculta passa a ser vista pelo jogador
+
+
 class EventRecord(Operation):
     """Acontecimento narrativo importante, sem mudança mecânica (SPEC 15.2)."""
 
@@ -286,7 +309,7 @@ AnyOperation = Annotated[
     | AttributeSet | AttributeModify | ResourceSpend | ResourceRestore
     | SkillGrant | SkillRevoke | SkillEvolve | SkillUse | ItemCreate | ItemTransfer | ItemDestroy
     | CheckRequest | CanonAssert | CanonAmend | TimeAdvance | EventSchedule | EffectApply | EffectRemove
-    | RelationshipChange | KnowledgeRecord | MemoryRecord | EventRecord,
+    | RelationshipChange | KnowledgeRecord | MemoryRecord | QuestCreate | QuestUpdate | EventRecord,
     Field(discriminator="op"),
 ]
 
@@ -296,7 +319,8 @@ OPERATION_NAMES = (
     "attribute.set", "attribute.modify", "resource.spend", "resource.restore",
     "skill.grant", "skill.revoke", "skill.evolve", "skill.use", "item.create", "item.transfer", "item.destroy",
     "check.request", "canon.assert", "canon.amend", "time.advance", "event.schedule",
-    "effect.apply", "effect.remove", "relationship.change", "knowledge.record", "memory.record", "event.record",
+    "effect.apply", "effect.remove", "relationship.change", "knowledge.record", "memory.record", "quest.create",
+    "quest.update", "event.record",
 )
 
 

@@ -100,6 +100,17 @@ def _applied_line(op: str, r: dict[str, Any]) -> str:
         return f"Fato do mundo estabelecido ({r['status']}): {r['statement']}"
     if op == "canon.amend":
         return f"Fato do mundo mudou: antes \"{r['previous']}\", agora \"{r['statement']}\"."
+    if op == "quest.create":
+        hidden = " (oculta: o jogador ainda não sabe)" if r["hidden"] else ""
+        return f"Nova missão{hidden}: {r['title']}."
+    if op == "quest.update":
+        parts = [f"objetivo cumprido: {text}" for text in r["completed_objectives"]]
+        parts += [f"novo objetivo: {text}" for text in r["added_objectives"]]
+        if r["status"] != r["previous_status"]:
+            parts.append(f"situação: {r['status']}")
+        if r["revealed"]:
+            parts.append("revelada ao jogador")
+        return f"Missão '{r['title']}': {'; '.join(parts)}."
     if op == "relationship.change":
         parts = [f"{k} {c['delta']:+g} (agora {c['to']:g})" for k, c in r["changes"].items()]
         parts += [f"+rótulo '{label}'" for label in r["added"]] + [f"-rótulo '{label}'" for label in r["removed"]]
@@ -130,6 +141,23 @@ def player_notices(outcomes: list[OperationOutcome], player_id: str | None) -> l
     return notices
 
 
+QUEST_STATUS_TEXT = {"completed": "Missão concluída", "failed": "Missão falhou", "abandoned": "Missão abandonada",
+                     "active": "Missão retomada"}
+
+
+def _quest_notice(op: str, r: dict[str, Any]) -> PlayerNotice | None:
+    """Missões ocultas não aparecem (até serem reveladas)."""
+    if r["hidden"]:
+        return None
+    if op == "quest.create" or r.get("revealed"):
+        return PlayerNotice("MISSÃO", f"Nova missão: {r['title']}.")
+    if r["status"] != r["previous_status"]:
+        return PlayerNotice("MISSÃO", f"{QUEST_STATUS_TEXT[r['status']]}: {r['title']}.")
+    parts = [f"objetivo cumprido — {t}" for t in r["completed_objectives"]]
+    parts += [f"novo objetivo — {t}" for t in r["added_objectives"]]
+    return PlayerNotice("MISSÃO", f"{r['title']}: {'; '.join(parts)}.") if parts else None
+
+
 def _time_notices(r: dict[str, Any], player_id: str) -> list[PlayerNotice]:
     """O jogador vê o relógio e o que o afeta diretamente; o resto dos agendamentos é narrado (ou não)."""
     notices = [PlayerNotice("SISTEMA", f"Tempo: {r['to_text']} (+{r['duration_text']}).")]
@@ -152,6 +180,8 @@ def _player_notice(op: str, r: dict[str, Any], player_id: str) -> PlayerNotice |
             verdict = "falha crítica"
         return PlayerNotice("TESTE", f"{r['label']}: {r['natural']} + {r['modifier']} = {r['total']} "
                                      f"(dificuldade {r['difficulty']}) → {verdict}.")
+    if op in ("quest.create", "quest.update"):
+        return _quest_notice(op, r)
     if not mine and op not in ("item.create", "item.transfer"):
         return None
     if op == "effect.apply":

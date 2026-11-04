@@ -61,6 +61,17 @@ def build_game_state(data: CampaignData) -> GameStateSnapshot:
         lines.append("Fatos do mundo já estabelecidos (não contradiga; para mudar use canon.amend):")
         lines.extend(f"- [{STATUS_LABELS.get(f.status, f.status)}] {f.key}: {f.statement}" for f in facts)
 
+    quests = data.quests.list(only_active=True)
+    if quests:
+        lines.append("")
+        lines.append("Missões ativas (use quest.update com a chave):")
+        for quest in quests:
+            objectives = "; ".join(
+                f"{n}. {'[x]' if o['done'] else '[ ]'} {o['text']}" for n, o in enumerate(quest.objectives, 1)
+            )
+            hidden = " (OCULTA para o jogador)" if quest.hidden else ""
+            lines.append(f"- {quest.key}: {quest.title}{hidden}" + (f" — {objectives}" if objectives else ""))
+
     player = data.entities.player()
     lines.append("")
     if player is None:
