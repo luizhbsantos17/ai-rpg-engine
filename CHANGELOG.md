@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.7.0] — Etapa 7 (em andamento)
+- Segurança: limite de 50 MB por pedido, bloqueio de 60 s após 5 senhas de administrador erradas.
+- Snapshot automático a cada `AUTO_SNAPSHOT_EVERY` jogadas (padrão 20), mantendo os 5 automáticos mais recentes.
+- Teste real de ponta a ponta com o Ollama, incluindo reinício do backend (tempos em AI_PROVIDERS.md).
+- Correção: falha no snapshot automático não impede o resumo da história.
+
 ## [0.6.0] — Etapa 6 (concluída)
 - Modo administrador e debug: interpretador próprio, sessão por senha, confirmação de destrutivos,
   auditoria, desfazer; console separado da história; comandos nunca vão para a IA.

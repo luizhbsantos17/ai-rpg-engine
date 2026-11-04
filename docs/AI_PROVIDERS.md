@@ -60,6 +60,24 @@ Turno completo: ~21 s (com preparação no 1º turno: ~46 s). JSON sempre válid
 sentido em um caso, mas em outro aumentou "Força" por um chute numa porta: **as escolhas mecânicas do
 modelo de 1,5B não são confiáveis**; o motor impede estados inválidos, mas não escolhas ruins.
 
+### Fluxo completo pela API, `qwen2.5:1.5b`, 2026-11-04 (Etapa 7.2)
+Gerar campanha → começar → 3 turnos → ficha/mapa → admin (status, validate_world, snapshot, inspect) →
+desligar e religar o backend → 4º turno. Tudo funcionou; histórico (3 turnos `completed`), ficha e snapshot
+continuaram iguais depois do reinício; `/debug validate_world` sem inconsistências.
+
+| Chamada | Tokens entrada → saída | Tempo |
+|---|---|---|
+| geração da campanha | 364 → 313 | 14,5 s |
+| preparação (1º turno) | 894 → 634 | 26,1 s |
+| intérprete | 2.859–4.108 → 14–25 | 5,9–19,6 s |
+| narrador | 1.452–2.637 → 321–882 | 21,6–40,2 s |
+
+Turnos completos: 1º 86 s (preparação + narração longa de 882 tokens), depois 27–34 s. O contexto cresceu
+(intérprete com ~4 mil tokens de entrada no 3º turno), o que pesa no tempo em CPU.
+Qualidade: o intérprete devolveu quase sempre "nenhuma operação" (14–25 tokens); em "Durmo até o amanhecer"
+não avançou o relógio, então a simulação do mundo não rodou. Narração confusa ("dormindo... completamente
+acordada"). Reforça a decisão pendente de um modelo maior.
+
 Modelos com modo "pensamento" (ex.: família `qwen3`) foram evitados por enquanto: o texto de raciocínio
 precisaria ser separado da narração.
 

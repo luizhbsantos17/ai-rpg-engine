@@ -5,28 +5,33 @@
 ## Resumo
 | Etapa | Status |
 |---|---|
-| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-046) |
+| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-048) |
 | 1 — Fundação | **concluída** e verificada com Ollama real |
 | 2 — Motor de RPG | **concluída** e verificada com Ollama real |
 | 3 — Narrativa e mundo | **concluída** (teste de campanha simulada com reinício) |
 | 4 — Sistemas avançados | **concluída** (`tests/e2e/test_different_rule_systems.py`) |
 | 5 — Interface completa | **concluída** (testes de componentes; falta o dono olhar a tela) |
 | 6 — Imagens e administração | **concluída** (imagens: só a estrutura, desligada; gerador real pendente) |
-| 7 — Qualidade e expansão | não iniciada (plano abaixo) |
+| 7 — Qualidade e expansão | **em andamento**: 7.1, 7.2 e 7.3 concluídas; faltam 7.4 e 7.5 |
 
 ## Última tarefa concluída
-Etapa 6: modo administrador/debug (interpretador, sessão, confirmação, auditoria, desfazer, console),
-snapshots/restauração/exportação/importação por campanha, estrutura de imagens opcionais.
+Etapa 7.2: teste real de ponta a ponta com o Ollama pela API (gerar → começar → 3 turnos → ficha/mapa → admin →
+snapshot → reiniciar o backend → 4º turno). Tudo funcionou; tempos em `docs/AI_PROVIDERS.md`.
+Antes: 7.1 (limites de segurança, D-047) e 7.3 (snapshot automático com rotação, D-048).
+Correção nesta etapa: falha no snapshot automático não impede mais o resumo da história daquele turno.
 
-## Próxima tarefa: Etapa 7 — Qualidade e expansão
+## Próxima tarefa: Etapa 7.4 — Desempenho com muitos NPCs/eventos
 Critério (SPEC Parte 23): o projeto funciona de maneira consistente, com testes demonstrando os principais fluxos.
-Subtarefas planejadas:
-1. **Verificação de segurança**: entradas, caminhos de arquivo, segredos em logs, modo admin, tamanho de pedidos.
-2. **Teste real de ponta a ponta com o Ollama** de todo o fluxo novo (geração → preparação → turnos → admin →
-   snapshot → reinício), registrando tempos.
-3. **Snapshot automático a cada N turnos** (DATABASE.md) e limpeza de snapshots antigos.
-4. Desempenho com muitos NPCs/eventos (índices, limites de contexto).
+Faltam:
+4. **Desempenho** com muitos NPCs/eventos: medir com campanha grande (centenas de NPCs, milhares de eventos),
+   conferir índices e se o contexto da IA continua dentro do orçamento de tokens.
 5. Documentação final (README, guia do jogador) e preparação para hospedagem (Dockerfile opcional, D-009).
+
+## Arquivos modificados nesta sessão (Etapa 7)
+`backend/app/__init__.py`, `backend/app/admin/sessions.py`, `backend/app/config.py`,
+`backend/app/persistence/snapshots.py`, `backend/app/services/{auto_backup.py, startup.py}`,
+`backend/tests/integration/{test_security.py, test_auto_backup.py}`, `.env.example`,
+`docs/{AI_PROVIDERS.md, DECISIONS.md}`, `PROJECT_STATUS.md`, `CHANGELOG.md`.
 
 ## Pendências menores
 - Combate sem ordem de iniciativa dedicada (funciona por testes + dano condicional + efeitos + morte).
@@ -62,7 +67,7 @@ Subtarefas planejadas:
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **310 passed**, 1 deselected (externo) |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **322 passed**, 1 deselected (externo) |
 | 2026-11-04 | frontend `npm test` (Vitest) | **43 passed** |
 | 2026-11-04 | frontend `npm run build` | ok |
 | 2026-11-04 | `pytest -m external` com Ollama real | **1 passed** |
@@ -70,6 +75,7 @@ Subtarefas planejadas:
 | 2026-11-04 | Etapa 2 com IA real (motor ligado) | ok: preparação, teste 1d20 rolado pelo motor, operação persistida; turno ~21 s |
 | 2026-11-04 | Etapa 3: campanha simulada (FakeProvider) com NPC, relação, missão, cânone, agendamento, tempo e reinício | ok (`tests/e2e/test_living_campaign.py`) |
 | 2026-11-04 | Geração de campanha com IA real | ok: 7–9 s; ingredientes usados; segredos só no banco |
+| 2026-11-04 | Etapa 7.2: fluxo completo pela API com IA real + reinício | ok: geração 14,6 s; 1º turno 86 s; depois 27–34 s; histórico, ficha e snapshot intactos após religar; `validate_world` sem inconsistências |
 
 **Não testado por mim**: a interface no navegador com os olhos (não tenho como ver a tela).
 
@@ -77,7 +83,10 @@ Subtarefas planejadas:
 - **Qualidade com `qwen2.5:1.5b`**: narração razoável, mas repetitiva; escolhas mecânicas do intérprete muitas
   vezes sem sentido; preenche pouco os formatos mais ricos (gêneros, companheiros). O motor impede estados
   inválidos, não escolhas ruins. Precisa de modelo maior (decisão pendente 1).
-- Turno com motor ~21 s nesta máquina (1º turno ~46 s com a preparação).
+- Turno com motor ~27–34 s nesta máquina depois de alguns turnos (1º turno até ~86 s com a preparação);
+  o contexto cresce (~4 mil tokens de entrada no 3º turno) e pesa em CPU.
+- No teste 7.2 o intérprete do modelo 1,5B quase não propôs operações (ex.: "dormir até o amanhecer" não
+  avançou o relógio, então o mundo não foi simulado). É limite do modelo, não do motor (testado com FakeProvider).
 - A busca no passado é por palavras (FTS5); sinônimos não são encontrados (embeddings: melhoria futura).
 - 5 vulnerabilidades "moderadas" no `npm audit` só em dependência de testes.
 

@@ -3,6 +3,7 @@
 import uuid
 
 from app import create_app
+from app.ai.orchestrator.events import TurnCompleted
 from app.persistence.snapshots import list_snapshots, write_snapshot, export_campaign
 from tests.conftest import make_settings
 
@@ -23,6 +24,25 @@ def test_every_n_turns_with_rotation(tmp_path, migrated_db_template):
     automatic = [label for label in labels if label.startswith("automatico")]
     assert automatic == [f"automatico-turno-{n}" for n in (14, 12, 10, 8, 6)]  # 7 criados, ficam os 5 últimos
     assert "manual-importante" in labels
+    services.db.dispose()
+
+
+def test_backup_failure_keeps_turn_and_summary(tmp_path, migrated_db_template, monkeypatch):
+    application = create_app(make_settings(tmp_path, migrated_db_template, AUTO_SNAPSHOT_EVERY="1"))
+    services = application.extensions["rpg_engine"]
+    campaign = services.campaigns.create(services.local_user_id, "Falha", None, [])
+    scheduled = []
+
+    def broken(campaign_id):
+        raise OSError("disco cheio")
+
+    monkeypatch.setattr(services.auto_backup, "after_turn", broken)
+    monkeypatch.setattr(services.summaries, "schedule", scheduled.append)
+    services.provider.queue("Narração.")
+    events = list(services.turns.run(services.turns.prepare(services.local_user_id, campaign["id"],
+                                                            str(uuid.uuid4()), "Ação.")))
+    assert isinstance(events[-1], TurnCompleted)
+    assert scheduled == [campaign["id"]]
     services.db.dispose()
 
 

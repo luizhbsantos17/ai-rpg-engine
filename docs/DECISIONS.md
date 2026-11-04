@@ -240,3 +240,16 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
   arquivos em `data/images`), mas só existe o provedor "none" (e "fake" nos testes).
 - Motivo: SPEC 13 (o jogo funciona sem imagens). Geradores reais são pagos ou exigem modelo local grande:
   dependem de autorização do dono (decisão pendente).
+
+### D-047 — Limites de segurança do servidor
+- Decisão: pedidos HTTP de no máximo 50 MB (cabe a importação de uma campanha grande); login de administrador
+  bloqueado por 60 s depois de 5 senhas erradas seguidas; nomes de snapshot só com letras, números e "-"
+  (sem caminhos); segredos com `repr=False` nunca aparecem em logs.
+- Motivo: SPEC 16 e 20 (proteção mesmo rodando localmente; preparar para hospedagem).
+
+### D-048 — Snapshot automático a cada N jogadas, com rotação
+- Decisão: `AUTO_SNAPSHOT_EVERY` (padrão 20; 0 = nunca). Depois de cada jogada concluída, se o número da jogada
+  for múltiplo de N, grava `automatico-turno-<n>` e mantém só os 5 automáticos mais recentes. Snapshots
+  manuais e os de segurança (antes de comandos destrutivos e de excluir) nunca são apagados pela rotação.
+  Falha no backup é registrada no log e não estraga a jogada.
+- Motivo: DATABASE.md (snapshots periódicos) sem encher o disco.
