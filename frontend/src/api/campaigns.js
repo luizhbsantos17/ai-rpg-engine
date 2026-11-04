@@ -27,6 +27,11 @@ export const getSheet = (campaignId) => request('GET', `/api/campaigns/${campaig
 export const getKnown = (campaignId) =>
   request('GET', `/api/campaigns/${campaignId}/known`).then((r) => r.characters)
 
+export const getSettings = (campaignId) => request('GET', `/api/campaigns/${campaignId}/settings`)
+
+// { experience?, content? } -> nova versão; volta a visão atualizada + "warnings"
+export const saveSettings = (campaignId, changes) => request('PUT', `/api/campaigns/${campaignId}/settings`, changes)
+
 export const deleteCampaign = (campaignId, confirmTitle) =>
   request('DELETE', `/api/campaigns/${campaignId}`, { confirm_title: confirmTitle })
 

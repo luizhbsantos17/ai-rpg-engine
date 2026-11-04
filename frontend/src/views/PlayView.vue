@@ -50,9 +50,12 @@ watch(
           <h1>{{ play.campaign.title }}</h1>
           <p v-if="play.campaign.premise" class="premise">{{ play.campaign.premise }}</p>
         </div>
-        <button type="button" class="btn sheet-toggle" :aria-expanded="sheetOpen" @click="sheetOpen = !sheetOpen">
-          {{ sheetOpen ? 'Fechar ficha' : 'Ficha' }}
-        </button>
+        <div class="header-actions">
+          <RouterLink :to="`/campanha/${id}/configuracoes`" class="btn">Configurações</RouterLink>
+          <button type="button" class="btn sheet-toggle" :aria-expanded="sheetOpen" @click="sheetOpen = !sheetOpen">
+            {{ sheetOpen ? 'Fechar ficha' : 'Ficha' }}
+          </button>
+        </div>
       </header>
 
       <div class="layout">
@@ -120,6 +123,12 @@ watch(
   padding-bottom: var(--space-4);
   margin-bottom: var(--space-4);
   border-bottom: 1px solid var(--line);
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
 }
 
 .layout {
