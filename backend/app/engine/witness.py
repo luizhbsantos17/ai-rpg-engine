@@ -40,6 +40,9 @@ def scene_knowledge_notes(data: CampaignData, player: Entity, memories_per_npc: 
     notes = []
     for npc in scene_npcs(data, player):
         parts = []
+        for key, label in (("personality", "personalidade"), ("goal", "quer")):
+            if npc.data.get(key):
+                parts.append(f"{label}: {str(npc.data[key])[:200]}")
         memories = data.memories.recall(npc.id, memories_per_npc)
         if memories:
             parts.append("lembra: " + " | ".join(m.content for m in memories))

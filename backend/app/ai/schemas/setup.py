@@ -29,6 +29,19 @@ class SetupProtagonist(BaseModel):
     description: str = Field(default="", max_length=2000)
 
 
+class SetupCompanion(BaseModel):
+    """Integrante de uma turma/grupo: cada um com identidade própria (SPEC 4.3)."""
+
+    model_config = ConfigDict(extra="ignore")
+    name: str = Field(min_length=1, max_length=200)
+    kind: str = Field(default="character", max_length=40)
+    description: str = Field(default="", max_length=1000)
+    personality: str = Field(default="", max_length=500)
+    goal: str = Field(default="", max_length=500)
+    bond: str = Field(default="", max_length=60, description="laço com o protagonista: amigo, rival, desconhecido...")
+    attributes: dict[str, int | float | str] = Field(default_factory=dict, description="nome do atributo -> valor")
+
+
 class CampaignSetup(BaseModel):
     model_config = ConfigDict(extra="ignore")
     attributes: list[SetupAttribute] = Field(min_length=1, max_length=12)
@@ -37,6 +50,7 @@ class CampaignSetup(BaseModel):
     location_description: str = Field(default="", max_length=2000)
     world_facts: list[str] = Field(default_factory=list, max_length=8,
                                    description="fatos importantes do mundo, incluindo como funciona a morte")
+    companions: list[SetupCompanion] = Field(default_factory=list, max_length=8)
 
     def to_operations(self) -> list[dict[str, Any]]:
         operations: list[dict[str, Any]] = []
@@ -62,6 +76,24 @@ class CampaignSetup(BaseModel):
         operations.append({"op": "entity.create", "ref": "protagonista", "kind": self.protagonist.kind or "character",
                            "name": self.protagonist.name, "is_player": True, "location": "local_inicial",
                            "data": {"description": self.protagonist.description}, "attributes": values})
+        operations += self._companion_operations(set(values))
+        return operations
+
+    def _companion_operations(self, attribute_keys: set[str]) -> list[dict[str, Any]]:
+        operations: list[dict[str, Any]] = []
+        for index, companion in enumerate(self.companions, start=1):
+            ref = f"companheiro_{index}"
+            # Só atributos que existem no sistema da campanha; nomes desconhecidos são ignorados.
+            attributes = {slugify(name): value for name, value in companion.attributes.items()
+                          if slugify(name) in attribute_keys}
+            data = {k: v for k, v in {"description": companion.description, "personality": companion.personality,
+                                      "goal": companion.goal}.items() if v}
+            operations.append({"op": "entity.create", "ref": ref, "kind": companion.kind or "character",
+                               "name": companion.name, "location": "local_inicial", "data": data,
+                               "attributes": attributes})
+            if companion.bond.strip():
+                operations.append({"op": "relationship.change", "source": ref, "target": "protagonista",
+                                   "add_labels": [companion.bond.strip()], "cause": "como tudo começou"})
         return operations
 
 

@@ -110,8 +110,15 @@ def _status(entity: Entity) -> str:
     return {"active": "ativo", "dead": "MORTO"}.get(entity.status, entity.status)
 
 
+PROFILE_FIELDS = (("personality", "personalidade"), ("goal", "objetivo"))
+
+
 def _entity_details(data: CampaignData, entity: Entity, aliases: _Aliases) -> list[str]:
     details = []
+    if not entity.is_player:
+        profile = [f"{label}: {str(entity.data[key])[:200]}" for key, label in PROFILE_FIELDS if entity.data.get(key)]
+        if profile:
+            details.append("  " + "; ".join(profile))
     attributes = data.attributes.for_entity(entity.id)
     if attributes:
         details.append("  atributos: " + ", ".join(
