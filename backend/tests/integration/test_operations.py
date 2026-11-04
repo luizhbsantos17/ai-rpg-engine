@@ -187,6 +187,25 @@ def test_check_is_rolled_by_engine_reproducibly_and_recorded(db, campaign_id, ru
     assert read(db, campaign_id, lambda d: d.dice_rolls.count()) == 2
 
 
+def test_operations_conditioned_on_check_results(db, campaign_id, run, world):
+    outcomes = run([
+        {"op": "check.request", "ref": "ataque", "actor": "player", "target": world["Goblin"],
+         "label": "Golpe", "difficulty": 11},
+        {"op": "attribute.modify", "entity": world["Goblin"], "key": "vida", "delta": -4,
+         "when": {"check": "ataque", "success": True}},
+        {"op": "attribute.modify", "entity": "player", "key": "vida", "delta": -2,
+         "when": {"check": "ataque", "success": False}},
+        {"op": "attribute.modify", "entity": "player", "key": "vida", "delta": -1,
+         "when": {"check": "teste_inexistente"}},
+    ])
+    success = outcomes[0]["result"]["success"]
+    assert [o["status"] for o in outcomes[1:3]] == (["applied", "skipped"] if success else ["skipped", "applied"])
+    assert outcomes[3]["status"] == "rejected"
+    goblin_life = read(db, campaign_id, lambda d: attrs(d, world["Goblin"])["vida"][0])
+    player_life = read(db, campaign_id, lambda d: attrs(d, world["Aria"])["vida"][0])
+    assert (goblin_life, player_life) == (("6", "30") if success else ("10", "28"))
+
+
 def test_check_cannot_be_decided_by_the_ai(run, world):
     outcomes = run([{"op": "check.request", "actor": "player", "label": "x", "difficulty": 10, "result": 20}])
     assert outcomes[0]["status"] == "rejected"

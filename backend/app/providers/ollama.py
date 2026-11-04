@@ -61,6 +61,8 @@ class OllamaProvider(AIProvider):
         }
         if model_options:
             payload["options"] = model_options
+        if options.json_schema is not None:
+            payload["format"] = options.json_schema  # saída estruturada do Ollama
         return payload
 
     def stream(self, messages: Sequence[ChatMessage], options: GenerationOptions) -> Iterator[StreamEvent]:

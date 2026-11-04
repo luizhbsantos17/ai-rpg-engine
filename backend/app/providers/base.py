@@ -29,6 +29,8 @@ class GenerationOptions:
     # Tamanho da "memória de trabalho" do modelo em tokens (no Ollama: num_ctx).
     context_window: int | None = None
     timeout_seconds: float = 600.0
+    # Esquema JSON que a resposta deve seguir (provedores que suportam usam para forçar o formato).
+    json_schema: dict | None = None
 
 
 @dataclass(frozen=True)

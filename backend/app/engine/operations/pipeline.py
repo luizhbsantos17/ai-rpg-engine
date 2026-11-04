@@ -34,7 +34,7 @@ DECIMAL_PRECISION = 100
 class OperationOutcome:
     index: int
     op: str
-    status: str  # "applied" | "rejected"
+    status: str  # "applied" | "rejected" | "skipped" (condição de teste não cumprida)
     reason: str | None = None
     result: dict[str, Any] = field(default_factory=dict)
     event_id: str | None = None
@@ -60,6 +60,15 @@ def _apply_one(ctx: OperationContext, index: int, raw: Any) -> OperationOutcome:
         operation = parse_operation(raw)
     except ValidationError as exc:
         return _reject(ctx, index, str(name), raw, _schema_message(exc))
+
+    if operation.when is not None:
+        check = ctx.check_results.get(operation.when.check)
+        if check is None:
+            return _reject(ctx, index, operation.op, raw,
+                           f"Condição usa o teste '{operation.when.check}', que não existe (ou veio depois).")
+        if check["success"] != operation.when.success:
+            return OperationOutcome(index, operation.op, "skipped",
+                                    reason=f"Condição não cumprida (teste '{check['label']}').")
 
     handler = HANDLERS[operation.op]
     refs_before, checks_before = dict(ctx.refs), dict(ctx.check_results)

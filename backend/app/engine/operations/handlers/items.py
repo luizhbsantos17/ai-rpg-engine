@@ -15,11 +15,12 @@ def _definition(ctx: OperationContext, key: str) -> dict:
     return definition.data
 
 
-def _holder(ctx: OperationContext, owner: str | None, location: str | None) -> tuple[str | None, str | None, str]:
+def _holder(ctx: OperationContext, owner: str | None, location: str | None):
+    """Devolve (owner_id, location_id, entidade de destino)."""
     if (owner is None) == (location is None):
         raise OperationRejected("Informe exatamente um destino: um dono OU um local.")
     entity = ctx.entity(owner or location)
-    return (entity.id, None, entity.name) if owner else (None, entity.id, entity.name)
+    return (entity.id, None, entity) if owner else (None, entity.id, entity)
 
 
 def _place(ctx: OperationContext, key: str, owner_id, location_id, quantity: int, data: dict, stackable: bool) -> ItemInstance:
@@ -41,17 +42,18 @@ def item_create(op: ItemCreate, ctx: OperationContext) -> dict:
     stackable = definition.get("stackable", True)
     if not stackable and op.quantity != 1:
         raise OperationRejected(f"{definition['name']} não é empilhável: crie um de cada vez.")
-    owner_id, location_id, holder_name = _holder(ctx, op.owner, op.location)
+    owner_id, location_id, holder = _holder(ctx, op.owner, op.location)
     item = _place(ctx, op.key, owner_id, location_id, op.quantity, op.data, stackable)
     ctx.register_ref(op.ref, item.id)
     return {"item_id": item.id, "key": op.key, "item": definition["name"], "quantity": op.quantity,
-            "holder": holder_name, "total_quantity": item.quantity}
+            "holder": holder.name, "holder_id": holder.id, "total_quantity": item.quantity}
 
 
 def item_transfer(op: ItemTransfer, ctx: OperationContext) -> dict:
     item = ctx.item(op.item)
     definition = _definition(ctx, item.definition_key)
-    owner_id, location_id, holder_name = _holder(ctx, op.to_owner, op.to_location)
+    owner_id, location_id, holder = _holder(ctx, op.to_owner, op.to_location)
+    from_id = item.owner_id or item.location_id
     if (owner_id, location_id) == (item.owner_id, item.location_id):
         raise OperationRejected("O item já está nesse lugar.")
     quantity = op.quantity or item.quantity
@@ -67,7 +69,7 @@ def item_transfer(op: ItemTransfer, ctx: OperationContext) -> dict:
         moved = _place(ctx, item.definition_key, owner_id, location_id, quantity, dict(item.data),
                        definition.get("stackable", True))
     return {"item_id": moved.id, "source_item_id": item.id, "item": definition["name"],
-            "quantity": quantity, "to": holder_name}
+            "quantity": quantity, "to": holder.name, "to_id": holder.id, "from_id": from_id}
 
 
 def item_destroy(op: ItemDestroy, ctx: OperationContext) -> dict:

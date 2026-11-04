@@ -20,9 +20,18 @@ Number = int | float | str
 DEFINITION_KINDS = ("attribute", "skill", "item", "species", "class", "effect", "check_rule", "death_rule", "title")
 
 
+class CheckCondition(BaseModel):
+    """Aplica a operação só se o teste `check` (apelido de um check.request anterior) deu esse resultado."""
+
+    model_config = ConfigDict(extra="forbid")
+    check: Ref
+    success: bool = True
+
+
 class Operation(BaseModel):
     model_config = ConfigDict(extra="forbid")
     reason: Reason = ""
+    when: CheckCondition | None = None
 
 
 class DefinitionCreate(Operation):
