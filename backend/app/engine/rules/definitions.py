@@ -66,10 +66,31 @@ class ItemDefinition(OpenDefinition):
     stackable: bool = True
 
 
+class DeathRuleDefinition(OpenDefinition):
+    """Como a morte funciona neste universo (SPEC 7.4). Aplicada pelo motor quando o recurso vital zera.
+
+    mode: permanent (morte definitiva) · unconscious (desmaia; acorda depois de `revive_after`)
+          resurrection (morre e volta depois de `revive_after`) · reincarnation (morre; a história segue
+          com a reencarnação) · narrative (o motor só avisa; a narração decide, dentro das regras do mundo)
+    """
+
+    mode: Literal["permanent", "unconscious", "resurrection", "reincarnation", "narrative"]
+    vital_resource: Annotated[str, StringConstraints(pattern=r"^[a-z0-9_]{1,100}$")]
+    revive_after: int | Annotated[str, StringConstraints(max_length=30)] | None = None  # "8h", "3d"...
+    revive_value: Number | None = None  # quanto do recurso vital volta (padrão: 1)
+
+    @model_validator(mode="after")
+    def _check(self):
+        if self.mode in ("unconscious", "resurrection") and self.revive_after is None:
+            raise ValueError(f"O modo '{self.mode}' precisa de revive_after (ex.: \"8h\").")
+        return self
+
+
 SCHEMAS: dict[str, type[OpenDefinition]] = {
     "attribute": AttributeDefinition,
     "skill": SkillDefinition,
     "item": ItemDefinition,
+    "death_rule": DeathRuleDefinition,
 }
 FORMULA_FIELDS = ("formula", "damage", "amount", "modifier", "difficulty")
 

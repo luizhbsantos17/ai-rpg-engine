@@ -42,6 +42,13 @@ class SetupCompanion(BaseModel):
     attributes: dict[str, int | float | str] = Field(default_factory=dict, description="nome do atributo -> valor")
 
 
+class SetupDeathRule(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    mode: Literal["permanent", "unconscious", "resurrection", "reincarnation", "narrative"] = "narrative"
+    description: str = Field(default="", max_length=1000)
+    revive_after: str | None = Field(default=None, max_length=30, description='ex.: "8h", "3d"')
+
+
 class CampaignSetup(BaseModel):
     model_config = ConfigDict(extra="ignore")
     attributes: list[SetupAttribute] = Field(min_length=1, max_length=12)
@@ -51,6 +58,7 @@ class CampaignSetup(BaseModel):
     world_facts: list[str] = Field(default_factory=list, max_length=8,
                                    description="fatos importantes do mundo, incluindo como funciona a morte")
     companions: list[SetupCompanion] = Field(default_factory=list, max_length=8)
+    death_rule: SetupDeathRule | None = None
 
     def to_operations(self) -> list[dict[str, Any]]:
         operations: list[dict[str, Any]] = []
@@ -69,6 +77,7 @@ class CampaignSetup(BaseModel):
             values[key] = attribute.initial_value
         operations.append({"op": "entity.create", "ref": "local_inicial", "kind": "location",
                            "name": self.starting_location, "data": {"description": self.location_description}})
+        operations += self._death_rule_operation(attributes)
         facts = [fact.strip() for fact in self.world_facts if fact.strip()]
         for index, fact in enumerate(facts, start=1):
             operations.append({"op": "canon.assert", "key": f"mundo_{index}", "subject": "mundo",
@@ -78,6 +87,22 @@ class CampaignSetup(BaseModel):
                            "data": {"description": self.protagonist.description}, "attributes": values})
         operations += self._companion_operations(set(values))
         return operations
+
+    def _death_rule_operation(self, attributes: list[SetupAttribute]) -> list[dict[str, Any]]:
+        """A regra de morte vale para o primeiro recurso (ex.: Vida). Sem recurso, não há regra automática."""
+        vital = next((slugify(a.name) for a in attributes if a.resource), None)
+        if self.death_rule is None or vital is None:
+            return []
+        rule = self.death_rule
+        mode = rule.mode
+        if mode in ("unconscious", "resurrection") and not rule.revive_after:
+            mode = "narrative"  # sem tempo de volta, o motor não inventa um: a narração decide
+        data: dict[str, Any] = {"name": "Regra de morte", "mode": mode, "vital_resource": vital,
+                                "description": rule.description}
+        if mode in ("unconscious", "resurrection"):
+            data["revive_after"] = rule.revive_after
+        return [{"op": "definition.create", "kind": "death_rule", "key": "regra_de_morte", "data": data,
+                 "reason": "como a morte funciona neste universo"}]
 
     def _companion_operations(self, attribute_keys: set[str]) -> list[dict[str, Any]]:
         operations: list[dict[str, Any]] = []

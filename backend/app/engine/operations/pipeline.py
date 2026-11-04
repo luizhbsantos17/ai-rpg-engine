@@ -75,6 +75,11 @@ def _apply_one(ctx: OperationContext, index: int, raw: Any) -> OperationOutcome:
     try:
         with ctx.data.savepoint(), decimal.localcontext(prec=DECIMAL_PRECISION):
             result = handler(operation, ctx)
+            from app.engine.death import check_death  # import aqui: evita ciclo de importação
+
+            death = check_death(ctx, operation.op, result)
+            if death is not None:
+                result["death"] = death
             event = ctx.data.events.record(
                 operation.op, ctx.source,
                 {"operation": operation.model_dump(mode="json"), "result": result},

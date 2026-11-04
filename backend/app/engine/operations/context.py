@@ -57,6 +57,8 @@ class OperationContext:
             raise OperationRejected(f"Entidade '{ref}' não existe nesta campanha.")
         if not allow_dead and entity.status == Entity.STATUS_DEAD:
             raise OperationRejected(f"'{entity.name}' está morto(a).")
+        if not allow_dead and self.data.effects.active_by_key(entity.id, "inconsciente") is not None:
+            raise OperationRejected(f"'{entity.name}' está inconsciente e não pode agir.")
         return entity
 
     def item(self, ref: str) -> ItemInstance:

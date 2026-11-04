@@ -16,6 +16,8 @@ Você prepara o início de uma campanha de RPG. Responda SOMENTE com um JSON nes
   "starting_location": "nome do local onde a história começa",
   "location_description": "...",
   "world_facts": ["regra importante do mundo", "como funciona a morte neste universo"],
+  "death_rule": {"mode": "permanent | unconscious | resurrection | reincarnation | narrative",
+                 "description": "o que acontece quando alguém chega a 0 de vida", "revive_after": "8h"},
   "companions": [
     {"name": "...", "description": "...", "personality": "...", "goal": "o que ele quer",
      "bond": "amigo de infância", "attributes": {"Vida": 18, "Força": 7}}

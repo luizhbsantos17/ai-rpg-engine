@@ -36,7 +36,33 @@ def describe_for_narrator(outcomes: list[OperationOutcome]) -> list[str]:
             lines.extend(_time_lines(r))
         else:
             lines.append(_applied_line(outcome.op, r))
+        if outcome.status == "applied" and r.get("death"):
+            lines.append(_death_line(r["death"]))
     return [line for line in lines if line]
+
+
+DEATH_TEXT = {
+    "permanent": "MORREU (morte permanente neste mundo)",
+    "unconscious": "caiu INCONSCIENTE",
+    "resurrection": "MORREU, mas pela regra deste mundo voltará à vida",
+    "reincarnation": "MORREU e vai REENCARNAR",
+    "narrative": "chegou ao limite da vida; aplique a regra de morte do mundo na narração",
+}
+
+
+def _death_line(d: dict[str, Any]) -> str:
+    back = f" (volta em {d['returns_at']})" if d.get("returns_at") else ""
+    rule = f" Regra: {d['description']}" if d.get("description") else ""
+    return f"{d['name']} {DEATH_TEXT[d['mode']]}{back}.{rule}"
+
+
+PLAYER_DEATH_TEXT = {
+    "permanent": "Você morreu.",
+    "unconscious": "Você perdeu a consciência.",
+    "resurrection": "Você morreu… mas não para sempre.",
+    "reincarnation": "Você morreu. Uma nova vida espera.",
+    "narrative": "Você chegou ao limite.",
+}
 
 
 NARRATOR_LEVELS = {"confirmed": "descobriu", "partial": "descobriu em parte (percebe que há algo oculto)",
@@ -162,6 +188,10 @@ def player_notices(outcomes: list[OperationOutcome], player_id: str | None) -> l
         notice = _player_notice(outcome.op, outcome.result, player_id)
         if notice:
             notices.append(notice)
+        death = outcome.result.get("death")
+        if death and death["entity_id"] == player_id:
+            back = f" (até {death['returns_at']})" if death.get("returns_at") else ""
+            notices.append(PlayerNotice("ALERTA", PLAYER_DEATH_TEXT[death["mode"]] + back))
     return notices
 
 
