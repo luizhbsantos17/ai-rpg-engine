@@ -29,7 +29,7 @@
 | CPU | Ryzen 5 4600G (6 núcleos / 12 threads) | ok |
 | RAM | 13,8 GB visíveis | suficiente só para modelos locais pequenos |
 | Placa de vídeo | só a integrada (Radeon do 4600G), sem placa dedicada | IA local vai rodar no processador: lenta |
-| Disco | C: **0,6 GB livres**; E: 10,7 GB; F: 25,1 GB | **C: quase cheio — liberar espaço** |
+| Disco | C: 3,3 GB livres de 111 GB (após limpeza; antes 0,6 GB); E: 10,7 GB; F: 25,1 GB | C: ainda apertado; Ollama e modelos vão no F: |
 | SQLite (do Python) | 3.49.1, com FTS5 e funções JSON | ok |
 
 ## Pendências da Etapa 0
@@ -81,5 +81,5 @@ Subtarefas, nesta ordem:
 | 2026-11-03 | manual: servidor real (`flask --app app run`) + `GET /api/health` | HTTP 200 `{"env":"development","status":"ok","version":"0.1.0"}`; rota inexistente → HTTP 404 em JSON |
 
 ## Problemas conhecidos
-- Disco C: com 0,6 GB livres. Pode travar o Windows e impede instalar o Ollama no local padrão.
+- Disco C: com 3,3 GB livres (2026-11-03). Dá para instalar o Node; Ollama e modelos devem ir para o F:.
 - Sem placa de vídeo dedicada: velocidade da IA local ainda não medida (será medida na subtarefa 9).
