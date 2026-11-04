@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [0.9.0] — Pedidos do dono depois de testar
+- **Outra versão da narração** (botão "↻ Outra versão"): reescreve o texto da última jogada sem refazer dados
+  nem operações; se falhar, a anterior fica.
+- **IA gratuita na internet**: `AI_PROVIDER=gemini`, `groq` ou `openrouter` (só modelos `:free`), com espera
+  automática no limite de pedidos e JSON que se adapta ao modelo.
+- Narrador mais coerente: recebe a cena atual (local, hora, quem está presente) e regras de ofício (vozes
+  próprias, detalhes concretos, história sempre andando, sem clichês).
+- Ficha inicial mais completa: 5 a 10 atributos (energia, nível/experiência quando o universo é estilo jogo),
+  habilidades e itens iniciais (já equipados quando faz sentido); regra de progressão no intérprete.
+- Guia do desenvolvedor/administrador: `docs/GUIA_DO_DESENVOLVEDOR.md`.
+- Temporários e caches na pasta do projeto (`.tmp/`, `.cache/`), nada no disco C:.
+
 ## [0.8.0] — Depois da Etapa 7
 - Equipamentos: itens com espaço (`slot`) e bônus; `item.equip`/`item.unequip`; um item por espaço; o bônus vale
   nos testes do motor; seção "Equipamento" na ficha.

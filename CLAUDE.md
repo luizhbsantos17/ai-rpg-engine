@@ -57,3 +57,4 @@ Ambiente do dono: Windows 11, PowerShell. O ambiente virtual fica em `backend/.v
 - Frontend: `cd frontend && npm run dev`
 - Migrações: `cd backend && alembic upgrade head`
 - Medir desempenho (campanha grande, IA falsa): `cd backend && python scripts/benchmark_large_campaign.py 500 300`
+- Conferir uma jogada com o Ollama real (banco separado em .tmp/): `cd backend && python scripts/real_turn_check.py gemma3:4b`

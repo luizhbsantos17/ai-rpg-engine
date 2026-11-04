@@ -301,3 +301,39 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
   Servidores gratuitos/locais declaram `OPENAI_COMPAT_PAID=false`.
 - Motivo: SPEC 17 (IA local ou externa, trocar de provedor sem mexer no motor) + regra do dono (nada pago sem
   autorização). Testado de verdade sem custo contra o Ollama em `/v1`.
+
+### D-054 — Serviços de IA gratuitos na internet (Gemini, Groq, OpenRouter)
+- Decisão: `AI_PROVIDER=gemini|groq|openrouter` são atalhos sobre o adaptador `openai_compat`
+  (`providers/free_services.py`): endereço, variável da chave, modelos preferidos (escolhidos sozinhos se
+  `AI_MODEL` vazio) e travas. OpenRouter só aceita modelos terminados em `:free` (na configuração e de novo a
+  cada pedido); Gemini/Groq dependem de a conta não ter faturamento (documentado ao dono). O adaptador espera e
+  tenta de novo em HTTP 429 (Retry-After, até 2 vezes, máx. 60 s, só antes de chegar texto) e, se o modelo
+  recusar o esquema JSON (HTTP 400), tenta `json_object` e depois só o prompt; o modo que funcionou fica guardado.
+- Motivo: o dono pediu IA gratuita melhor que a local (o PC não tem GPU dedicada). Limites conferidos em
+  2026-11-04 nas páginas oficiais (ver AI_PROVIDERS.md). Sem chave do dono, testado só com servidor simulado;
+  o teste real fica pronto em `tests/external/test_free_service_real.py`.
+
+### D-055 — "Gerar outra versão" da narração
+- Decisão: `POST /api/campaigns/<id>/turns/<turn_id>/regenerate` (SSE) reescreve só o TEXTO da última jogada
+  concluída. Dados e operações não são refeitos (reaproveita `turns.mechanics`, como no repetir após falha);
+  a IA recebe só o pedido de "outra versão" e criatividade +0,3 (máx. 1,3). A versão recusada NÃO é mostrada:
+  no teste real o `qwen2.5:1.5b` copiou quase igual o texto que via. A versão anterior só sai quando a nova fica pronta (mesma
+  transação), vai para o log de eventos (`turn.narration_regenerated`, `previous_text`) e sai da busca; resumos
+  que a usaram são apagados e refeitos. Se a IA falhar ou a conexão cair, o turno volta a `completed` com a
+  versão anterior. O resumo em segundo plano descarta o trabalho se uma narração usada mudar no meio.
+- Alternativa adiada: "desfazer a jogada inteira" (novos dados) exige voltar o estado do mundo; pode usar os
+  snapshots. Fica como melhoria futura, se o dono quiser.
+
+### D-056 — Ficha inicial mais completa
+- Decisão: a preparação pede de 5 a 10 atributos pensados para o gênero (vida + energia do universo, principais,
+  "Nível"/"Experiência" quando o universo é estilo jogo ou tem janela de status, extras como sorte), de 1 a 3
+  habilidades e de 1 a 4 itens iniciais (com espaço, bônus e "equipado"). O motor cria tudo por operações
+  validadas. O intérprete ganhou a regra 10 (progressão: experiência e nível só pelo que marcou).
+- Motivo: o dono viu só Força/Destreza/Inteligência/Vida. A SPEC 5 pede atributos livres por universo (nada de
+  lista fixa), então a lista continua sendo da IA, mas com orientação melhor.
+
+### D-057 — Temporários e caches dentro do projeto
+- Decisão: testes (`--basetemp` em `.tmp/pytest`), teste de desempenho, `TEMP`/`TMP` dos iniciadores e cache
+  do npm (`.cache/npm`) ficam na pasta do projeto; pip do ambiente virtual sem cache. `.tmp/` e `.cache/` no
+  `.gitignore`.
+- Motivo: o disco C: do dono estava com menos de 1 GB livre; o pytest deixava ~270 MB por execução no C:.

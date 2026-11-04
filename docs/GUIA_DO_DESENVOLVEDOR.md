@@ -147,6 +147,7 @@ peça ao Claude Code para ajustar junto.
 | Compilar a tela | `cd frontend; npm run build` | `built in ...` |
 | Servidor sozinho | `cd backend; .\.venv\Scripts\flask.exe --app app run --debug` | abre em http://127.0.0.1:5000/api/health |
 | Desempenho | `cd backend; .\.venv\Scripts\python.exe scripts\benchmark_large_campaign.py 500 300` | tempos por jogada |
+| Uma jogada real com o Ollama (banco à parte) | `cd backend; .\.venv\Scripts\python.exe scripts\real_turn_check.py gemma3:4b` | ficha, narração e "outra versão" |
 
 Se `npm` não for reconhecido, rode antes: `$env:PATH = "F:\Tools\node-v24.22.2-win-x64;" + $env:PATH`.
 

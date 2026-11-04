@@ -97,9 +97,10 @@ def test_new_version_replaces_text_but_keeps_mechanics(services, fake_ai, campai
     assert all("Primeira" not in snippet for snippet in after["found"])  # busca da memória só tem a versão nova
 
     sent = fake_ai.calls[-1].messages
-    assert "OUTRA VERSÃO" in sent[-1].content and "Primeira versão" in sent[-1].content  # pede algo diferente
+    assert "OUTRA VERSÃO" in sent[-1].content  # pede algo diferente
     assert "Vida de Kael: 20 → 16" in sent[-1].content  # mesmos fatos do motor
-    assert all("Primeira versão" not in m.content for m in sent[:-1])  # a versão recusada não vira histórico
+    assert all("Primeira versão" not in m.content for m in sent)  # a recusada não é mostrada (modelos copiam)
+    assert fake_ai.calls[-1].options.temperature == pytest.approx(1.1)  # 0.8 + 0.3: mais variação
 
 
 def test_previous_text_is_kept_in_the_event_log(services, fake_ai, campaign):

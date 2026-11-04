@@ -111,6 +111,33 @@ ignorado); quem decide é o servidor. Para o Ollama, prefira o adaptador nativo 
 - Jogo completo pela API (gerar → começar → 3 turnos → admin): tudo ok, `validate_world` sem inconsistências.
   Geração 7,2 s; 1º turno 66 s; depois 13–19 s. Intérprete com até 3.544 tokens de entrada.
 
+## Serviços gratuitos na internet (D-054)
+| `AI_PROVIDER` | Chave (`.env`) | Onde criar | Modelos preferidos (escolha automática) |
+|---|---|---|---|
+| `gemini` | `GEMINI_API_KEY` | https://aistudio.google.com/apikey | `gemini-3.8-flash`, `gemini-2.5-flash` |
+| `groq` | `GROQ_API_KEY` | https://console.groq.com/keys | `openai/gpt-oss-120b`, `qwen/qwen3.8-27b` |
+| `openrouter` | `OPENROUTER_API_KEY` | https://openrouter.ai/keys | `google/gemma-4-31b-it:free` (**só `:free`**) |
+
+Limites conferidos em 2026-11-04 (mudam sem aviso):
+- **OpenRouter** (página oficial de preços): modelos `:free` com 20 pedidos/min e 50/dia; 1.000/dia depois de
+  comprar US$ 10 em créditos; pedidos que falham também contam. Havia 12 modelos `:free` na lista pública
+  (`/api/v1/models`), nenhum específico de roleplay. Com 50/dia: ~20 jogadas (cada jogada = 2 ou mais pedidos).
+  Fonte: https://openrouter.ai/pricing
+- **Groq** (página oficial de limites): a tabela publicada é a "base do plano Developer": `openai/gpt-oss-120b`
+  e `qwen/qwen3.8-27b` com 30 pedidos/min, 1.000/dia, 8.000 tokens/min. Os limites do plano Free aparecem só no
+  painel da conta. 8.000 tokens/min é apertado: uma jogada usa ~6–7 mil. Fonte: https://console.groq.com/docs/rate-limits
+- **Gemini** (AI Studio): o nível gratuito não exige faturamento; a página oficial não publica números (mostra
+  os limites no AI Studio). Endereço no formato OpenAI: `https://generativelanguage.googleapis.com/v1beta/openai/`.
+  O nível gratuito pode usar os dados para melhorar produtos do Google. Fonte: https://aistudio.google.com/docs/rate-limits
+  e https://aistudio.google.com/docs/openai
+
+Cuidados: não cadastrar cartão/faturamento (Gemini, Groq); na OpenRouter o programa recusa modelo que não seja
+`:free`. Conteúdo: os três têm regras próprias e podem recusar cenas explícitas (aviso mostrado nas configurações
+da campanha).
+
+Não testado com os serviços reais (sem chave do dono). Testado com servidor simulado: escolha de modelo,
+trava `:free`, espera no 429, troca do modo JSON. Teste real pronto: `pytest -m external` (pula sem chave).
+
 ## Provedores externos (pagos)
 Não pesquisados. Antes de usar qualquer serviço pago: implementar o controle de gasto, registrar aqui preço e
 limites com fonte e data, e pedir autorização ao dono.

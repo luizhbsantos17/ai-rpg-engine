@@ -37,11 +37,8 @@ def _to_chat_message(item: HistoryItem) -> ChatMessage:
     return ChatMessage("user", f"[Aviso do jogo] {item.content}")
 
 
-REJECTED_EXCERPT_CHARS = 1200  # trecho da versão recusada mostrado à IA (para ela não repetir)
-
-
 def with_engine_facts(player_input: str, facts: Sequence[str], scene_notes: Sequence[str] = (),
-                      rejected: str | None = None, scene: str = "") -> str:
+                      regenerate: bool = False, scene: str = "") -> str:
     """Ação do jogador + resultados reais do motor (só no turno atual; o histórico guarda só a ação)."""
     text = player_input
     if scene:
@@ -53,11 +50,10 @@ def with_engine_facts(player_input: str, facts: Sequence[str], scene_notes: Sequ
         listed = "\n".join(f"- {note}" for note in scene_notes)
         text += ("\n\nO QUE CADA PERSONAGEM PRESENTE SABE (cada um só age e fala com base no que sabe):\n"
                  f"{listed}")
-    if rejected:
-        excerpt = rejected.strip()[:REJECTED_EXCERPT_CHARS]
-        text += ("\n\nO JOGADOR PEDIU OUTRA VERSÃO desta narração. Escreva uma diferente: outras palavras, outros "
-                 "detalhes e outro jeito de conduzir a cena, com os MESMOS resultados do motor. Versão recusada "
-                 f"(não repita):\n«{excerpt}»")
+    if regenerate:
+        # A versão recusada NÃO é mostrada: modelos pequenos copiam o que veem (medido com qwen2.5:1.5b).
+        text += ("\n\nO JOGADOR PEDIU OUTRA VERSÃO desta narração. Escreva uma nova, com outro começo, outras "
+                 "palavras, outros detalhes e outro jeito de conduzir a cena, mantendo os MESMOS resultados do motor.")
     return text
 
 
@@ -70,12 +66,12 @@ def build_narration_context(
     mechanics: bool = False,
     facts: Sequence[str] = (),
     scene_notes: Sequence[str] = (),
-    rejected: str | None = None,
+    regenerate: bool = False,
     scene: str = "",
 ) -> list[ChatMessage]:
     """Monta as mensagens, mantendo o histórico mais recente que couber no orçamento."""
     system = ChatMessage("system", build_narrator_system_prompt(brief, mechanics))
-    current = ChatMessage("user", with_engine_facts(player_input, facts, scene_notes, rejected, scene))
+    current = ChatMessage("user", with_engine_facts(player_input, facts, scene_notes, regenerate, scene))
 
     budget = context_window - max_output_tokens - SAFETY_MARGIN_TOKENS
     budget -= estimate_tokens(system.content) + estimate_tokens(current.content)

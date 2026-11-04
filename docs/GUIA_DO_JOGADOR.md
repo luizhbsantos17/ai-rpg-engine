@@ -38,6 +38,11 @@ Dica: frases claras ajudam a IA a entender a mecânica ("tento arrombar a porta 
 amanhecer"). Com o modelo pequeno instalado hoje, ela às vezes ignora a parte mecânica; o motor nunca deixa
 o estado ficar inválido, mas pode não aplicar o que você esperava.
 
+### Não gostou do texto?
+Embaixo da última narração há o botão **↻ Outra versão**: a IA escreve a mesma cena de outro jeito.
+Os dados rolados e o que aconteceu no mundo continuam iguais; só o texto muda. Se der erro, o texto
+anterior fica.
+
 ## 4. Painéis à direita (no celular: botão **Ficha**)
 | Aba | O que mostra |
 |---|---|

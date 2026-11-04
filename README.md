@@ -4,7 +4,8 @@ Plataforma de RPG narrativo com inteligência artificial: a IA cria mundos, narr
 personagens, enquanto um motor de jogo valida as regras e guarda tudo de forma persistente.
 
 > **Status: as 7 etapas da especificação estão concluídas** (Dockerfile ainda não testado). Detalhes, testes e pendências
-> em [`PROJECT_STATUS.md`](PROJECT_STATUS.md). Como jogar: [Guia do jogador](docs/GUIA_DO_JOGADOR.md).
+> em [`PROJECT_STATUS.md`](PROJECT_STATUS.md). Como jogar: [Guia do jogador](docs/GUIA_DO_JOGADOR.md). Para mexer e administrar:
+> [Guia do desenvolvedor](docs/GUIA_DO_DESENVOLVEDOR.md).
 
 ## O que já funciona
 - Campanhas independentes, criadas à mão ou **geradas aleatoriamente** (com segredos que só a IA conhece).
@@ -14,10 +15,12 @@ personagens, enquanto um motor de jogo valida as regras e guarda tudo de forma p
 - **Mundo persistente**: fatos canônicos, relógio do mundo, acontecimentos agendados, missões,
   relacionamentos, o que cada personagem sabe (com disfarces e informações falsas), memória individual de NPCs,
   NPCs que agem longe do jogador quando o tempo passa, resumos automáticos da história.
-- Interface com narração em tempo real, ficha, missões, conhecidos, mapa, diário e laços.
+- Interface com narração em tempo real, ficha, missões, conhecidos, mapa, diário e laços;
+  botão **↻ Outra versão** para reescrever a última narração (mesmos dados e resultados).
 - **Modo administrador** (`/admin`, `/debug`) separado da história, com senha, confirmação, auditoria e desfazer.
 - **Cópias de segurança**: snapshots por campanha (automáticos e manuais), exportar e importar.
-- IA local e gratuita (Ollama), ou qualquer servidor gratuito no formato OpenAI (LM Studio, llama.cpp...).
+- IA local e gratuita (Ollama), **IA gratuita na internet** (Google Gemini, Groq, OpenRouter só com modelos
+  `:free`) ou qualquer servidor no formato OpenAI (LM Studio, llama.cpp...).
   Serviços pagos: bloqueados até existir controle de gasto. Imagens: estrutura pronta, desligada.
 
 Ainda não: contas de usuário/multiplayer, serviços de IA pagos, gerador de imagens, ordem de iniciativa
@@ -57,7 +60,9 @@ O modelo comentado é o [`.env.example`](.env.example). Os mais usados:
 
 | Variável | Para que serve | Padrão |
 |---|---|---|
-| `AI_MODEL` | modelo do Ollama (ex.: `qwen2.5:1.5b`); vazio = primeiro instalado | vazio |
+| `AI_PROVIDER` | `ollama` (local), `gemini`, `groq`, `openrouter` (internet, grátis; precisam da chave) | ollama |
+| `GEMINI_API_KEY` / `GROQ_API_KEY` / `OPENROUTER_API_KEY` | chave do serviço gratuito escolhido | — |
+| `AI_MODEL` | modelo (ex.: `qwen2.5:1.5b`); vazio = escolha automática | vazio |
 | `AI_TEMPERATURE` | criatividade (0 a 2) | 0.8 |
 | `AI_MAX_OUTPUT_TOKENS` | tamanho máximo de cada narração | 1024 |
 | `AI_CONTEXT_WINDOW` | quanto histórico o modelo considera (mais = mais RAM) | 8192 |
@@ -92,6 +97,7 @@ cd frontend; npm run dev                                         # http://127.0.
 
 ## Documentação
 - [Guia do jogador](docs/GUIA_DO_JOGADOR.md)
+- [Guia do desenvolvedor e administrador](docs/GUIA_DO_DESENVOLVEDOR.md) — trocar a IA, comandos /admin, prompts, testes
 - [Hospedagem (opcional)](docs/HOSTING.md)
 - [Comece aqui (como usar o Claude Code neste projeto)](COMECE_AQUI.md)
 - [Status do projeto](PROJECT_STATUS.md)

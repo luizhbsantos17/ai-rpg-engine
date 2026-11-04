@@ -1,11 +1,11 @@
 # PROJECT_STATUS
 
-Última atualização: 2026-11-04 (sessão autônoma; Etapa 7 concluída + equipamentos + provedor openai_compat).
+Última atualização: 2026-11-04 (pedidos do dono depois de testar: outra versão, IA gratuita, ficha, disco C:).
 
 ## Resumo
 | Etapa | Status |
 |---|---|
-| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-053) |
+| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-057) |
 | 1 — Fundação | **concluída** e verificada com Ollama real |
 | 2 — Motor de RPG | **concluída** e verificada com Ollama real |
 | 3 — Narrativa e mundo | **concluída** (teste de campanha simulada com reinício) |
@@ -15,6 +15,27 @@
 | 7 — Qualidade e expansão | **concluída** (Dockerfile escrito, não testado: sem Docker nesta máquina) |
 
 ## Última tarefa concluída
+Pedidos do dono depois de testar (D-054 a D-057):
+- **Disco C:**: temporários dos testes (~270 MB por execução), cache do pip/npm e sobra do teste de desempenho
+  saíram do C: (liberados ~390 MB); agora tudo fica em `.tmp/` e `.cache/` no projeto. **Causa principal
+  do C: enchendo, medida**: `C:\pagefile.sys` (memória virtual do Windows) cresceu de 3,7 para 4,8 GB em
+  1 hora enquanto um modelo de IA estava carregado; `C:\hiberfil.sys` ocupa 5,6 GB. Ver "Decisões pendentes" 5.
+- **"↻ Outra versão"** da última narração (D-055): mesmos dados e resultados, texto novo; se falhar, a
+  anterior fica. Testado com Ollama real: troca ok; o 1,5B copiava a versão recusada quando ela era mostrada,
+  então ela deixou de ser mostrada (e a criatividade sobe +0,3 só nessa hora). Depois disso, texto diferente.
+- **IA gratuita na internet** (D-054): `AI_PROVIDER=gemini|groq|openrouter` + chave. Limites pesquisados nas
+  páginas oficiais (AI_PROVIDERS.md). **Não testado com os serviços reais** (falta a chave do dono); testado
+  com servidor simulado; teste real pronto em `tests/external/test_free_service_real.py`.
+- **Ficha inicial mais completa** (D-056): 5 a 10 atributos (energia, nível/experiência quando estilo jogo),
+  habilidades e itens iniciais equipados; regra de progressão no intérprete. Com o 1,5B real: vieram
+  habilidade e 4 itens (1 equipado), mas só 5 atributos e sem mana: o modelo pequeno ignora parte das regras.
+- **Narrador mais coerente**: recebe a CENA ATUAL (local, hora, presentes) e regras de ofício.
+- **Guia do desenvolvedor/admin**: `docs/GUIA_DO_DESENVOLVEDOR.md`.
+- Modelo local `gemma3:4b` (3,3 GB) **baixado** em `F:\Tools\ollama-models`, **não testado**: com 99 MB
+  livres no C:, carregar 4 GB de modelo pode travar o Windows (a memória extra vai para o C:).
+
+Antes: adaptador para servidores no formato OpenAI (D-053), testado com o Ollama em `/v1`.
+
 Adaptador para servidores no formato OpenAI (D-053): `AI_PROVIDER=openai_compat`, com serviços pagos
 bloqueados. Testado de verdade (sem custo) contra o Ollama em `/v1`: `pytest -m external` e um jogo completo.
 
@@ -41,33 +62,28 @@ Antes, Etapa 7.4: desempenho com campanha grande (D-049). Medição com `scripts
 Antes: 7.1 (segurança, D-047), 7.2 (teste real ponta a ponta com Ollama), 7.3 (snapshot automático, D-048).
 
 ## Próxima tarefa
-As 7 etapas da SPEC (Parte 23) estão concluídas. O que vem agora depende do dono (ver "Decisões pendentes"):
-1. **Testar a interface com os próprios olhos** (passo a passo em "Como testar") e anotar o que estranhar.
-2. Escolher um **modelo de IA maior**: é o que mais melhora a qualidade (decisão pendente 1).
-3. Melhorias técnicas que posso fazer sem decisão do dono, por prioridade:
-   a. ordem de iniciativa no combate (a SPEC não exige; hoje o combate funciona por testes + dano + efeitos);
-   b. contas de usuário para hospedagem.
+1. **Dono**: liberar espaço no C: (decisão pendente 5) e criar uma chave gratuita do Gemini (passo a passo em
+   `docs/GUIA_DO_DESENVOLVEDOR.md`, seção 2). Com a chave: rodar `pytest -m external` (teste real) e jogar.
+2. Com espaço no C:: testar o `gemma3:4b` local (velocidade e qualidade), com
+   `cd backend; .\.venv\Scripts\python.exe scripts\real_turn_check.py gemma3:4b` (banco separado).
+3. Possíveis melhorias sem decisão do dono: "desfazer a jogada inteira" (novos dados, usando snapshots);
+   ordem de iniciativa no combate; contas de usuário para hospedagem.
 
+## Arquivos modificados nesta sessão
+`backend/app/ai/orchestrator/{turns.py, events.py, mechanics.py}`, `backend/app/ai/context/narration.py`,
+`backend/app/ai/prompts/{narrator.py, interpreter.py, setup.py}`, `backend/app/ai/schemas/setup.py`,
+`backend/app/api/turns.py`, `backend/app/engine/witness.py`,
+`backend/app/persistence/repositories/{memory.py, narrative.py}`, `backend/app/services/summaries.py`,
+`backend/app/providers/{free_services.py (novo), openai_compat.py, registry.py, base.py}`, `backend/app/config.py`,
+`backend/tests/conftest.py`, `backend/tests/integration/{test_regenerate_narration.py (novo),
+test_setup_progression.py (novo), test_turn_mechanics.py}`, `backend/tests/unit/{test_free_services.py (novo),
+test_openai_compat_provider.py}`, `backend/tests/external/test_free_service_real.py (novo)`,
+`backend/scripts/benchmark_large_campaign.py`, `frontend/src/{api/campaigns.js, stores/play.js,
+stores/play.test.js, views/PlayView.vue}`, `frontend/.npmrc (novo)`, `iniciar.cmd`, `instalar.cmd`, `.gitignore`,
+`.env.example`, `README.md`, `docs/{GUIA_DO_DESENVOLVEDOR.md (novo), GUIA_DO_JOGADOR.md, AI_PROVIDERS.md,
+DECISIONS.md}`, `CHANGELOG.md`, `PROJECT_STATUS.md`. No `.env` do dono: só foram ACRESCENTADAS linhas vazias
+`GEMINI_API_KEY=`, `GROQ_API_KEY=`, `OPENROUTER_API_KEY=` (nada existente mudou).
 
-## Arquivos modificados nesta sessão (Etapa 7)
-`backend/app/__init__.py`, `backend/app/admin/sessions.py`, `backend/app/config.py`,
-`backend/app/persistence/snapshots.py`, `backend/app/services/{auto_backup.py, startup.py, background.py,
-summaries.py, journal.py}`, `backend/app/persistence/repositories/narrative.py`,
-`backend/app/persistence/models/knowledge.py`, `backend/app/ai/context/game_state.py`,
-`backend/app/admin/commands.py`, `backend/alembic/versions/...db33890eefb9_indice_memorias_npc.py`,
-`backend/scripts/benchmark_large_campaign.py`, `backend/app/persistence/snapshot_upgrade.py`,
-`backend/app/services/campaigns.py`, `backend/tests/integration/test_snapshot_upgrade.py`,
-`backend/app/{web.py, __init__.py, config.py}`, `backend/pyproject.toml`,
-`backend/tests/integration/test_frontend_serving.py`, `Dockerfile`, `.dockerignore`, `README.md`,
-`docs/{GUIA_DO_JOGADOR.md, HOSTING.md, ARCHITECTURE.md}`,
-`backend/app/engine/{operations/schemas.py, operations/handlers/items.py, rules/variables.py, notifications.py}`,
-`backend/app/ai/{context/game_state.py, prompts/interpreter.py, prompts/setup.py, schemas/setup.py}`,
-`backend/app/services/sheet.py`, `backend/tests/integration/test_equipment.py`,
-`frontend/src/components/CharacterSheet.{vue,test.js}`, `backend/app/providers/{openai_compat.py, registry.py}`,
-`backend/tests/{unit/test_openai_compat_provider.py, external/test_openai_compat_real.py}`,
-`backend/tests/{integration/test_security.py, integration/test_auto_backup.py,
-integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
-`docs/{AI_PROVIDERS.md, DECISIONS.md, DATABASE.md}`, `CLAUDE.md`, `PROJECT_STATUS.md`, `CHANGELOG.md`.
 
 ## Pendências menores
 - Combate sem ordem de iniciativa dedicada (funciona por testes + dano condicional + efeitos + morte).
@@ -96,14 +112,18 @@ integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
 | Python 3.13.3 | ok |
 | Node.js | sistema: 20.11.1 (não usado); **projeto: 24.22.2 LTS portátil em `F:\Tools\node-v24.22.2-win-x64`** |
 | Ollama | **0.40.14 portátil em `F:\Tools\ollama`**, modelos em `F:\Tools\ollama-models` |
-| Modelo instalado | `qwen2.5:1.5b` (986 MB) |
-| Disco | C: ~3,3 GB livres (nada instalado no C:); F: ~21 GB livres |
+| Modelos instalados | `qwen2.5:1.5b` (986 MB), `gemma3:4b` (3,3 GB, ainda não testado) |
+| Disco | C: **~0,1 GB livre** (pagefile 4,8 GB + hiberfil 5,6 GB; nada do projeto no C:); F: ~14 GB livres |
 
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **351 passed**, 3 deselected (externos) |
-| 2026-11-04 | frontend `npm test` (Vitest) | **45 passed** |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **367 passed**, 5 deselected (externos) |
+| 2026-11-04 | frontend `npm test` (Vitest) | **48 passed** (uma execução antes caiu por falta de RAM do PC; repetida ok) |
+| 2026-11-04 | `pytest -m external` (Ollama nativo + /v1; serviços gratuitos sem chave) | **3 passed, 2 skipped** |
+| 2026-11-04 | "outra versão" com Ollama real (`qwen2.5:1.5b`), banco separado | ok: troca feita, texto novo diferente; 1ª jogada 77–90 s, outra versão 25 s |
+| 2026-11-04 | serviços Gemini/Groq/OpenRouter de verdade | **não testado** (sem chave do dono) |
+| 2026-11-04 | `gemma3:4b` local | **não testado** (baixado; C: com 99 MB livres) |
 | 2026-11-04 | frontend `npm run build` | ok |
 | 2026-11-04 | `pytest -m external` com Ollama real (nativo + formato OpenAI em /v1) | **3 passed** |
 | 2026-11-04 | jogo completo com `AI_PROVIDER=openai_compat` (Ollama /v1) | ok: geração 7 s; 1º turno 66 s; depois 13–19 s |
@@ -130,13 +150,19 @@ integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
 - 5 vulnerabilidades "moderadas" no `npm audit` só em dependência de testes.
 
 ## Decisões pendentes (dependem do dono)
-0. **Serviços de IA pagos**: o adaptador existe, mas fica bloqueado. Liberar exige: controle de gasto
-   (ainda não implementado), pesquisa de preços com fonte e sua autorização.
-1. **Modelo de IA**: baixar um maior? `qwen2.5:3b` (1,9 GB), `gemma3:4b` (3,4 GB), `qwen2.5:7b` (4,7 GB).
-   Ou serviço externo (pode ter custo; exige pesquisa de preços e autorização).
+0. **Serviços de IA pagos**: bloqueados. Liberar exige controle de gasto, pesquisa de preços e sua autorização.
+1. **Chave de IA gratuita**: criar a chave (Gemini recomendado; passo a passo no guia do desenvolvedor) e
+   colocar no `.env`. Só você pode criar a conta. Lembre: o texto da história vai para o serviço.
 2. **GPU integrada** no Ollama (`OLLAMA_IGPU_ENABLE=1`): testar se acelera?
 3. Apagar `F:\Tools\downloads` (~1,7 GB de zips já extraídos)? Não apaguei por segurança.
-4. **Gerador de imagens**: deixar desligado, ou escolher um (serviço pago ou modelo local grande).
+4. **Gerador de imagens**: deixar desligado, ou escolher um.
+5. **Espaço no C:** (mudanças no Windows; precisam de você como administrador, e dá para desfazer):
+   a. desligar a hibernação (libera ~5,6 GB): PowerShell **como administrador** → `powercfg /h off`
+      (desfazer: `powercfg /h on`). O "Início rápido" do Windows deixa de existir; o PC continua igual.
+   b. mover a memória virtual para o F:: Configurações avançadas do sistema → Desempenho → Avançado →
+      Memória virtual → Alterar → C: "Sem arquivo de paginação", F: "Gerenciado pelo sistema" → reiniciar.
+   c. limpar o que não é do projeto: "Limpeza de disco" (arquivos do Windows Update), duas versões do app
+      Codex (~2,3 GB cada) em WindowsApps, cache de extensões do VS Code (~700 MB), cache do Google Updater (~500 MB).
 
 ## Como testar (passo a passo para o dono)
 1. Dois cliques em `F:\Projetos\AI-RPG-Engine\iniciar.cmd`. Abrem 3 janelas pretas e o navegador.

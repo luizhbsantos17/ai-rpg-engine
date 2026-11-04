@@ -17,7 +17,7 @@ import logging
 import time
 import uuid
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from sqlalchemy.exc import IntegrityError
@@ -62,6 +62,8 @@ SUMMARIES_IN_CONTEXT = 3
 RECALLED_IN_CONTEXT = 4
 RECENT_TURNS_SEEN = 6  # turnos tão recentes que já estão no histórico enviado
 NARRATOR_ROLE = "narrator"
+REGENERATE_EXTRA_TEMPERATURE = 0.3
+REGENERATE_MAX_TEMPERATURE = 1.3
 INTERRUPTED_MESSAGE = "Jogada interrompida antes do fim (conexão encerrada). Tente de novo."
 INTERNAL_ERROR_MESSAGE = "Erro interno ao processar a jogada. Tente de novo; se persistir, veja o log do servidor."
 
@@ -287,10 +289,14 @@ class TurnOrchestrator:
                 prepared.brief, prepared.history, prepared.player_input,
                 settings.ai_context_window, settings.ai_max_output_tokens,
                 mechanics=prepared.mechanics is not None, facts=facts, scene_notes=scene_notes, scene=scene,
-                rejected=prepared.previous_narration["content"] if regenerating else None,
+                regenerate=regenerating,
             )
             result: CompletionResult | None = None
-            for event in self.provider.stream(prepared.context, generation_options(settings, model)):
+            options = generation_options(settings, model)
+            if regenerating:  # um pouco mais de variação, para a nova versão não sair igual
+                options = replace(options, temperature=min((options.temperature or 0.8) + REGENERATE_EXTRA_TEMPERATURE,
+                                                           REGENERATE_MAX_TEMPERATURE))
+            for event in self.provider.stream(prepared.context, options):
                 if isinstance(event, TextDelta):
                     yield NarrationDelta(event.text)
                 elif isinstance(event, StreamCompleted):
