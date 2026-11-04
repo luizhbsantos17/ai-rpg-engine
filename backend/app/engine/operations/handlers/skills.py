@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from app.engine.errors import OperationRejected
+from app.engine.expressions import ExpressionError, evaluate
 from app.engine.operations.context import OperationContext
-from app.engine.operations.schemas import SkillEvolve, SkillGrant, SkillRevoke
+from app.engine.operations.schemas import SkillEvolve, SkillGrant, SkillRevoke, SkillUse
+from app.engine.rules.values import number_text, to_decimal
+from app.engine.rules.variables import entity_variables
 from app.persistence.models import EntitySkill
 
 
@@ -60,4 +65,51 @@ def skill_evolve(op: SkillEvolve, ctx: OperationContext) -> dict:
             "from": previous, "to": new_level}
 
 
-HANDLERS = {"skill.grant": skill_grant, "skill.revoke": skill_revoke, "skill.evolve": skill_evolve}
+def skill_use(op: SkillUse, ctx: OperationContext) -> dict:
+    """Confere se pode usar e cobra os custos. Faltou recurso para algum custo: nada é cobrado."""
+    entity = ctx.entity(op.entity, allow_dead=False)
+    definition = _definition(ctx, op.key)
+    skill = ctx.data.skills.get_for(entity.id, op.key)
+    if skill is None or not skill.active:
+        raise OperationRejected(f"{entity.name} não tem a habilidade {definition['name']}.")
+    target = ctx.entity(op.target) if op.target else None
+    variables = {**entity_variables(ctx.data, entity), "level": Decimal(skill.level)}
+
+    paid = []
+    for cost in definition.get("costs", []):
+        amount = _cost_amount(cost["amount"], variables, definition["name"])
+        resource = ctx.data.attributes.get_for(entity.id, cost["resource"])
+        if resource is None:
+            raise OperationRejected(f"{entity.name} não tem {cost['resource']} para pagar {definition['name']}.")
+        current = to_decimal(resource.value)
+        if amount > current:
+            raise OperationRejected(
+                f"{entity.name} não tem {cost['resource']} suficiente para {definition['name']} "
+                f"({resource.value} < {number_text(amount)})."
+            )
+        previous = resource.value
+        ctx.data.attributes.upsert(entity.id, cost["resource"], number_text(current - amount))
+        paid.append({"resource": cost["resource"], "amount": number_text(amount), "from": previous,
+                     "to": number_text(current - amount), "max": resource.max_value})
+    return {"entity_id": entity.id, "name": entity.name, "key": op.key, "skill": definition["name"],
+            "level": skill.level, "target_id": target.id if target else None,
+            "target": target.name if target else None, "costs": paid}
+
+
+def _cost_amount(raw, variables, skill_name: str) -> Decimal:
+    try:
+        amount = to_decimal(raw)
+    except OperationRejected:
+        try:
+            amount = evaluate(str(raw), variables)
+        except ExpressionError as exc:
+            raise OperationRejected(f"Custo de {skill_name} com fórmula inválida: {exc}") from None
+        if not isinstance(amount, Decimal):
+            raise OperationRejected(f"O custo de {skill_name} precisa ser um número.")
+    if amount < 0:
+        raise OperationRejected(f"O custo de {skill_name} não pode ser negativo.")
+    return amount
+
+
+HANDLERS = {"skill.grant": skill_grant, "skill.revoke": skill_revoke, "skill.evolve": skill_evolve,
+            "skill.use": skill_use}

@@ -137,6 +137,27 @@ def test_skills_grant_evolve_revoke_and_limits(db, campaign_id, run, world):
     assert skills == {"bola_de_fogo": 5}
 
 
+def test_skill_use_pays_costs_all_or_nothing(db, campaign_id, run, world):
+    outcomes = run([
+        {"op": "definition.create", "kind": "skill", "key": "explosao",
+         "data": {"name": "Explosão", "costs": [{"resource": "vida", "amount": 2},
+                                                 {"resource": "mana", "amount": "5 * level"}]}},
+        {"op": "skill.use", "entity": "player", "key": "bola_de_fogo"},  # ainda não aprendeu
+        {"op": "skill.grant", "entity": "player", "key": "bola_de_fogo"},
+        {"op": "skill.use", "entity": "player", "key": "bola_de_fogo", "target": world["Goblin"]},
+        {"op": "skill.grant", "entity": "player", "key": "explosao", "level": 3},
+        {"op": "skill.use", "entity": "player", "key": "explosao"},  # paga 2 de vida e 15 de mana
+        {"op": "skill.use", "entity": "player", "key": "explosao"},  # vida dá, mana não: nada é cobrado
+    ])
+    assert [o["status"] for o in outcomes] == ["applied", "rejected", "applied", "applied", "applied", "applied", "rejected"]
+    assert outcomes[3]["result"]["costs"] == [{"resource": "mana", "amount": "10", "from": "25.5", "to": "15.5", "max": "25.5"}]
+    assert outcomes[3]["result"]["target"] == "Goblin"
+    assert [c["amount"] for c in outcomes[5]["result"]["costs"]] == ["2", "15"]  # 5 * nível 3
+    assert "suficiente" in outcomes[6]["reason"]
+    values = read(db, campaign_id, lambda d: attrs(d, world["Aria"]))
+    assert values["mana"][0] == "0.5" and values["vida"][0] == "28"  # a vida da tentativa recusada voltou
+
+
 def test_inventory_without_duplication(db, campaign_id, run, world):
     created = run([
         {"op": "item.create", "ref": "p", "key": "pocao", "owner": "player", "quantity": 3},

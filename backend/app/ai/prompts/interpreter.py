@@ -28,6 +28,7 @@ Operações (campo "op" + campos):
 - attribute.set {entity, key, value, max} · attribute.modify {entity, key, delta}  (delta: número ou fórmula)
 - resource.spend {entity, key, amount} · resource.restore {entity, key, amount}
 - skill.grant {entity, key, level} · skill.evolve {entity, key, levels} · skill.revoke {entity, key}
+- skill.use {entity, key, target}: usar uma habilidade; o motor cobra os custos dela sozinho (não gaste à mão).
 - item.create {ref, key, owner OU location, quantity} · item.transfer {item, to_owner OU to_location, quantity}
 - item.destroy {item, quantity}
 - check.request {ref, actor, target, label, dice: "1d20", modifier, difficulty, critical_success, critical_failure}

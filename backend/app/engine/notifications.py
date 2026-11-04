@@ -69,6 +69,10 @@ def _applied_line(op: str, r: dict[str, Any]) -> str:
         return f"{r['skill']} de {r['name']} evoluiu do nível {r['from']} para {r['to']}."
     if op == "skill.revoke":
         return f"{r['name']} perdeu a habilidade '{r['key']}'."
+    if op == "skill.use":
+        target = f" em {r['target']}" if r.get("target") else ""
+        costs = ", ".join(f"{c['amount']} de {c['resource']}" for c in r["costs"])
+        return f"{r['name']} usou {r['skill']}{target}" + (f" (gastou {costs})." if costs else ".")
     if op == "item.create":
         return f"{r['holder']} recebeu {r['item']} ×{r['quantity']}."
     if op == "item.transfer":
@@ -118,6 +122,9 @@ def _player_notice(op: str, r: dict[str, Any], player_id: str) -> PlayerNotice |
         return PlayerNotice("SISTEMA", f"{r['skill']} evoluiu: nível {r['from']} → {r['to']}.")
     if op == "skill.revoke":
         return PlayerNotice("ALERTA", f"Habilidade perdida: {r['key']}.")
+    if op == "skill.use":
+        costs = ", ".join(f"−{c['amount']} {c['resource']} ({c['to']})" for c in r["costs"])
+        return PlayerNotice("SISTEMA", f"Habilidade usada: {r['skill']}" + (f" · {costs}" if costs else "") + ".")
     if op == "entity.update" and r.get("changes", {}).get("status", {}).get("to") == "dead":
         return PlayerNotice("ALERTA", "Você morreu.")
     if op == "entity.move":

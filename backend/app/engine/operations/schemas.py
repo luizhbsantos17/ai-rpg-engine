@@ -134,6 +134,15 @@ class SkillEvolve(Operation):
     levels: int = Field(default=1, ge=1)
 
 
+class SkillUse(Operation):
+    """Usa uma habilidade: o motor cobra os custos definidos nela (tudo ou nada)."""
+
+    op: Literal["skill.use"]
+    entity: Ref
+    key: Key
+    target: Ref | None = None
+
+
 class ItemCreate(Operation):
     op: Literal["item.create"]
     ref: Ref | None = None
@@ -185,7 +194,7 @@ class EventRecord(Operation):
 AnyOperation = Annotated[
     DefinitionCreate | DefinitionAmend | EntityCreate | EntityUpdate | EntityRemove | EntityMove
     | AttributeSet | AttributeModify | ResourceSpend | ResourceRestore
-    | SkillGrant | SkillRevoke | SkillEvolve | ItemCreate | ItemTransfer | ItemDestroy
+    | SkillGrant | SkillRevoke | SkillEvolve | SkillUse | ItemCreate | ItemTransfer | ItemDestroy
     | CheckRequest | EventRecord,
     Field(discriminator="op"),
 ]
@@ -194,7 +203,7 @@ OPERATION_ADAPTER: TypeAdapter[AnyOperation] = TypeAdapter(AnyOperation)
 OPERATION_NAMES = (
     "definition.create", "definition.amend", "entity.create", "entity.update", "entity.remove", "entity.move",
     "attribute.set", "attribute.modify", "resource.spend", "resource.restore",
-    "skill.grant", "skill.revoke", "skill.evolve", "item.create", "item.transfer", "item.destroy",
+    "skill.grant", "skill.revoke", "skill.evolve", "skill.use", "item.create", "item.transfer", "item.destroy",
     "check.request", "event.record",
 )
 
