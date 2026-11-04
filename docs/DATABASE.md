@@ -21,8 +21,11 @@ Status: modelo inicial da Etapa 0. Colunas podem mudar; toda mudança vira migra
 | `campaign_intro` | campaign_id, player_visible JSON, gm_secret JSON, version | separa o que o jogador vê dos segredos |
 
 Implementadas na Etapa 1 (migração `2026_11_03_2328-32791f394f68`): `users`, `campaigns`,
-`campaign_intro`, `turns`, `messages`, `events`, `ai_requests`. As demais tabelas abaixo são o plano
-das próximas etapas. `world_clock` = minutos do mundo desde o início da campanha (inteiro).
+`campaign_intro`, `turns`, `messages`, `events`, `ai_requests`.
+Etapa 2 (migração `2026_11_03_2353-f2dd50ffa852`): `definitions`, `entities`, `entity_attributes`,
+`entity_skills`, `item_instances`, `effects`, `dice_rolls`; e (`2026_11_04_0016-d35448393fd0`)
+`turns.mechanics` (resumo das mecânicas aplicadas no turno, para repetição segura).
+As demais tabelas abaixo são o plano das próximas etapas. `world_clock` = minutos do mundo desde o início da campanha (inteiro).
 `ai_requests.request_messages` guarda as mensagens enviadas à IA (para `/debug show_context`).
 
 ### Definições (o "sistema de RPG" de cada campanha)

@@ -118,3 +118,34 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
 ### D-024 — `complete_json` fica para a Etapa 2
 - Decisão: a interface de provedores da Etapa 1 tem `stream`, `complete` e `list_models`. A resposta estruturada
   (JSON validado, com reenvio do erro — D-008) entra com o papel "intérprete" na Etapa 2, que é quando ela é usada.
+
+### D-025 — Operações condicionais ao resultado de testes
+- Contexto: o intérprete propõe todas as operações numa resposta, antes de o motor rolar os dados; mas o dano
+  de um ataque depende de o ataque acertar.
+- Decisão: toda operação aceita `"when": {"check": "<ref de um check.request anterior>", "success": true|false}`.
+  O pipeline aplica só se o teste teve aquele resultado; senão a operação fica `skipped` (sem efeito).
+- Alternativas: uma segunda chamada ao intérprete depois dos dados (mais lenta, ~+10 s por turno em CPU).
+
+### D-026 — Reenvio à IA só para erros de formato
+- Decisão: JSON inválido ou fora do esquema → reenvio com o erro (até `AI_JSON_ATTEMPTS`). Operação válida no
+  formato mas recusada pelas regras (ex.: mana insuficiente) NÃO é reenviada: fica registrada
+  (`operation.rejected`) e o narrador é avisado de que "não aconteceu".
+- Motivo: cada reenvio custa uma chamada à IA; o motor já impede o dano, e a narração explica a falha.
+
+### D-027 — Preparação da campanha com formato próprio e simples
+- Decisão: no 1º turno (sem protagonista), a IA responde um JSON simples (`CampaignSetup`: atributos,
+  protagonista, local) que o motor converte em operações. Atributos repetidos são descartados; se nenhum
+  vier marcado como recurso, um com nome típico (vida, energia, mana...) é marcado.
+- Motivo: medido com `qwen2.5:1.5b`: com operações livres a IA não criava nada; com o formato simples criou.
+
+### D-028 — Limites de tamanho próprios para intérprete (512) e preparação (800 tokens)
+- Motivo: medido com Ollama real: sem limite, o intérprete às vezes gerava até o máximo da narração e o JSON
+  saía cortado (90 s perdidos por turno).
+
+### D-029 — Testes do fluxo de narração com o motor desligado
+- Decisão: a fixture padrão dos testes usa `AI_MECHANICS=false` (Etapa 1); os testes do motor usam
+  `mechanics_settings`. Os dois modos são suportados pelo produto (`AI_MECHANICS` no `.env`).
+
+### D-030 — `skill.use` cobra custos de forma atômica
+- Decisão: usar habilidade é uma operação; o motor cobra todos os custos declarados na definição (número ou
+  fórmula com `level` e atributos) ou nenhum. Recarga (cooldown) fica para a Etapa 4 (depende do relógio do mundo).

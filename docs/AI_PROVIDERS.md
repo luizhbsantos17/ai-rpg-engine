@@ -49,6 +49,17 @@ Conclusão: a integração está comprovada, mas uma narração de qualidade pre
 | `gemma3:4b` | 3,4 GB | contexto 128K; texto e imagem |
 | `qwen2.5:7b` | 4,7 GB | provavelmente o limite prático nesta RAM; mais lento |
 
+### Motor ligado (intérprete + narrador), `qwen2.5:1.5b`, 2026-11-04
+| Chamada | Tokens gerados | Tempo |
+|---|---|---|
+| preparação da campanha (1º turno) | 360 | 15,7 s |
+| intérprete | 81–151 | 7,5–14,4 s |
+| narrador | 325–334 | 13,4–16,3 s |
+Turno completo: ~21 s (com preparação no 1º turno: ~46 s). JSON sempre válido depois do limite de 512 tokens
+(D-028). Preparação funcionou (atributos, protagonista, local). O intérprete pediu um teste quando fazia
+sentido em um caso, mas em outro aumentou "Força" por um chute numa porta: **as escolhas mecânicas do
+modelo de 1,5B não são confiáveis**; o motor impede estados inválidos, mas não escolhas ruins.
+
 Modelos com modo "pensamento" (ex.: família `qwen3`) foram evitados por enquanto: o texto de raciocínio
 precisaria ser separado da narração.
 

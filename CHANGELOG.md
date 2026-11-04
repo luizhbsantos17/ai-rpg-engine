@@ -1,6 +1,13 @@
 # CHANGELOG
 
-## [0.2.0-dev] — Etapa 2 (em andamento)
+## [0.2.0] — Etapa 2 (concluída)
+- Turno em duas fases (D-013): preparação da campanha (1º turno), intérprete com JSON validado e reenvio
+  do erro, motor aplica operações, narrador recebe os fatos; repetição segura via `turns.mechanics`.
+- Operações condicionais (`when`) e `skill.use` (cobra custos tudo-ou-nada).
+- Ficha do protagonista (API + painel "STATUS") e avisos [SISTEMA]/[TESTE]/[ALERTA] no chat.
+- `AI_MECHANICS` e `AI_JSON_ATTEMPTS`; limites próprios de tokens para intérprete e preparação.
+- Correção: valor "anterior" errado nas operações de atributo.
+- Testado com Ollama real (`qwen2.5:1.5b`): operações aplicadas e persistidas; dados rolados pelo motor.
 - Motor: `engine/dice` (sementes registradas e reproduzíveis), `engine/expressions` (fórmulas seguras, Decimal
   com 100 dígitos), `engine/rules` (definições abertas versionadas), `engine/operations` (18 operações primitivas
   com validação, savepoint por operação e registro no log).

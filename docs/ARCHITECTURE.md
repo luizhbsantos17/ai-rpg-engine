@@ -95,6 +95,19 @@ Docker é opcional nesta fase (facilita a hospedagem futura, mas complica a inst
 | `frontend/src/stores/` | estado da lista de campanhas e da partida (Pinia) |
 | `frontend/src/views/`, `components/` | telas e peças visuais |
 
+### 3.2.1. Módulos do motor (Etapa 2)
+| Módulo | Responsabilidade |
+|---|---|
+| `app/engine/dice/` | notação de dados, rolagem com semente, `derive_seed` (única fonte de aleatoriedade) |
+| `app/engine/expressions/` | avaliador de fórmulas sem `eval` (árvore `ast` + lista do que é permitido; Decimal, 100 dígitos) |
+| `app/engine/rules/` | esquemas de definições (parte obrigatória + livre), valores por tipo, variáveis para fórmulas |
+| `app/engine/operations/` | catálogo (Pydantic), contexto (apelidos, "player"), aplicadores, pipeline com savepoint |
+| `app/engine/notifications.py` | texto para o narrador (verdade) e avisos do jogador (só o protagonista) |
+| `app/ai/structured.py` | JSON com esquema + validação + reenvio do erro |
+| `app/ai/context/game_state.py` | regras, ficha do protagonista e cena para o intérprete (apelidos e1, i1...) |
+| `app/ai/orchestrator/mechanics.py` | preparação da campanha → intérprete → motor → resumo guardado no turno |
+| `app/services/sheet.py` | ficha do protagonista para a interface |
+
 ### 3.3. API HTTP (Etapa 1)
 | Método e endereço | O que faz |
 |---|---|
@@ -104,11 +117,12 @@ Docker é opcional nesta fase (facilita a hospedagem futura, mas complica a inst
 | `GET /api/campaigns/<id>` | dados visíveis da campanha (nunca os segredos do mestre) |
 | `GET /api/campaigns/<id>/history?after_seq=n` | turnos e mensagens, para retomar exatamente |
 | `DELETE /api/campaigns/<id>` | exclui: exige `{confirm_title}` igual ao título |
+| `GET /api/campaigns/<id>/sheet` | ficha do protagonista (`{"character": null}` antes da preparação) |
 | `POST /api/campaigns/<id>/turns` | joga: `{turn_id (UUID do frontend), input}` → stream SSE |
 
-Eventos do stream do turno: `turn` (turno registrado + mensagem do jogador), `delta` (pedaço da
-narração), `done` (narração salva) ou `error` (`message`, `retryable`). Erros do pedido (404, 409, 400)
-voltam como JSON comum, antes do stream.
+Eventos do stream do turno: `turn` (turno registrado + mensagem do jogador), `mechanics` (avisos
+`[SISTEMA]`/`[TESTE]` do motor), `delta` (pedaço da narração), `done` (narração salva) ou `error`
+(`message`, `retryable`). Erros do pedido (404, 409, 400) voltam como JSON comum, antes do stream.
 
 ---
 
@@ -220,6 +234,16 @@ dela vira, por exemplo, `effect.apply` + `attribute.modify` + `knowledge.record`
 
 O catálogo pode crescer, mas cada verbo novo exige validador e testes.
 
+**Implementado na Etapa 2** (`app/engine/operations/`): `definition.create/amend`, `entity.create/update/
+remove/move`, `attribute.set/modify`, `resource.spend/restore`, `skill.grant/revoke/evolve/use`,
+`item.create/transfer/destroy`, `check.request`, `event.record`. Ficam para as próximas etapas:
+`effect.*` e `time.advance` (Etapa 3/4), `relationship.change`, `knowledge.record`, `canon.*`, `quest.*`,
+`event.schedule` (Etapa 3).
+
+Regras do pipeline: cada operação é aplicada num *savepoint* (se for recusada, só ela é desfeita, inclusive
+apelidos `ref`); toda operação aceita `reason` e `when` (condição sobre um teste anterior, D-025); toda
+operação aplicada ou recusada fica no log de eventos.
+
 ### 5.3. Fórmulas seguras
 
 Regras como "dano = Força × 1.5 + nível da habilidade" são guardadas como texto e
@@ -251,9 +275,13 @@ Valores numéricos usam `Decimal` em texto no banco para não estourar limites.
 10. Passo de simulação do mundo (NPCs, eventos agendados) conforme intensidade configurada
 ```
 
-Na Etapa 1 (sem motor de regras ainda) há só a chamada de narração. A partir da Etapa 2,
-o passo 4 (intérprete, JSON) e o passo 8 (narradora, streaming) são chamadas separadas,
-e a narração sempre vem depois dos resultados reais (DECISIONS D-013).
+Com `AI_MECHANICS=true` (padrão, Etapa 2), o passo 4 (intérprete, JSON) e o passo 8 (narradora,
+streaming) são chamadas separadas, e a narração vem depois dos resultados reais (D-013). No 1º turno de
+uma campanha sem protagonista, antes do intérprete roda a **preparação** (D-027). Com
+`AI_MECHANICS=false`, só há a chamada de narração (fluxo da Etapa 1).
+
+Repetição segura: as operações do intérprete e o resumo (`turns.mechanics`) são gravados na mesma
+transação; se a narração falhar e o turno for repetido, o motor não aplica nada de novo.
 
 **Transações curtas** (D-012): nenhuma chamada à IA acontece com transação do banco aberta.
 O turno é registrado como `processing`, a IA é chamada, e só o passo 7 (aplicação) é a

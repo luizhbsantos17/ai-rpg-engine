@@ -5,106 +5,109 @@
 ## Resumo
 | Etapa | Status |
 |---|---|
-| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-024) |
-| 1 — Fundação | **concluída**: critério verificado com Ollama real (falta só o usuário olhar a interface no navegador) |
-| 2 — Motor de RPG | **em andamento**: dados, fórmulas, tabelas e pipeline de operações prontos; falta ligar à IA e à interface |
-| 3 a 7 | não iniciadas |
+| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-030) |
+| 1 — Fundação | **concluída** e verificada com Ollama real (falta só o usuário olhar a interface) |
+| 2 — Motor de RPG | **concluída**: critério verificado com Ollama real (operações alteram dados reais e persistentes) |
+| 3 — Narrativa e mundo | não iniciada (plano abaixo) |
+| 4 a 7 | não iniciadas |
 
 ## Última tarefa concluída
-Etapa 2.4 — pipeline de operações do motor (validar → aplicar em savepoint → registrar no log).
+Etapa 2 — turno em duas fases (intérprete → motor → narrador), ficha do protagonista, `skill.use`.
 
-## Próxima tarefa: Etapa 2.5 — IA intérprete + turno em duas chamadas (D-013)
-1. `complete_json` nos provedores: pedir JSON, validar com Pydantic, reenviar o erro à IA (máx. N tentativas, D-008).
-2. Prompt do intérprete: recebe estado relevante (protagonista, entidades da cena, definições) e devolve
-   `{"operations": [...]}`; operações recusadas voltam com o motivo.
-3. Orquestrador: intérprete → `apply_operations` (na transação do turno, com os testes rolados pelo motor) →
-   narrador recebe os resultados reais → narração em streaming.
-4. Criação do protagonista e das regras iniciais da campanha (operações `definition.create`/`entity.create` geradas pela IA).
-5. API e interface: ficha do protagonista (atributos, recursos, habilidades, inventário) e mensagens `[SISTEMA]`
-   para operações aplicadas (nova habilidade, item recebido, teste rolado...).
-6. Testes: fluxo com FakeProvider roteirizando JSON válido/inválido; teste externo com Ollama.
-Critério da Etapa 2 (SPEC Parte 23): as operações do RPG modificam dados reais e persistentes.
+## Próxima tarefa: Etapa 3 — Narrativa e mundo
+Critério (SPEC Parte 23): a campanha possui continuidade narrativa e acontecimentos persistentes.
+Subtarefas planejadas, nesta ordem:
+1. **Registro canônico** (SPEC 3.4): tabela `canon_facts` com versões; operações `canon.assert` / `canon.amend`
+   (alterar exige motivo e cria versão nova); fatos relevantes entram no contexto do intérprete e do narrador.
+2. **Relógio do mundo** (SPEC 10.3): `time.advance`; `scheduled_events` + `event.schedule`; eventos vencidos
+   processados quando o relógio anda; fechar o programa não avança o tempo (já testado).
+3. **Relacionamentos** (SPEC 9): `relationships` (direcional, várias dimensões) + `relationship_events`;
+   operação `relationship.change` sempre com o acontecimento que causou.
+4. **Conhecimento e memória de NPCs** (SPEC 6.5 e 8.2): `knowledge` + `npc_memories`; `knowledge.record`;
+   NPCs presentes numa cena guardam memória do que viram; contexto de NPC só com o que ele sabe.
+5. **Missões** (SPEC 10.1): `quests` + `quest.create` / `quest.update`; painel na interface.
+6. **Memória em camadas** (SPEC 15.1): `summaries` por cena/arco gerados pela IA "resumidora"; busca FTS5 em
+   eventos e resumos para recuperar fatos antigos sem mandar o histórico inteiro.
+7. **Geração de campanhas** (SPEC 3): campanha aleatória pela IA, gerar de novo, preservar elementos,
+   separação `player_visible` × `gm_secret`; tela de criação nova.
+8. **Turmas e grupos** (SPEC 4.3): vários personagens com atributos, personalidades e objetivos próprios.
+9. Testes de fluxo: campanha simulada com NPCs, relacionamentos e retomada.
 
 ## O que existe e funciona (com testes)
 - **Backend** (`backend/`, Python 3.13, Flask 3.1, SQLAlchemy 2.1, Alembic 1.20, Pydantic 2.14, httpx):
-  - configuração por `.env` com validação; migrações automáticas ao iniciar; usuário local;
-  - banco SQLite (WAL, chaves estrangeiras, savepoints) com 2 migrações e 14 tabelas;
+  - configuração por `.env` com validação; migrações automáticas ao iniciar (3 migrações, 14 tabelas);
   - repositórios com filtro obrigatório por `campaign_id` (+ testes guardiões no código-fonte);
-  - provedores `fake` (só testes) e `ollama` (real, com streaming);
-  - turno idempotente com recuperação de falhas e retomada após reiniciar;
-  - API de campanhas e turnos com SSE;
-  - **motor (Etapa 2, ainda não ligado ao turno)**: `engine/dice` (semente registrada, reproduzível),
-    `engine/expressions` (fórmulas sem `eval`, Decimal sem teto), `engine/rules` (definições abertas
-    versionadas, valores por tipo), `engine/operations` (18 operações primitivas validadas e registradas).
-- **Frontend** (`frontend/`, Vue 3.5, Vite 8, Pinia 4, Vue Router 5): lista/criação/exclusão de campanhas e
-  tela de jogo com narração em tempo real, falhas com "Tentar de novo". Build de produção ok.
+  - provedores `fake` (só testes) e `ollama` (real, streaming, saída JSON com esquema);
+  - turno idempotente: preparação da campanha → intérprete (JSON validado + reenvio do erro) → motor →
+    narrador com os fatos; repetição segura; retomada após reiniciar;
+  - motor: `engine/dice` (semente registrada), `engine/expressions` (fórmulas sem `eval`), `engine/rules`
+    (definições abertas versionadas), `engine/operations` (19 operações, `when` condicional, savepoint por operação);
+  - API: campanhas, histórico, ficha do protagonista, turno com SSE (eventos `turn`, `mechanics`, `delta`, `done`, `error`).
+- **Frontend** (`frontend/`, Vue 3.5, Vite 8, Pinia 4, Vue Router 5): lista/criação/exclusão de campanhas;
+  jogo com narração em tempo real, avisos `[SISTEMA]`/`[TESTE]`/`[ALERTA]`, painel "STATUS" do protagonista
+  (barras de recurso, atributos, habilidades, inventário), falhas com "Tentar de novo".
 - **Atalhos**: `instalar.cmd` e `iniciar.cmd` (abre Ollama portátil, backend, frontend e navegador).
 
 ## Ambiente do usuário (verificado em 2026-11-03/04)
 | Item | Situação |
 |---|---|
-| Windows 11 Pro, Ryzen 5 4600G (só GPU integrada), 13,8 GB RAM | IA local só com modelos pequenos/médios, em CPU |
+| Windows 11 Pro, Ryzen 5 4600G (só GPU integrada), 13,8 GB RAM | IA local em CPU |
 | Python 3.13.3 | ok |
-| Node.js | sistema: 20.11.1 (antigo, não usado); **projeto: 24.22.2 LTS portátil em `F:\Tools\node-v24.22.2-win-x64`** |
+| Node.js | sistema: 20.11.1 (não usado); **projeto: 24.22.2 LTS portátil em `F:\Tools\node-v24.22.2-win-x64`** |
 | Ollama | **0.40.14 portátil em `F:\Tools\ollama`**, modelos em `F:\Tools\ollama-models` |
 | Modelo instalado | `qwen2.5:1.5b` (986 MB) |
-| Disco | C: ~3,3 GB livres (nada foi instalado no C:); F: ~21 GB livres após Node + Ollama + modelo |
-| Pastas no F:\Tools | `downloads\` (zips do Node e do Ollama, ~1,7 GB, podem ser apagados pelo usuário), `npm-cache\` |
+| Disco | C: ~3,3 GB livres (nada instalado no C:); F: ~21 GB livres |
+| `F:\Tools\downloads` | zips do Node e do Ollama (~1,7 GB) já extraídos; podem ser apagados pelo usuário |
 
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo, FakeProvider) | **186 passed**, 1 deselected (externo) |
-| 2026-11-04 | frontend `npm test` (Vitest) | **19 passed** |
-| 2026-11-04 | frontend `npm run build` | ok (109 kB JS / 7 kB CSS) |
-| 2026-11-04 | `pytest -m external` com Ollama real (`qwen2.5:1.5b`) | **1 passed** ("Pronto", 3 tokens, 4,2 s com carga) |
-| 2026-11-04 | manual: backend + Vite juntos, API pelo proxy, SSE, falha sem Ollama | ok: erro claro e repetível, sem duplicar mensagem |
-| 2026-11-04 | manual: `instalar.cmd` e `iniciar.cmd` | ok (portas 5000 e 5173 respondendo) |
-| 2026-11-04 | **critério da Etapa 1 com IA real**: criar campanha → 2 turnos → desligar backend → religar → 3º turno | ok: 3 turnos `completed`; no 3º a IA recebeu as 2 jogadas e narrações anteriores. Velocidade 25–28 tokens/s, 1º pedaço em 2,6–5 s, turno de 16–23 s |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo, FakeProvider) | **206 passed**, 1 deselected (externo) |
+| 2026-11-04 | frontend `npm test` (Vitest) | **26 passed** |
+| 2026-11-04 | frontend `npm run build` | ok (113 kB JS / 10 kB CSS) |
+| 2026-11-04 | `pytest -m external` com Ollama real (`qwen2.5:1.5b`) | **1 passed** |
+| 2026-11-04 | manual: `instalar.cmd`, `iniciar.cmd`, backend + Vite pelo proxy | ok |
+| 2026-11-04 | **critério da Etapa 1 com IA real**: criar → 2 turnos → desligar → religar → 3º turno | ok (3 turnos `completed`, história completa no contexto) |
+| 2026-11-04 | **critério da Etapa 2 com IA real** (motor ligado) | ok: preparação criou 4 atributos + protagonista + local; um teste `1d20` rolado pelo motor (semente gravada); `Força 5→8` aplicada e persistida; operação malformada recusada com motivo no log. Turno ~21 s |
 
 **Não testado por mim**: a interface no navegador com os olhos (não tenho como ver a tela).
-Ver "Como testar" abaixo.
 
 ## Problemas conhecidos
-- **Qualidade da narração com `qwen2.5:1.5b` é fraca** (repete frases, escreve falas do protagonista,
-  usa "-" no início de parágrafos). A integração funciona; o modelo é pequeno demais. Ver decisões pendentes.
-- 5 vulnerabilidades "moderadas" no `npm audit`, todas em dependência só de testes
-  (`@vue/test-utils` → `js-beautify` → `glob`/`minimatch`); não entram no programa. Reavaliar quando houver versão corrigida.
-- O motor de regras ainda não está ligado ao turno: o narrador é instruído a não inventar números.
+- **Qualidade com `qwen2.5:1.5b`**: narração razoável com o motor ligado, mas repetitiva; as **escolhas
+  mecânicas** do intérprete muitas vezes não fazem sentido (ex.: aumentar Força por um chute). O motor impede
+  estados inválidos, não escolhas ruins. Precisa de modelo maior (decisão pendente 1).
+- Turno com motor ligado ~21 s nesta máquina (1º turno ~46 s, com a preparação). `AI_MECHANICS=false` volta a ~15 s.
+- 5 vulnerabilidades "moderadas" no `npm audit` só em dependência de testes (`@vue/test-utils` → `js-beautify`).
+- Recarga de habilidades (cooldown) e efeitos com duração ainda não aplicados (dependem do relógio — Etapa 3/4).
 
 ## Decisões pendentes (dependem do dono)
-1. **Modelo de IA para narrar**: baixar um maior? Opções medidas só em tamanho (desempenho não testado):
-   `qwen2.5:3b` (1,9 GB), `gemma3:4b` (3,4 GB), `qwen2.5:7b` (4,7 GB, provavelmente o limite desta RAM).
-   Ou usar um serviço externo (pode ter custo; precisa de pesquisa de preços e autorização).
-2. **Testar a GPU integrada** no Ollama (`OLLAMA_IGPU_ENABLE=1`)? Pode acelerar ou não; é só um teste.
-3. Apagar `F:\Tools\downloads` (zips já extraídos, ~1,7 GB)? Não apaguei por segurança.
+1. **Modelo de IA**: baixar um maior? Tamanhos (página oficial do Ollama, 2026-11-04; desempenho não medido):
+   `qwen2.5:3b` (1,9 GB), `gemma3:4b` (3,4 GB), `qwen2.5:7b` (4,7 GB, provável limite desta RAM).
+   Ou serviço externo (pode ter custo; exige pesquisa de preços e autorização).
+2. **GPU integrada** no Ollama (`OLLAMA_IGPU_ENABLE=1`): testar se acelera?
+3. Apagar `F:\Tools\downloads` (~1,7 GB)? Não apaguei por segurança.
 
 ## Como testar (passo a passo para o dono)
 1. Dois cliques em `F:\Projetos\AI-RPG-Engine\iniciar.cmd`. Abrem 3 janelas pretas (Ollama, backend, frontend) e o navegador.
-2. Clique em **+ Nova campanha**, preencha título e premissa, **Criar e começar**.
-3. Clique em **Começar a história** ou escreva uma ação e aperte Enter. O texto deve aparecer aos poucos.
-4. Feche tudo (navegador e janelas pretas). Abra de novo com `iniciar.cmd`, clique em **Continuar**:
-   a história deve estar igual e continuar dali.
+2. **+ Nova campanha** → título e premissa → **Criar e começar**.
+3. **Começar a história**. O 1º turno demora mais (~45 s): a IA cria as regras e o personagem. Devem aparecer
+   avisos `[SISTEMA]` e a ficha "STATUS" à direita (no celular, botão "Ficha").
+4. Escreva ações (ex.: "Tento escalar o muro"). Testes aparecem como `[TESTE] ... → sucesso/falha`.
+5. Feche tudo e abra de novo: **Continuar** deve mostrar a história e a ficha iguais.
 
-## Arquivos principais modificados nesta sessão
-Backend: `app/config.py`, `app/persistence/**`, `app/providers/**`, `app/ai/**`, `app/services/**`, `app/api/**`,
-`app/engine/**`, `alembic/**`, `tests/**`. Frontend: `frontend/**`. Raiz: `instalar.cmd`, `iniciar.cmd`,
-`.gitattributes`, `.env.example`, `README.md`, `CLAUDE.md`. Docs: todos em `docs/`.
+## Arquivos principais
+Backend: `app/{config.py, persistence, providers, ai, engine, services, api}`, `alembic/versions` (3 migrações),
+`tests/{unit, integration, e2e, external}`. Frontend: `frontend/src/{api, stores, views, components, utils, styles}`.
+Raiz: `instalar.cmd`, `iniciar.cmd`. Docs: `docs/*.md`.
 
-## Plano de testes (visão geral)
-- Unitários: dados, fórmulas, configuração, provedores, regras de arquitetura (guardiões).
-- Integração: banco, repositórios/isolamento, pipeline de operações, orquestrador, API.
-- Fluxo completo: criar → jogar → reiniciar → retomar (`tests/e2e`).
-- Externos (`-m external`): Ollama real.
-- Casos da SPEC Parte 22 já cobertos: 1, 2, 3, 4, 5, 6, 7, 8 (parcial: evolução de habilidades),
-  18 (falhas de provedor), 19 (respostas inválidas), 20 (consistência de regras), 24, 25 (parcial: dono), 26.
+## Casos da SPEC Parte 22 cobertos por testes
+1, 2, 3, 4, 5, 6, 7, 8 (parcial), 9 (parcial: dano/recursos; efeitos na Etapa 4), 18, 19, 20, 24, 25 (parcial), 26.
 
 ## Riscos principais
 | Risco | Mitigação |
 |---|---|
 | Escopo muito grande | Etapas pequenas e executáveis; nada marcado pronto sem teste |
-| Modelos locais erram o formato JSON | Validação + reenvio com o erro (D-008); operações recusadas uma a uma |
-| Qualidade da narração com modelo pequeno | Modelo maior ou provedor externo (decisão pendente) |
-| Lentidão com duas chamadas por turno (Etapa 2) | Intérprete curto (JSON); medir com Ollama real |
-| Contexto grande demais | Orçamento de tokens; resumos em camadas (Etapa 3) |
-| IA contradizer fatos antigos | Regras versionadas (pronto); registro canônico (Etapa 3) |
+| Modelos locais erram JSON e escolhas | Validação + reenvio (D-008/D-026); operações recusadas uma a uma; modelo maior |
+| Lentidão com 2 chamadas por turno | Limites de tokens (D-028); `AI_MECHANICS=false`; modelo/hardware melhores |
+| Contexto grande demais | Orçamento de tokens; resumos em camadas (Etapa 3.6) |
+| IA contradizer fatos antigos | Regras versionadas (pronto); registro canônico (Etapa 3.1) |

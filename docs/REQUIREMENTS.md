@@ -10,10 +10,10 @@ Status possíveis: `pendente`, `parcial`, `pronto` (só com teste executado).
 | RF-02 | Salvamento automático e retomada exata após reiniciar | 15 | 1 | pronto |
 | RF-03 | Turno de jogo com IA (entrada → narração) | 11, 17.5 | 1 | pronto |
 | RF-04 | Camada de provedores (local e externo) com troca sem mexer no motor | 17.1–17.2 | 1 | parcial (local pronto; externo na Etapa 2+) |
-| RF-05 | Entidades, atributos dinâmicos, habilidades, inventário persistentes | 5 | 2 | pendente |
-| RF-06 | Pipeline de operações estruturadas com validação | 17.5, 20 | 2 | parcial (motor pronto; falta ligar à IA) |
-| RF-07 | Testes com dados, modificadores e seeds registradas | 7.2 | 2 | parcial (motor pronto; falta ligar à IA) |
-| RF-08 | Progressão sem teto fixo | 5.2 | 2 | pendente |
+| RF-05 | Entidades, atributos dinâmicos, habilidades, inventário persistentes | 5 | 2 | pronto |
+| RF-06 | Pipeline de operações estruturadas com validação | 17.5, 20 | 2 | pronto (qualidade das escolhas depende do modelo) |
+| RF-07 | Testes com dados, modificadores e seeds registradas | 7.2 | 2 | pronto |
+| RF-08 | Progressão sem teto fixo | 5.2 | 2 | parcial (atributos e níveis sem teto; regras de progressão próprias na Etapa 4) |
 | RF-09 | Geração aleatória de campanhas, com regenerar, personalizar e preservar elementos | 3 | 3 | pendente |
 | RF-10 | Geração de protagonista, reencarnação e turmas com indivíduos distintos | 4 | 3 | pendente |
 | RF-11 | Registro canônico com versões (sem sobrescrever o passado) | 3.4 | 3 | pendente |
@@ -24,7 +24,7 @@ Status possíveis: `pendente`, `parcial`, `pronto` (só com teste executado).
 | RF-16 | Combate híbrido (narrativo + mecânico) | 7.1 | 4 | pendente |
 | RF-17 | Avaliação, ocultação e falsificação de informações | 6 | 4 | pendente |
 | RF-18 | Regras de morte por universo | 7.4 | 4 | pendente |
-| RF-19 | Mecânicas e regras criadas pela IA, validadas | 5.3, 6.4 | 4 | pendente |
+| RF-19 | Mecânicas e regras criadas pela IA, validadas | 5.3, 6.4 | 4 | parcial (definições abertas versionadas e fórmulas seguras prontas) |
 | RF-20 | Interface completa (23 telas/módulos) e mensagens diegéticas | 12 | 5 | pendente |
 | RF-21 | Geração opcional de imagens associadas a entidades | 13 | 6 | pendente |
 | RF-22 | Modo administrador e debug com interpretador próprio | 16 | 6 | pendente |
