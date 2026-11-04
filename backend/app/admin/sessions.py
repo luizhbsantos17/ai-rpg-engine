@@ -14,6 +14,8 @@ from dataclasses import dataclass, field
 
 SESSION_SECONDS = 30 * 60
 CONFIRM_SECONDS = 120
+MAX_FAILED_LOGINS = 5  # senhas erradas seguidas...
+LOCKOUT_SECONDS = 60  # ...bloqueiam novas tentativas por este tempo (contra adivinhação)
 
 
 class AdminAccessError(Exception):
@@ -32,6 +34,7 @@ class AdminSessions:
         self._clock = clock
         self._sessions: dict[str, _Session] = {}
         self._lock = threading.Lock()
+        self._failures: list[float] = []
 
     @property
     def enabled(self) -> bool:
@@ -40,8 +43,17 @@ class AdminSessions:
     def login(self, password: str) -> str:
         if not self.enabled:
             raise AdminAccessError("Modo administrador desligado: defina ADMIN_PASSWORD no arquivo .env.")
+        now = self._clock()
+        with self._lock:
+            self._failures = [t for t in self._failures if now - t < LOCKOUT_SECONDS]
+            if len(self._failures) >= MAX_FAILED_LOGINS:
+                raise AdminAccessError("Muitas senhas erradas seguidas. Espere um minuto e tente de novo.")
         if not hmac.compare_digest(str(password).encode("utf-8"), self._password.encode("utf-8")):
+            with self._lock:
+                self._failures.append(now)
             raise AdminAccessError("Senha de administrador incorreta.")
+        with self._lock:
+            self._failures.clear()
         token = secrets.token_urlsafe(32)
         with self._lock:
             self._sessions[token] = _Session(self._clock() + SESSION_SECONDS)

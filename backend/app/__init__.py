@@ -9,6 +9,7 @@ from flask import Flask
 from app.config import Settings, load_settings
 
 __version__ = "0.1.0"
+MAX_REQUEST_BYTES = 50 * 1024 * 1024
 
 
 def create_app(settings: Settings | None = None) -> Flask:
@@ -19,6 +20,8 @@ def create_app(settings: Settings | None = None) -> Flask:
         SECRET_KEY=settings.secret_key,
         TESTING=settings.app_env == "test",
         SETTINGS=settings,
+        # Limite por pedido (inclui importar campanha). Acima disso: erro 413, sem travar o servidor.
+        MAX_CONTENT_LENGTH=MAX_REQUEST_BYTES,
     )
 
     from app.services.startup import initialize_services
