@@ -5,7 +5,7 @@
 ## Resumo
 | Etapa | Status |
 |---|---|
-| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-052) |
+| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-053) |
 | 1 — Fundação | **concluída** e verificada com Ollama real |
 | 2 — Motor de RPG | **concluída** e verificada com Ollama real |
 | 3 — Narrativa e mundo | **concluída** (teste de campanha simulada com reinício) |
@@ -15,7 +15,10 @@
 | 7 — Qualidade e expansão | **concluída** (Dockerfile escrito, não testado: sem Docker nesta máquina) |
 
 ## Última tarefa concluída
-Equipamentos e classe/raça (D-052), itens 9 e 11 da interface da SPEC que faltavam: `item.equip` /
+Adaptador para servidores no formato OpenAI (D-053): `AI_PROVIDER=openai_compat`, com serviços pagos
+bloqueados. Testado de verdade (sem custo) contra o Ollama em `/v1`: `pytest -m external` e um jogo completo.
+
+Antes, Equipamentos e classe/raça (D-052), itens 9 e 11 da interface da SPEC que faltavam: `item.equip` /
 `item.unequip`, um item por espaço, bônus somado pelo motor nos testes, seção "Equipamento" na ficha,
 classe e raça na ficha e no contexto da IA, preparação da campanha pede classe e raça.
 Testado com Ollama real: fluxo completo ok; preparação preenche classe/raça coerentes (ver AI_PROVIDERS.md).
@@ -43,8 +46,7 @@ As 7 etapas da SPEC (Parte 23) estão concluídas. O que vem agora depende do do
 2. Escolher um **modelo de IA maior**: é o que mais melhora a qualidade (decisão pendente 1).
 3. Melhorias técnicas que posso fazer sem decisão do dono, por prioridade:
    a. ordem de iniciativa no combate (a SPEC não exige; hoje o combate funciona por testes + dano + efeitos);
-   b. adaptador para APIs compatíveis com OpenAI (só código e testes com provedor falso; usar de verdade
-      depende de autorização por ter custo); c. contas de usuário para hospedagem.
+   b. contas de usuário para hospedagem.
 
 
 ## Arquivos modificados nesta sessão (Etapa 7)
@@ -61,7 +63,8 @@ summaries.py, journal.py}`, `backend/app/persistence/repositories/narrative.py`,
 `backend/app/engine/{operations/schemas.py, operations/handlers/items.py, rules/variables.py, notifications.py}`,
 `backend/app/ai/{context/game_state.py, prompts/interpreter.py, prompts/setup.py, schemas/setup.py}`,
 `backend/app/services/sheet.py`, `backend/tests/integration/test_equipment.py`,
-`frontend/src/components/CharacterSheet.{vue,test.js}`,
+`frontend/src/components/CharacterSheet.{vue,test.js}`, `backend/app/providers/{openai_compat.py, registry.py}`,
+`backend/tests/{unit/test_openai_compat_provider.py, external/test_openai_compat_real.py}`,
 `backend/tests/{integration/test_security.py, integration/test_auto_backup.py,
 integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
 `docs/{AI_PROVIDERS.md, DECISIONS.md, DATABASE.md}`, `CLAUDE.md`, `PROJECT_STATUS.md`, `CHANGELOG.md`.
@@ -99,10 +102,11 @@ integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **341 passed**, 1 deselected (externo) |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **351 passed**, 3 deselected (externos) |
 | 2026-11-04 | frontend `npm test` (Vitest) | **45 passed** |
 | 2026-11-04 | frontend `npm run build` | ok |
-| 2026-11-04 | `pytest -m external` com Ollama real | **1 passed** |
+| 2026-11-04 | `pytest -m external` com Ollama real (nativo + formato OpenAI em /v1) | **3 passed** |
+| 2026-11-04 | jogo completo com `AI_PROVIDER=openai_compat` (Ollama /v1) | ok: geração 7 s; 1º turno 66 s; depois 13–19 s |
 | 2026-11-04 | Etapa 1 com IA real: criar → jogar → desligar → religar → continuar | ok |
 | 2026-11-04 | Etapa 2 com IA real (motor ligado) | ok: preparação, teste 1d20 rolado pelo motor, operação persistida; turno ~21 s |
 | 2026-11-04 | Etapa 3: campanha simulada (FakeProvider) com NPC, relação, missão, cânone, agendamento, tempo e reinício | ok (`tests/e2e/test_living_campaign.py`) |
@@ -126,6 +130,8 @@ integration/test_large_campaign.py, unit/test_background.py}`, `.env.example`,
 - 5 vulnerabilidades "moderadas" no `npm audit` só em dependência de testes.
 
 ## Decisões pendentes (dependem do dono)
+0. **Serviços de IA pagos**: o adaptador existe, mas fica bloqueado. Liberar exige: controle de gasto
+   (ainda não implementado), pesquisa de preços com fonte e sua autorização.
 1. **Modelo de IA**: baixar um maior? `qwen2.5:3b` (1,9 GB), `gemma3:4b` (3,4 GB), `qwen2.5:7b` (4,7 GB).
    Ou serviço externo (pode ter custo; exige pesquisa de preços e autorização).
 2. **GPU integrada** no Ollama (`OLLAMA_IGPU_ENABLE=1`): testar se acelera?

@@ -87,9 +87,33 @@ exemplo e a regra em palavras. Resultado: fantasia → Arqueiro/Humano, ficção
 Modelos com modo "pensamento" (ex.: família `qwen3`) foram evitados por enquanto: o texto de raciocínio
 precisaria ser separado da narração.
 
-## Provedores externos
-Ainda não pesquisados em detalhe (o adaptador `openai_compat` é da Etapa 2). Antes de usar qualquer
-serviço pago: registrar aqui preço e limites com fonte e data, e pedir autorização ao dono.
+## Servidores no formato OpenAI (`AI_PROVIDER=openai_compat`, D-053)
+Adaptador `backend/app/providers/openai_compat.py`: `POST {base}/chat/completions` com streaming SSE,
+`GET {base}/models`, chave opcional (`Authorization: Bearer`), saída estruturada por `response_format`
+`json_schema`. Serve para LM Studio, llama.cpp, vLLM, o próprio Ollama em `/v1`, e serviços externos.
+
+```
+AI_PROVIDER=openai_compat
+OPENAI_COMPAT_BASE_URL=http://127.0.0.1:11434/v1   # exemplo: o Ollama local nesse formato
+OPENAI_COMPAT_PAID=false                            # obrigatório: serviços pagos estão bloqueados
+OPENAI_COMPAT_API_KEY=                              # só se o servidor pedir
+AI_MODEL=qwen2.5:1.5b                               # nome do modelo no servidor
+```
+
+**Serviços pagos ficam bloqueados** (o programa recusa iniciar com `OPENAI_COMPAT_PAID=true`, o padrão):
+o controle de gasto ainda não existe e preços não foram pesquisados. Liberar exige decisão do dono.
+
+Diferença importante: este formato não tem como pedir o tamanho de contexto (`AI_CONTEXT_WINDOW` é
+ignorado); quem decide é o servidor. Para o Ollama, prefira o adaptador nativo (`AI_PROVIDER=ollama`).
+
+### Teste real, Ollama em /v1 com `qwen2.5:1.5b`, 2026-11-04
+- `pytest -m external`: streaming, contagem de tokens (`stream_options.include_usage`) e JSON com esquema ok.
+- Jogo completo pela API (gerar → começar → 3 turnos → admin): tudo ok, `validate_world` sem inconsistências.
+  Geração 7,2 s; 1º turno 66 s; depois 13–19 s. Intérprete com até 3.544 tokens de entrada.
+
+## Provedores externos (pagos)
+Não pesquisados. Antes de usar qualquer serviço pago: implementar o controle de gasto, registrar aqui preço e
+limites com fonte e data, e pedir autorização ao dono.
 
 ## Suporte a categorias de conteúdo (ver DECISIONS D-007)
 | Provedor | Violência | Horror | Linguagem pesada | Sexual explícito | Fonte |

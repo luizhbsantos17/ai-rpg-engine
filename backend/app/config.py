@@ -24,7 +24,7 @@ PLACEHOLDER_VALUES = frozenset({"troque-por-um-texto-aleatorio-longo", "troque-e
 DEV_SECRET_KEY = "dev-only-insecure-secret-key"
 SQLITE_PREFIX = "sqlite:///"
 # "fake" (respostas roteirizadas) só é aceito em APP_ENV=test: nunca simula IA de verdade.
-AI_PROVIDERS = ("ollama", "fake")
+AI_PROVIDERS = ("ollama", "openai_compat", "fake")
 
 
 class ConfigError(Exception):
@@ -38,6 +38,7 @@ class Settings:
     database_url: str
     ollama_base_url: str
     openai_compat_base_url: str | None
+    openai_compat_paid: bool  # o servidor no formato OpenAI cobra? (padrão: sim, por segurança)
     ai_provider: str
     ai_model: str | None  # None: usa o primeiro modelo instalado no provedor
     ai_temperature: float
@@ -90,6 +91,16 @@ def load_settings(
     if ai_provider == "fake" and app_env != "test":
         raise ConfigError("AI_PROVIDER=fake só pode ser usado nos testes automatizados (APP_ENV=test).")
 
+    openai_compat_paid = _parse_bool("OPENAI_COMPAT_PAID", get("OPENAI_COMPAT_PAID", "true"))
+    if ai_provider == "openai_compat":
+        if not get("OPENAI_COMPAT_BASE_URL"):
+            raise ConfigError("AI_PROVIDER=openai_compat precisa de OPENAI_COMPAT_BASE_URL (ex.: http://localhost:1234/v1).")
+        if openai_compat_paid:
+            # D-053: sem controle de gasto implementado, serviço pago nenhum é usado sem autorização do dono.
+            raise ConfigError("Serviços de IA pagos ainda estão bloqueados: o controle de gasto não existe. "
+                              "Para um servidor gratuito ou local no formato OpenAI (LM Studio, llama.cpp, "
+                              "Ollama em /v1), use OPENAI_COMPAT_PAID=false.")
+
     image_provider = get("IMAGE_PROVIDER", "none")
     if image_provider not in ("none", "fake"):
         raise ConfigError(f"IMAGE_PROVIDER={image_provider!r} inválido. Por enquanto só existe 'none' (desligado).")
@@ -112,6 +123,7 @@ def load_settings(
         database_url=database_url,
         ollama_base_url=get("OLLAMA_BASE_URL", "http://localhost:11434"),
         openai_compat_base_url=get("OPENAI_COMPAT_BASE_URL"),
+        openai_compat_paid=openai_compat_paid,
         ai_provider=ai_provider,
         ai_model=get("AI_MODEL"),
         ai_temperature=_parse_number("AI_TEMPERATURE", get("AI_TEMPERATURE", "0.8"), float, 0, 2),

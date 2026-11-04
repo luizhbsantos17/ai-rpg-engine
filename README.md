@@ -17,9 +17,10 @@ personagens, enquanto um motor de jogo valida as regras e guarda tudo de forma p
 - Interface com narração em tempo real, ficha, missões, conhecidos, mapa, diário e laços.
 - **Modo administrador** (`/admin`, `/debug`) separado da história, com senha, confirmação, auditoria e desfazer.
 - **Cópias de segurança**: snapshots por campanha (automáticos e manuais), exportar e importar.
-- IA local e gratuita (Ollama). Imagens: estrutura pronta, desligada (sem gerador escolhido).
+- IA local e gratuita (Ollama), ou qualquer servidor gratuito no formato OpenAI (LM Studio, llama.cpp...).
+  Serviços pagos: bloqueados até existir controle de gasto. Imagens: estrutura pronta, desligada.
 
-Ainda não: contas de usuário/multiplayer, provedores de IA externos, gerador de imagens, ordem de iniciativa
+Ainda não: contas de usuário/multiplayer, serviços de IA pagos, gerador de imagens, ordem de iniciativa
 no combate.
 
 ## Tecnologias

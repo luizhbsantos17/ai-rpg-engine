@@ -11,6 +11,11 @@ from app.providers.ollama import OllamaProvider
 def build_provider(settings: Settings) -> AIProvider:
     if settings.ai_provider == "ollama":
         return OllamaProvider(settings.ollama_base_url)
+    if settings.ai_provider == "openai_compat":
+        from app.providers.openai_compat import OpenAICompatProvider
+
+        return OpenAICompatProvider(settings.openai_compat_base_url, settings.openai_compat_api_key,
+                                    paid=settings.openai_compat_paid)
     if settings.ai_provider == "fake":
         from app.providers.fake import FakeProvider
 
@@ -25,7 +30,8 @@ def resolve_model(provider: AIProvider, configured_model: str | None) -> str:
     models = provider.list_models()
     if not models:
         raise ModelNotFoundError(
-            "Nenhum modelo de IA instalado. No Ollama, instale um com: ollama pull <nome-do-modelo>"
+            "Nenhum modelo de IA instalado. No Ollama, instale um com: ollama pull <nome-do-modelo>. "
+            "Em outro servidor, defina AI_MODEL no .env."
         )
     return models[0]
 

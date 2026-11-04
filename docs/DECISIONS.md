@@ -293,3 +293,11 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
 - Motivo: SPEC 4 (equipamentos, classes, raças criados pela IA) e SPEC interface itens 9 e 11; o bônus pelo
   motor atende "o motor processa bloqueios/resistências" (SPEC 7.1) sem a IA somar números de cabeça.
 - Sem migração: `item_instances.data` e `entities.data` já são JSON.
+
+### D-053 — Adaptador no formato OpenAI, com serviços pagos bloqueados
+- Decisão: `AI_PROVIDER=openai_compat` fala o formato `/chat/completions` (streaming SSE, `json_schema`, uso de
+  tokens quando o servidor informa, chave nunca exibida). `OPENAI_COMPAT_PAID` tem padrão `true` e, nesse caso,
+  a configuração é recusada: sem controle de gasto real e sem preços pesquisados, nenhum serviço pago é usado.
+  Servidores gratuitos/locais declaram `OPENAI_COMPAT_PAID=false`.
+- Motivo: SPEC 17 (IA local ou externa, trocar de provedor sem mexer no motor) + regra do dono (nada pago sem
+  autorização). Testado de verdade sem custo contra o Ollama em `/v1`.

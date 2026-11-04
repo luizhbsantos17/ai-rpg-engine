@@ -4,6 +4,8 @@
 - Equipamentos: itens com espaço (`slot`) e bônus; `item.equip`/`item.unequip`; um item por espaço; o bônus vale
   nos testes do motor; seção "Equipamento" na ficha.
 - Classe e raça/espécie do protagonista na ficha e no contexto da IA (a preparação da campanha pede as duas).
+- Provedor `openai_compat` (servidores no formato OpenAI: LM Studio, llama.cpp, Ollama /v1...); serviços pagos
+  bloqueados até existir controle de gasto. Testado com o Ollama em /v1.
 
 ## [0.7.0] — Etapa 7 (concluída)
 - Segurança: limite de 50 MB por pedido, bloqueio de 60 s após 5 senhas de administrador erradas.
