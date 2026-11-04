@@ -1,14 +1,18 @@
 @echo off
 rem ============================================================
 rem  AI RPG Engine - iniciar o jogo
-rem  Abre o backend (Flask, porta 5000) e o frontend (Vite, porta 5173)
-rem  em duas janelas e abre o navegador. Para encerrar, feche as duas janelas.
+rem  Abre o Ollama (IA local, porta 11434, se instalado em OLLAMA_DIR),
+rem  o backend (Flask, porta 5000) e o frontend (Vite, porta 5173) em janelas
+rem  separadas e abre o navegador. Para encerrar, feche as janelas.
 rem ============================================================
 setlocal
 set "ROOT=%~dp0"
 set "NODE_DIR=F:\Tools\node-v24.22.2-win-x64"
 if exist "%NODE_DIR%\node.exe" set "PATH=%NODE_DIR%;%PATH%"
 set "npm_config_cache=F:\Tools\npm-cache"
+rem Ollama portatil e pasta dos modelos (fora do disco C:).
+set "OLLAMA_DIR=F:\Tools\ollama"
+set "OLLAMA_MODELS=F:\Tools\ollama-models"
 
 if not exist "%ROOT%backend\.venv\Scripts\flask.exe" (
   echo [ERRO] Backend nao instalado. Rode primeiro: instalar.cmd
@@ -19,6 +23,16 @@ if not exist "%ROOT%frontend\node_modules" (
   echo [ERRO] Frontend nao instalado. Rode primeiro: instalar.cmd
   pause
   exit /b 1
+)
+
+rem Inicia o Ollama so se ele existir e ainda nao estiver rodando.
+netstat -ano | findstr /R /C:":11434 .*LISTENING" >nul
+if errorlevel 1 (
+  if exist "%OLLAMA_DIR%\ollama.exe" (
+    start "AI RPG Engine - Ollama (nao feche durante o jogo)" /D "%OLLAMA_DIR%" cmd /k "ollama.exe serve"
+  ) else (
+    echo [AVISO] Ollama nao encontrado em %OLLAMA_DIR%. O jogo abre, mas a IA nao vai responder.
+  )
 )
 
 start "AI RPG Engine - backend (nao feche durante o jogo)" /D "%ROOT%backend" cmd /k ".venv\Scripts\flask.exe --app app run"

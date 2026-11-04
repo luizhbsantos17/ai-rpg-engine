@@ -18,7 +18,12 @@ Status: modelo inicial da Etapa 0. Colunas podem mudar; toda mudança vira migra
 | `users` | id, name, created_at | um usuário local na v1 |
 | `campaigns` | id, owner_id, title, genre_tags, status, world_clock, rng_seed, created_at, updated_at | |
 | `campaign_settings` | id, campaign_id, kind (`experience`/`rules`), data JSON, version, created_at | mudanças de regra versionadas |
-| `campaign_intro` | campaign_id, player_visible JSON, gm_secret JSON | separa o que o jogador vê dos segredos |
+| `campaign_intro` | campaign_id, player_visible JSON, gm_secret JSON, version | separa o que o jogador vê dos segredos |
+
+Implementadas na Etapa 1 (migração `2026_11_03_2328-32791f394f68`): `users`, `campaigns`,
+`campaign_intro`, `turns`, `messages`, `events`, `ai_requests`. As demais tabelas abaixo são o plano
+das próximas etapas. `world_clock` = minutos do mundo desde o início da campanha (inteiro).
+`ai_requests.request_messages` guarda as mensagens enviadas à IA (para `/debug show_context`).
 
 ### Definições (o "sistema de RPG" de cada campanha)
 | Tabela | Campos principais |

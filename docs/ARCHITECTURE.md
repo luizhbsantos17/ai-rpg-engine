@@ -76,6 +76,39 @@ Docker é opcional nesta fase (facilita a hospedagem futura, mas complica a inst
 - **API**: tudo sob `/api`. Erros sempre em JSON: `{"error": {"code", "name", "message"}}`.
   Erros inesperados respondem 500 sem detalhes internos (o detalhe vai para o log).
 - O servidor escuta só em `127.0.0.1` (acessível apenas do próprio computador).
+- **Inicialização** (`app/services/startup.py`): aplica migrações, garante o usuário local, marca como
+  `failed` turnos que ficaram em `processing` (programa fechado no meio) e monta os serviços.
+
+### 3.2. Módulos implementados na Etapa 1
+| Módulo | Responsabilidade |
+|---|---|
+| `app/persistence/models/` | tabelas (`platform.py`, `narrative.py`, `audit.py`) |
+| `app/persistence/db.py` | conexão (SQLite WAL + chaves estrangeiras), `Database.transaction()` |
+| `app/persistence/repositories/` | única porta de acesso aos dados; filtro obrigatório por `campaign_id` |
+| `app/providers/` | `base.py` (interface + streaming), `fake.py` (só testes), `ollama.py`, `registry.py` |
+| `app/ai/prompts/narrator.py` | regras do narrador (SPEC Parte 11) + dados da campanha |
+| `app/ai/context/narration.py` | contexto com orçamento de tokens (histórico mais recente que couber) |
+| `app/ai/orchestrator/turns.py` | pipeline do turno, idempotência e recuperação de falhas |
+| `app/services/campaigns.py` | criar, listar, abrir, histórico, excluir (com confirmação) |
+| `app/api/` | rotas HTTP, validação (Pydantic), erros em JSON, SSE |
+| `frontend/src/api/` | chamadas ao backend e leitor de SSE |
+| `frontend/src/stores/` | estado da lista de campanhas e da partida (Pinia) |
+| `frontend/src/views/`, `components/` | telas e peças visuais |
+
+### 3.3. API HTTP (Etapa 1)
+| Método e endereço | O que faz |
+|---|---|
+| `GET /api/health` | servidor no ar |
+| `GET /api/campaigns` | lista as campanhas do usuário (mais recentes primeiro) |
+| `POST /api/campaigns` | cria: `{title, premise?, genre_tags?}` |
+| `GET /api/campaigns/<id>` | dados visíveis da campanha (nunca os segredos do mestre) |
+| `GET /api/campaigns/<id>/history?after_seq=n` | turnos e mensagens, para retomar exatamente |
+| `DELETE /api/campaigns/<id>` | exclui: exige `{confirm_title}` igual ao título |
+| `POST /api/campaigns/<id>/turns` | joga: `{turn_id (UUID do frontend), input}` → stream SSE |
+
+Eventos do stream do turno: `turn` (turno registrado + mensagem do jogador), `delta` (pedaço da
+narração), `done` (narração salva) ou `error` (`message`, `retryable`). Erros do pedido (404, 409, 400)
+voltam como JSON comum, antes do stream.
 
 ---
 

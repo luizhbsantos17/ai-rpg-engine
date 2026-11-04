@@ -79,3 +79,42 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
 ### D-016 — Pastas do backend criadas quando recebem código
 - Decisão: a estrutura do ARCHITECTURE.md §4 é o mapa; cada pasta é criada na subtarefa que coloca código nela, não antes.
 - Motivo: pastas vazias parecem funcionalidade pronta (SPEC 1.3, princípio 3).
+
+### D-017 — Migrações aplicadas automaticamente ao iniciar
+- Decisão: ao iniciar, o backend roda `alembic upgrade head` e cria o usuário local se não existir.
+- Alternativas: o usuário rodar `alembic upgrade head` à mão.
+- Motivo: instalação simples (RNF-07). O comando manual continua disponível para desenvolvimento.
+
+### D-018 — Quebras de linha padronizadas
+- Decisão: `.gitattributes` com `* text=auto eol=lf`; arquivos `.cmd`/`.bat` com CRLF (o `cmd` do Windows exige).
+
+### D-019 — Atalhos de instalação e início; Node portátil no F:
+- Decisão: `instalar.cmd` (ambiente Python + `npm install` + `.env`) e `iniciar.cmd` (abre backend e frontend e o navegador).
+  Node.js 24 LTS (v24.22.2) em formato portátil em `F:\Tools\node-v24.22.2-win-x64`, cache do npm em `F:\Tools\npm-cache`.
+- Alternativas: instalador do Node (grava no C:, quase cheio) ou trocar o PATH do Windows (mudança no sistema).
+- Motivo: regras do dono (instalar no F:, não alterar o Windows). Node 24 em vez do 26 porque o 26 virou LTS há dias (2026-10-28).
+- Scripts `.cmd` em vez de `.ps1`: o Windows bloqueia scripts PowerShell por padrão.
+
+### D-020 — Frontend: Vue Router + Pinia; SSE lido com fetch
+- Decisão: o turno é um `POST` que devolve `text/event-stream`, lido com `fetch` + leitor próprio (`src/api/sse.js`).
+  O `EventSource` do navegador só faz `GET`, e o turno precisa enviar o texto do jogador.
+- O Vite repassa `/api` para o Flask (sem CORS). Texto da IA é sempre exibido como texto puro, nunca como HTML.
+
+### D-021 — Provedor falso só nos testes; modelo padrão automático
+- Decisão: `AI_PROVIDER=fake` é recusado fora de `APP_ENV=test` (SPEC 1.3: sem simulação disfarçada).
+  `AI_MODEL` vazio = primeiro modelo instalado no Ollama; nenhum instalado = erro claro com o comando para instalar.
+
+### D-022 — Ollama portátil no F: e modelo pequeno de teste
+- Decisão: Ollama em `.zip` oficial (GitHub, v0.40.14) extraído em `F:\Tools\ollama`, sem instalador (não cria atalhos,
+  inicialização automática nem entradas no PATH). Modelos em `F:\Tools\ollama-models` (variável `OLLAMA_MODELS`
+  definida só ao iniciar o Ollama). Modelo de teste: `qwen2.5:1.5b` (986 MB).
+- Regra adotada: até ~1 GB conta como "modelo pequeno" (autorizado para testes). Maiores dependem de autorização do dono.
+
+### D-023 — Repetição de turnos com falha
+- Decisão: só a jogada mais recente pode ser repetida; o jogador também pode seguir com uma ação nova.
+  Turnos com falha ficam no histórico (marcados "não concluída") e ficam fora do contexto enviado à IA.
+- Motivo: repetir um turno antigo colocaria a narração fora de ordem.
+
+### D-024 — `complete_json` fica para a Etapa 2
+- Decisão: a interface de provedores da Etapa 1 tem `stream`, `complete` e `list_models`. A resposta estruturada
+  (JSON validado, com reenvio do erro — D-008) entra com o papel "intérprete" na Etapa 2, que é quando ela é usada.
