@@ -36,6 +36,10 @@ logger = logging.getLogger(__name__)
 
 RECENT_HISTORY_FOR_INTERPRETER = 4
 INTERPRETER_TEMPERATURE = 0.3  # regras pedem consistência, não criatividade
+# Limites próprios de tamanho: JSON de operações é curto. Sem isso, modelos pequenos às vezes
+# "disparam" até o limite da narração e o JSON sai cortado (medido com qwen2.5:1.5b em 2026-11-04).
+INTERPRETER_MAX_TOKENS = 512
+SETUP_MAX_TOKENS = 800
 
 
 @dataclass
@@ -68,12 +72,15 @@ class MechanicsPhase:
         if mechanics.stored is not None:
             return MechanicsResult(mechanics.stored.get("narrator_facts", []), [], mechanics.stored)
 
-        options = replace(generation_options(self.settings, model), temperature=INTERPRETER_TEMPERATURE)
+        base = replace(generation_options(self.settings, model), temperature=INTERPRETER_TEMPERATURE)
+        setup_options = replace(base, max_output_tokens=min(base.max_output_tokens or SETUP_MAX_TOKENS, SETUP_MAX_TOKENS))
+        options = replace(base, max_output_tokens=min(base.max_output_tokens or INTERPRETER_MAX_TOKENS,
+                                                      INTERPRETER_MAX_TOKENS))
         summary: dict[str, Any] = {"setup": None, "intent": None, "interpreter_error": None, "outcomes": []}
         outcomes: list[OperationOutcome] = []
 
         if self._needs_setup(campaign_id):
-            setup = request_structured(self.provider, build_setup_messages(mechanics.brief), options,
+            setup = request_structured(self.provider, build_setup_messages(mechanics.brief), setup_options,
                                        CampaignSetup, self.settings.ai_json_attempts)
             self._record_attempts(campaign_id, turn_id, "setup", setup, build_setup_messages(mechanics.brief))
             if setup.ok:
