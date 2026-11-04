@@ -56,6 +56,8 @@ class CampaignBrief:
     player_visible: dict[str, Any] = field(default_factory=dict)
     gm_secret: dict[str, Any] = field(default_factory=dict)
     canon: list[tuple[str, str]] = field(default_factory=list)  # (status, afirmação) do registro canônico
+    summaries: list[str] = field(default_factory=list)  # memória narrativa (resumos de trechos anteriores)
+    recalled: list[str] = field(default_factory=list)  # memória histórica (trechos antigos ligados à ação)
 
 
 CANON_LABELS = {
@@ -78,4 +80,17 @@ def build_narrator_system_prompt(brief: CampaignBrief, mechanics: bool = False) 
     if brief.canon:
         lines.append("- Fatos estabelecidos do mundo (respeite; não contradiga):")
         lines.extend(f"  - {CANON_LABELS.get(status, '')}{statement}" for status, statement in brief.canon)
+    lines.extend(memory_lines(brief))
     return "\n".join(lines)
+
+
+def memory_lines(brief: CampaignBrief) -> list[str]:
+    """Memória de longo prazo: resumos e lembranças antigas que ajudam a não contradizer o passado."""
+    lines = []
+    if brief.summaries:
+        lines.append("- Resumo do que aconteceu antes:")
+        lines.extend(f"  - {summary}" for summary in brief.summaries)
+    if brief.recalled:
+        lines.append("- Lembranças de acontecimentos antigos ligados à ação atual:")
+        lines.extend(f"  - {item}" for item in brief.recalled)
+    return lines

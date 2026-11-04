@@ -22,6 +22,11 @@ if config.config_file_name is not None and config.attributes.get("configure_logg
 target_metadata = Base.metadata
 
 
+def include_name(name, type_, parent_names):
+    """A busca FTS5 (memory_fts e suas tabelas internas) é criada à mão na migração; não comparar."""
+    return not (type_ == "table" and name and name.startswith("memory_fts"))
+
+
 def render_item(type_, obj, autogen_context):
     """Escreve tipos próprios (ex.: UTCDateTime) nas migrações como o tipo real do banco.
 
@@ -44,6 +49,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         render_as_batch=True,
         render_item=render_item,
+        include_name=include_name,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -60,6 +66,7 @@ def run_migrations_online() -> None:
                 render_as_batch=True,
                 compare_type=True,
                 render_item=render_item,
+                include_name=include_name,
             )
             with context.begin_transaction():
                 context.run_migrations()

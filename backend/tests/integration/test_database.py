@@ -15,7 +15,8 @@ from app.persistence.models import Base, Campaign, Event, Message, Turn, User
 EXPECTED_TABLES = {
     "users", "campaigns", "campaign_intro", "turns", "messages", "events", "ai_requests",
     "definitions", "entities", "entity_attributes", "entity_skills", "item_instances", "effects", "dice_rolls",
-    "canon_facts",
+    "canon_facts", "scheduled_events", "relationships", "relationship_events", "knowledge", "npc_memories",
+    "quests", "summaries", "memory_fts",
 }
 PLATFORM_TABLES = {"users", "campaigns"}
 
@@ -34,8 +35,11 @@ def test_migration_creates_all_tables(db):
 
 def test_models_and_migrations_are_in_sync(db):
     """Se falhar: um modelo mudou sem migração. Gere uma com `alembic revision --autogenerate`."""
+    def include_name(name, type_, parent_names):  # a busca FTS5 é criada à mão (fora do ORM)
+        return not (type_ == "table" and name and name.startswith("memory_fts"))
+
     with db.engine.connect() as connection:
-        context = MigrationContext.configure(connection, opts={"compare_type": True})
+        context = MigrationContext.configure(connection, opts={"compare_type": True, "include_name": include_name})
         assert compare_metadata(context, Base.metadata) == []
 
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from app.ai.context.narration import HistoryItem
-from app.ai.prompts.narrator import CampaignBrief
+from app.ai.prompts.narrator import CampaignBrief, memory_lines
 from app.providers import ChatMessage
 
 INTERPRETER_RULES = """\
@@ -98,6 +98,7 @@ def build_interpreter_messages(
         lines.append(f"- Premissa: {brief.player_visible['premise']}")
     if brief.gm_secret:
         lines.append("- Segredos do mestre: " + "; ".join(f"{k}: {v}" for k, v in brief.gm_secret.items()))
+    lines.extend(memory_lines(brief))
     system = ChatMessage("system", "\n".join(lines))
 
     recent = "\n".join(

@@ -50,6 +50,7 @@ class CampaignService:
             campaign = self._require(campaigns, campaign_id)
             if (confirm_title or "").strip() != campaign.title:
                 raise InvalidInputError("Para excluir, confirme digitando o título exato da campanha.")
+            CampaignData(session, campaign.id).memory_search.delete_campaign()  # índice FTS não tem cascata
             campaigns.delete(campaign)
 
     @staticmethod

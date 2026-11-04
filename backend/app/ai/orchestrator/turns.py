@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -56,6 +56,9 @@ MAX_INPUT_CHARS = 4000
 HISTORY_FETCH_LIMIT = 60
 RECENT_FOR_INTERPRETER = 4
 CANON_IN_CONTEXT = 40
+SUMMARIES_IN_CONTEXT = 3
+RECALLED_IN_CONTEXT = 4
+RECENT_TURNS_SEEN = 6  # turnos tão recentes que já estão no histórico enviado
 NARRATOR_ROLE = "narrator"
 INTERRUPTED_MESSAGE = "Jogada interrompida antes do fim (conexão encerrada). Tente de novo."
 INTERNAL_ERROR_MESSAGE = "Erro interno ao processar a jogada. Tente de novo; se persistir, veja o log do servidor."
@@ -78,11 +81,13 @@ class PreparedTurn:
 
 
 class TurnOrchestrator:
-    def __init__(self, db: Database, provider: AIProvider, settings: Settings):
+    def __init__(self, db: Database, provider: AIProvider, settings: Settings,
+                 on_turn_completed: Callable[[str], None] | None = None):
         self.db = db
         self.provider = provider
         self.settings = settings
         self.mechanics = MechanicsPhase(db, provider, settings)
+        self.on_turn_completed = on_turn_completed  # ex.: agendar o resumo da campanha
 
     # ---------- fase 1 ----------
 
@@ -123,6 +128,14 @@ class TurnOrchestrator:
                     player_visible=dict(campaign.intro.player_visible) if campaign.intro else {},
                     gm_secret=dict(campaign.intro.gm_secret) if campaign.intro else {},
                     canon=[(f.status, f.statement) for f in data.canon.list_current(CANON_IN_CONTEXT)],
+                    summaries=[s.content for s in data.summaries.latest(SUMMARIES_IN_CONTEXT)],
+                    # Só lembranças de turnos que já saíram do histórico recente (evita repetir o que a IA já vê).
+                    recalled=[
+                        f"(turno {hit.turn_number}) {hit.snippet}"
+                        for hit in data.memory_search.search(
+                            player_input, RECALLED_IN_CONTEXT, before_turn=turn.number - RECENT_TURNS_SEEN
+                        )
+                    ],
                 )
                 mechanics = None
                 if self.settings.ai_mechanics:
@@ -222,6 +235,7 @@ class TurnOrchestrator:
                 raise ProviderResponseError("A IA devolveu uma narração vazia.")
             turn, narration = self._save_success(prepared, result)
             finished = True
+            self._after_completion(prepared.campaign_id)
             yield TurnCompleted(turn, narration)
         except ProviderError as exc:
             turn = self._save_failure(prepared, exc.message, model, started)
@@ -236,6 +250,14 @@ class TurnOrchestrator:
             if not finished:
                 # O consumidor parou de ler (ex.: o navegador fechou a conexão).
                 self._save_failure(prepared, INTERRUPTED_MESSAGE, model, started)
+
+    def _after_completion(self, campaign_id: str) -> None:
+        if self.on_turn_completed is None:
+            return
+        try:
+            self.on_turn_completed(campaign_id)
+        except Exception:  # tarefas complementares nunca derrubam o turno já salvo
+            logger.exception("Falha na tarefa pós-turno da campanha %s", campaign_id)
 
     def _save_success(self, prepared: PreparedTurn, result: CompletionResult):
         with self.db.transaction() as session:
@@ -262,6 +284,9 @@ class TurnOrchestrator:
                 prepared.world_time,
             )
             data.turns.mark_completed(turn)
+            # Memória histórica: a jogada e a narração ficam pesquisáveis por palavras.
+            data.memory_search.index("narration", narration.id, turn.number,
+                                     f"{prepared.player_input}\n{result.text}")
             campaigns = CampaignRepository(session, prepared.owner_id)
             campaign = campaigns.get(prepared.campaign_id)
             if campaign is not None:
