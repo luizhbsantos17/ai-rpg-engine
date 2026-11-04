@@ -9,6 +9,7 @@ vi.mock('../api/campaigns.js', () => ({
   getHistory: vi.fn(),
   getSheet: vi.fn(),
   getKnown: vi.fn().mockResolvedValue([]),
+  getJournal: vi.fn().mockResolvedValue({ map: { current: null, places: [] }, diary: [], bonds: [] }),
   playTurn: vi.fn(),
 }))
 

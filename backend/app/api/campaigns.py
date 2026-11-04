@@ -79,6 +79,13 @@ def known_characters(campaign_id: str):
     return services.known.known(services.local_user_id, campaign_id)
 
 
+@bp.get("/campaigns/<campaign_id>/journal")
+def campaign_journal(campaign_id: str):
+    """Mapa, diário e laços do ponto de vista do protagonista."""
+    services = get_services()
+    return services.journal.journal(services.local_user_id, campaign_id)
+
+
 @bp.get("/campaigns/<campaign_id>/settings")
 def campaign_settings(campaign_id: str):
     services = get_services()

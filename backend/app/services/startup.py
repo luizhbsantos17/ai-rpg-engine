@@ -17,6 +17,7 @@ from app.providers.registry import build_provider
 from app.services.campaign_settings import CampaignSettingsService
 from app.services.campaigns import CampaignService
 from app.services.generation import CampaignGenerationService
+from app.services.journal import JournalService
 from app.services.known import KnownCharactersService
 from app.services.sheet import CharacterSheetService
 from app.services.summaries import SummaryService
@@ -38,6 +39,7 @@ class Services:
         self.campaigns = CampaignService(db)
         self.sheets = CharacterSheetService(db)
         self.known = KnownCharactersService(db)
+        self.journal = JournalService(db)
         self.campaign_settings = CampaignSettingsService(db, provider, settings)
         self.summaries = SummaryService(db, provider, settings)
         self.generation = CampaignGenerationService(db, provider, settings)

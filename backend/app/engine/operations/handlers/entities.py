@@ -25,6 +25,8 @@ def entity_create(op: EntityCreate, ctx: OperationContext) -> dict:
         )
     )
     ctx.register_ref(op.ref, entity.id)
+    if op.is_player and location is not None:
+        _mark_visited(location)
     attributes = {key: write_initial_attribute(ctx, entity, key, raw) for key, raw in op.attributes.items()}
     return {"entity_id": entity.id, "name": entity.name, "kind": entity.kind, "attributes": attributes}
 
@@ -67,8 +69,16 @@ def entity_move(op: EntityMove, ctx: OperationContext) -> dict:
     _reject_cycle(ctx, entity, destination)
     previous = entity.location_id
     entity.location_id = destination.id
+    if entity.is_player:
+        _mark_visited(destination)
     ctx.data.session.flush()
     return {"entity_id": entity.id, "name": entity.name, "from": previous, "to": destination.id, "to_name": destination.name}
+
+
+def _mark_visited(location: Entity) -> None:
+    """O mapa do jogador mostra só os lugares por onde o protagonista passou."""
+    if not location.data.get("visited_by_player"):
+        location.data = {**location.data, "visited_by_player": True}
 
 
 def _reject_cycle(ctx: OperationContext, entity: Entity, destination: Entity) -> None:

@@ -3,6 +3,7 @@ import { nextTick, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import CharacterSheet from '../components/CharacterSheet.vue'
+import JournalPanels from '../components/JournalPanels.vue'
 import KnownCharacters from '../components/KnownCharacters.vue'
 import QuestLog from '../components/QuestLog.vue'
 import NarrationBlock from '../components/NarrationBlock.vue'
@@ -16,6 +17,15 @@ const props = defineProps({ id: { type: String, required: true } })
 const play = usePlayStore()
 const bottom = ref(null)
 const sheetOpen = ref(false) // em telas pequenas a ficha abre por botão
+const tab = ref('status')
+const TABS = [
+  { id: 'status', label: 'Status' },
+  { id: 'quests', label: 'Missões' },
+  { id: 'known', label: 'Conhecidos' },
+  { id: 'map', label: 'Mapa' },
+  { id: 'diary', label: 'Diário' },
+  { id: 'bonds', label: 'Laços' },
+]
 
 const START_PROMPT = 'Comece a história.'
 
@@ -95,9 +105,22 @@ watch(
         <div ref="bottom"></div>
       </div>
       <div class="sheet-panel" :class="{ open: sheetOpen }">
-        <CharacterSheet :character="play.character" :world-time="play.worldTime" />
-        <QuestLog :quests="play.quests" />
-        <KnownCharacters :characters="play.known" />
+        <nav class="side-tabs" role="tablist" aria-label="Painéis">
+          <button
+            v-for="item in TABS"
+            :key="item.id"
+            type="button"
+            role="tab"
+            class="side-tab"
+            :class="{ active: tab === item.id }"
+            :aria-selected="tab === item.id"
+            @click="tab = item.id"
+          >{{ item.label }}</button>
+        </nav>
+        <CharacterSheet v-if="tab === 'status'" :character="play.character" :world-time="play.worldTime" />
+        <QuestLog v-else-if="tab === 'quests'" :quests="play.quests" class="flush" />
+        <KnownCharacters v-else-if="tab === 'known'" :characters="play.known" class="flush" />
+        <div v-else class="panel journal-box"><JournalPanels :view="tab" :journal="play.journal" /></div>
       </div>
       </div>
 
@@ -123,6 +146,39 @@ watch(
   padding-bottom: var(--space-4);
   margin-bottom: var(--space-4);
   border-bottom: 1px solid var(--line);
+}
+
+.side-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: var(--space-2);
+}
+
+.side-tab {
+  flex: 1 1 auto;
+  padding: 3px var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.side-tab.active {
+  border-color: var(--accent);
+  color: var(--text);
+  background: rgba(108, 199, 255, 0.12);
+}
+
+.flush {
+  margin-top: 0;
+}
+
+.journal-box {
+  padding: var(--space-4);
 }
 
 .header-actions {

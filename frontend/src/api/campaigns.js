@@ -27,6 +27,9 @@ export const getSheet = (campaignId) => request('GET', `/api/campaigns/${campaig
 export const getKnown = (campaignId) =>
   request('GET', `/api/campaigns/${campaignId}/known`).then((r) => r.characters)
 
+// { map: {current, places}, diary: [...], bonds: [...] } — tudo do ponto de vista do protagonista
+export const getJournal = (campaignId) => request('GET', `/api/campaigns/${campaignId}/journal`)
+
 export const getSettings = (campaignId) => request('GET', `/api/campaigns/${campaignId}/settings`)
 
 // { experience?, content? } -> nova versão; volta a visão atualizada + "warnings"

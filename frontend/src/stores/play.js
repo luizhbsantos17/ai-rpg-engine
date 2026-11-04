@@ -16,6 +16,7 @@ export const usePlayStore = defineStore('play', {
     worldTime: null, // "dia 1, 08:00"
     quests: [], // missões visíveis ao jogador
     known: [], // personagens conhecidos (só o que o protagonista sabe)
+    journal: { map: { current: null, places: [] }, diary: [], bonds: [] },
     messages: [],
     turns: {},
     loading: false,
@@ -56,9 +57,11 @@ export const usePlayStore = defineStore('play', {
     async refreshKnown() {
       if (!this.campaign) return
       try {
-        this.known = await api.getKnown(this.campaign.id)
+        const [known, journal] = await Promise.all([api.getKnown(this.campaign.id), api.getJournal(this.campaign.id)])
+        this.known = known
+        this.journal = journal
       } catch {
-        // painel complementar: se falhar, a história continua
+        // painéis complementares: se falharem, a história continua
       }
     },
 
