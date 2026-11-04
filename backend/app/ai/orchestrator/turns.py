@@ -64,6 +64,13 @@ INTERRUPTED_MESSAGE = "Jogada interrompida antes do fim (conexão encerrada). Te
 INTERNAL_ERROR_MESSAGE = "Erro interno ao processar a jogada. Tente de novo; se persistir, veja o log do servidor."
 
 
+META_SECRET_KEYS = ("inspiracao", "semente_inspiracao")  # bastidores da geração, não são história
+
+
+def story_secrets(gm_secret: dict[str, Any]) -> dict[str, Any]:
+    return {k: v for k, v in gm_secret.items() if k not in META_SECRET_KEYS}
+
+
 @dataclass
 class PreparedTurn:
     owner_id: str
@@ -103,6 +110,8 @@ class TurnOrchestrator:
                 campaign = CampaignRepository(session, owner_id).get(campaign_id)
                 if campaign is None:
                     raise NotFoundError("Campanha não encontrada.")
+                if campaign.status == "draft":
+                    raise ConflictError("A campanha ainda está em criação. Clique em \"Começar\" para jogar.")
                 data = CampaignData(session, campaign_id)
                 turn = data.turns.get(turn_id)
                 if turn is None:
@@ -126,7 +135,7 @@ class TurnOrchestrator:
                     title=campaign.title,
                     genre_tags=list(campaign.genre_tags),
                     player_visible=dict(campaign.intro.player_visible) if campaign.intro else {},
-                    gm_secret=dict(campaign.intro.gm_secret) if campaign.intro else {},
+                    gm_secret=story_secrets(campaign.intro.gm_secret if campaign.intro else {}),
                     canon=[(f.status, f.statement) for f in data.canon.list_current(CANON_IN_CONTEXT)],
                     summaries=[s.content for s in data.summaries.latest(SUMMARIES_IN_CONTEXT)],
                     # Só lembranças de turnos que já saíram do histórico recente (evita repetir o que a IA já vê).

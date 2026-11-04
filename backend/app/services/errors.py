@@ -24,6 +24,13 @@ class ConflictError(ServiceError):
     code = "conflict"
 
 
+class UnavailableError(ServiceError):
+    """Um serviço necessário (ex.: a IA) não respondeu; tentar de novo pode funcionar."""
+
+    http_status = 503
+    code = "unavailable"
+
+
 class InvalidInputError(ServiceError):
     http_status = 400
     code = "invalid_input"

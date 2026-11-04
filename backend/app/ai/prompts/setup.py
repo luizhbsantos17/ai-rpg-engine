@@ -33,4 +33,7 @@ def build_setup_messages(brief: CampaignBrief) -> list[ChatMessage]:
     if brief.genre_tags:
         lines.append(f"Gêneros: {', '.join(brief.genre_tags)}")
     lines.append(f"Premissa: {brief.player_visible.get('premise') or '(livre: invente uma)'}")
+    if brief.gm_secret:
+        lines.append("Segredos do mestre (para manter coerência; não os revele na premissa nem no nome):")
+        lines += [f"- {value}" for value in brief.gm_secret.values()]
     return [ChatMessage("system", SETUP_RULES), ChatMessage("user", "\n".join(lines) + "\n\nResponda só com o JSON.")]

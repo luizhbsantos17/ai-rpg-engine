@@ -15,6 +15,7 @@ from app.persistence.repositories.narrative import fail_interrupted_turns
 from app.providers import AIProvider
 from app.providers.registry import build_provider
 from app.services.campaigns import CampaignService
+from app.services.generation import CampaignGenerationService
 from app.services.sheet import CharacterSheetService
 from app.services.summaries import SummaryService
 
@@ -35,6 +36,7 @@ class Services:
         self.campaigns = CampaignService(db)
         self.sheets = CharacterSheetService(db)
         self.summaries = SummaryService(db, provider, settings)
+        self.generation = CampaignGenerationService(db, provider, settings)
         self.turns = TurnOrchestrator(db, provider, settings, on_turn_completed=self.summaries.schedule)
 
 
