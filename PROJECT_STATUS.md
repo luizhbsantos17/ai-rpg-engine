@@ -8,19 +8,19 @@
 | 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-030) |
 | 1 — Fundação | **concluída** e verificada com Ollama real (falta só o usuário olhar a interface) |
 | 2 — Motor de RPG | **concluída**: critério verificado com Ollama real (operações alteram dados reais e persistentes) |
-| 3 — Narrativa e mundo | não iniciada (plano abaixo) |
+| 3 — Narrativa e mundo | **em andamento**: 3.1 (registro canônico) e 3.2 (relógio, agendamentos, efeitos) concluídas |
 | 4 a 7 | não iniciadas |
 
 ## Última tarefa concluída
-Etapa 2 — turno em duas fases (intérprete → motor → narrador), ficha do protagonista, `skill.use`.
+Etapa 3.2 — relógio do mundo (`time.advance`), acontecimentos agendados (`event.schedule`), efeitos com duração.
 
-## Próxima tarefa: Etapa 3 — Narrativa e mundo
-Critério (SPEC Parte 23): a campanha possui continuidade narrativa e acontecimentos persistentes.
-Subtarefas planejadas, nesta ordem:
-1. **Registro canônico** (SPEC 3.4): tabela `canon_facts` com versões; operações `canon.assert` / `canon.amend`
-   (alterar exige motivo e cria versão nova); fatos relevantes entram no contexto do intérprete e do narrador.
-2. **Relógio do mundo** (SPEC 10.3): `time.advance`; `scheduled_events` + `event.schedule`; eventos vencidos
-   processados quando o relógio anda; fechar o programa não avança o tempo (já testado).
+## Próxima tarefa: Etapa 3.3 — Relacionamentos
+Critério da Etapa 3 (SPEC Parte 23): a campanha possui continuidade narrativa e acontecimentos persistentes.
+Subtarefas:
+1. ~~**Registro canônico**~~ **Concluída**: `canon_facts` versionado; `canon.assert`/`canon.amend`; fatos no
+   contexto do intérprete e do narrador; preparação registra fatos iniciais e regras de morte.
+2. ~~**Relógio do mundo**~~ **Concluída**: `time.advance`, `event.schedule` (operações aplicadas ao vencer),
+   `effect.apply`/`effect.remove` com expiração; tempo e efeitos na ficha.
 3. **Relacionamentos** (SPEC 9): `relationships` (direcional, várias dimensões) + `relationship_events`;
    operação `relationship.change` sempre com o acontecimento que causou.
 4. **Conhecimento e memória de NPCs** (SPEC 6.5 e 8.2): `knowledge` + `npc_memories`; `knowledge.record`;
@@ -62,8 +62,8 @@ Subtarefas planejadas, nesta ordem:
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo, FakeProvider) | **206 passed**, 1 deselected (externo) |
-| 2026-11-04 | frontend `npm test` (Vitest) | **26 passed** |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo, FakeProvider) | **230 passed**, 1 deselected (externo) |
+| 2026-11-04 | frontend `npm test` (Vitest) | **27 passed** |
 | 2026-11-04 | frontend `npm run build` | ok (113 kB JS / 10 kB CSS) |
 | 2026-11-04 | `pytest -m external` com Ollama real (`qwen2.5:1.5b`) | **1 passed** |
 | 2026-11-04 | manual: `instalar.cmd`, `iniciar.cmd`, backend + Vite pelo proxy | ok |
