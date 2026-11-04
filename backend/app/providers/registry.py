@@ -5,6 +5,7 @@ from __future__ import annotations
 from app.config import Settings
 from app.providers.base import AIProvider, GenerationOptions
 from app.providers.errors import ModelNotFoundError
+from app.providers.free_services import FREE_SERVICES
 from app.providers.ollama import OllamaProvider
 
 
@@ -16,6 +17,11 @@ def build_provider(settings: Settings) -> AIProvider:
 
         return OpenAICompatProvider(settings.openai_compat_base_url, settings.openai_compat_api_key,
                                     paid=settings.openai_compat_paid)
+    if settings.ai_provider in FREE_SERVICES:
+        from app.providers.openai_compat import OpenAICompatProvider
+
+        service = FREE_SERVICES[settings.ai_provider]
+        return OpenAICompatProvider(service.base_url, settings.free_service_api_key, paid=False, service=service)
     if settings.ai_provider == "fake":
         from app.providers.fake import FakeProvider
 
@@ -24,16 +30,16 @@ def build_provider(settings: Settings) -> AIProvider:
 
 
 def resolve_model(provider: AIProvider, configured_model: str | None) -> str:
-    """Modelo configurado em AI_MODEL ou, se vazio, o primeiro instalado no provedor."""
+    """Modelo configurado em AI_MODEL ou, se vazio, o escolhido pelo provedor entre os disponíveis."""
     if configured_model:
         return configured_model
-    models = provider.list_models()
-    if not models:
+    model = provider.choose_model(provider.list_models())
+    if not model:
         raise ModelNotFoundError(
-            "Nenhum modelo de IA instalado. No Ollama, instale um com: ollama pull <nome-do-modelo>. "
+            "Nenhum modelo de IA disponível. No Ollama, instale um com: ollama pull <nome-do-modelo>. "
             "Em outro servidor, defina AI_MODEL no .env."
         )
-    return models[0]
+    return model
 
 
 def generation_options(settings: Settings, model: str) -> GenerationOptions:

@@ -6,6 +6,7 @@ protagonista guarda uma lembrança curta do que presenciou. NPCs em outros lugar
 
 from __future__ import annotations
 
+from app.engine.time import format_world_time
 from app.persistence.models import Entity
 from app.persistence.repositories import CampaignData
 
@@ -33,6 +34,21 @@ def record_witnesses(data: CampaignData, player: Entity, player_input: str, fact
     for npc in witnesses:
         data.memories.remember(npc.id, content, importance=1, world_time=world_time, turn_id=turn_id)
     return len(witnesses)
+
+
+SCENE_DESCRIPTION_CHARS = 300
+
+
+def scene_header(data: CampaignData, player: Entity) -> str:
+    """Para o narrador: onde o protagonista está, quando e quem está com ele (estado real do banco)."""
+    location = data.entities.get(player.location_id) if player.location_id else None
+    parts = [f"{player.name} está em {location.name}" if location else f"{player.name} está num lugar sem nome"]
+    if location is not None and location.data.get("description"):
+        parts[0] += f" ({str(location.data['description'])[:SCENE_DESCRIPTION_CHARS]})"
+    parts.append(f"quando: {format_world_time(data.campaign().world_clock)}")
+    present = [npc.name for npc in scene_npcs(data, player)]
+    parts.append("presentes: " + (", ".join(present) if present else "ninguém além do protagonista"))
+    return ". ".join(parts) + "."
 
 
 def scene_knowledge_notes(data: CampaignData, player: Entity, memories_per_npc: int = 3) -> list[str]:

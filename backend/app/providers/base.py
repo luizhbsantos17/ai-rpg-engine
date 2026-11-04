@@ -71,6 +71,10 @@ class AIProvider(ABC):
     def stream(self, messages: Sequence[ChatMessage], options: GenerationOptions) -> Iterator[StreamEvent]:
         """Gera a resposta aos poucos: vários TextDelta e, no fim, um StreamCompleted."""
 
+    def choose_model(self, models: list[str]) -> str | None:
+        """Modelo usado quando AI_MODEL está vazio (o primeiro, salvo regra própria do provedor)."""
+        return models[0] if models else None
+
     def complete(self, messages: Sequence[ChatMessage], options: GenerationOptions) -> CompletionResult:
         """Gera a resposta inteira de uma vez."""
         for event in self.stream(messages, options):

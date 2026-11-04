@@ -24,7 +24,11 @@ PLACEHOLDER_VALUES = frozenset({"troque-por-um-texto-aleatorio-longo", "troque-e
 DEV_SECRET_KEY = "dev-only-insecure-secret-key"
 SQLITE_PREFIX = "sqlite:///"
 # "fake" (respostas roteirizadas) só é aceito em APP_ENV=test: nunca simula IA de verdade.
-AI_PROVIDERS = ("ollama", "openai_compat", "fake")
+# gemini, groq e openrouter: serviços na internet com uso gratuito (D-054; ver providers/free_services.py).
+FREE_SERVICE_KEYS = {"gemini": "GEMINI_API_KEY", "groq": "GROQ_API_KEY", "openrouter": "OPENROUTER_API_KEY"}
+FREE_SERVICE_KEY_URLS = {"gemini": "https://aistudio.google.com/apikey", "groq": "https://console.groq.com/keys",
+                         "openrouter": "https://openrouter.ai/keys"}
+AI_PROVIDERS = ("ollama", "openai_compat", *FREE_SERVICE_KEYS, "fake")
 
 
 class ConfigError(Exception):
@@ -58,6 +62,7 @@ class Settings:
     secret_key: str = field(repr=False)
     admin_password: str | None = field(repr=False)
     openai_compat_api_key: str | None = field(repr=False)
+    free_service_api_key: str | None = field(repr=False)  # chave do serviço gratuito escolhido (Gemini, Groq...)
     anthropic_api_key: str | None = field(repr=False)
     image_api_key: str | None = field(repr=False)
 
@@ -101,6 +106,18 @@ def load_settings(
                               "Para um servidor gratuito ou local no formato OpenAI (LM Studio, llama.cpp, "
                               "Ollama em /v1), use OPENAI_COMPAT_PAID=false.")
 
+    free_service_api_key = None
+    if ai_provider in FREE_SERVICE_KEYS:
+        key_name = FREE_SERVICE_KEYS[ai_provider]
+        free_service_api_key = get(key_name)
+        if not free_service_api_key:
+            raise ConfigError(f"AI_PROVIDER={ai_provider} precisa da chave {key_name} no .env. "
+                              f"Crie uma de graça em {FREE_SERVICE_KEY_URLS[ai_provider]}.")
+        model = get("AI_MODEL")
+        if ai_provider == "openrouter" and model and not model.endswith(":free"):
+            raise ConfigError(f"AI_MODEL={model!r} não é gratuito na OpenRouter (só nomes terminados em ':free'). "
+                              "Modelos pagos estão bloqueados.")
+
     image_provider = get("IMAGE_PROVIDER", "none")
     if image_provider not in ("none", "fake"):
         raise ConfigError(f"IMAGE_PROVIDER={image_provider!r} inválido. Por enquanto só existe 'none' (desligado).")
@@ -142,6 +159,7 @@ def load_settings(
         secret_key=secret_key or DEV_SECRET_KEY,
         admin_password=admin_password,
         openai_compat_api_key=get("OPENAI_COMPAT_API_KEY"),
+        free_service_api_key=free_service_api_key,
         anthropic_api_key=get("ANTHROPIC_API_KEY"),
         image_api_key=get("IMAGE_API_KEY"),
     )

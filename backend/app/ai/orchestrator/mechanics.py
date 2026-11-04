@@ -25,7 +25,7 @@ from app.ai.schemas.setup import CampaignSetup
 from app.ai.structured import StructuredResult, request_structured
 from app.config import Settings
 from app.engine.notifications import describe_for_narrator, player_notices
-from app.engine.witness import record_witnesses, scene_knowledge_notes
+from app.engine.witness import record_witnesses, scene_header, scene_knowledge_notes
 from app.engine.operations import OperationContext, OperationOutcome, apply_operations
 from app.persistence.db import Database
 from app.persistence.models import Message
@@ -83,6 +83,7 @@ class MechanicsResult:
     system_messages: list[dict[str, Any]] = field(default_factory=list)
     summary: dict[str, Any] = field(default_factory=dict)
     scene_notes: list[str] = field(default_factory=list)  # o que cada NPC presente sabe e lembra
+    scene: str = ""  # onde, quando e quem está presente (depois das operações do turno)
 
 
 class MechanicsPhase:
@@ -96,7 +97,7 @@ class MechanicsPhase:
         """Erros do provedor (conexão, tempo esgotado) sobem; JSON inválido não interrompe o turno."""
         if mechanics.stored is not None:
             return MechanicsResult(mechanics.stored.get("narrator_facts", []), [], mechanics.stored,
-                                   mechanics.stored.get("scene_notes", []))
+                                   mechanics.stored.get("scene_notes", []), mechanics.stored.get("scene", ""))
 
         settings = mechanics.settings or self.settings
         base = replace(generation_options(settings, model), temperature=INTERPRETER_TEMPERATURE)
@@ -192,12 +193,13 @@ class MechanicsPhase:
             if player is not None:
                 record_witnesses(data, player, mechanics.player_input, facts, data.campaign().world_clock, turn_id)
                 summary["scene_notes"] = scene_knowledge_notes(data, player)
+                summary["scene"] = scene_header(data, player)
             turn = data.turns.get(turn_id)
             if turn is not None:
                 turn.mechanics = summary
                 session.flush()
             return MechanicsResult(facts, [message_to_dict(m) for m in messages], summary,
-                                   summary.get("scene_notes", []))
+                                   summary.get("scene_notes", []), summary.get("scene", ""))
 
     def _record_attempts(self, campaign_id, turn_id, role: str, result: StructuredResult, messages: list[ChatMessage]):
         with self.db.transaction() as session:

@@ -88,6 +88,8 @@ def test_first_turn_prepares_campaign_applies_operations_and_narrates_with_facts
     assert "motor de regras resolve testes" in narrator_call[0].content
     assert "RESULTADOS DO MOTOR" in narrator_call[-1].content
     assert "Vida de Kael: 20 → 17" in narrator_call[-1].content
+    assert "CENA ATUAL" in narrator_call[-1].content and "Kael está em Vila Costeira" in narrator_call[-1].content
+    assert "travessão" in narrator_call[0].content  # regras de ofício do narrador
 
     s = state(services, campaign["id"])
     assert s["player"] == "Kael" and s["attributes"] == {"vida": "17", "forca": "5"}

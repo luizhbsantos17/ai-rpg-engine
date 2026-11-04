@@ -38,7 +38,9 @@ def chunk(text=None, finish=None, usage=None):
 
 
 def provider_with(handler, key="chave-secreta"):
-    return OpenAICompatProvider("http://ia.test/v1/", key, paid=False, transport=httpx.MockTransport(handler))
+    provider = OpenAICompatProvider("http://ia.test/v1/", key, paid=False, transport=httpx.MockTransport(handler))
+    provider._sleep = lambda seconds: None  # 429: não espera de verdade nos testes
+    return provider
 
 
 def test_request_format_and_stream():
