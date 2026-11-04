@@ -38,13 +38,13 @@ class Services:
         self.db = db
         self.provider = provider
         self.local_user_id = local_user_id
-        self.campaigns = CampaignService(db)
+        self.campaigns = CampaignService(db, settings.data_dir)
         self.sheets = CharacterSheetService(db)
         self.known = KnownCharactersService(db)
         self.journal = JournalService(db)
         self.campaign_settings = CampaignSettingsService(db, provider, settings)
         self.admin_sessions = AdminSessions(settings.admin_password)
-        self.admin = AdminInterpreter(db, self.admin_sessions)
+        self.admin = AdminInterpreter(db, self.admin_sessions, settings.data_dir)
         self.summaries = SummaryService(db, provider, settings)
         self.generation = CampaignGenerationService(db, provider, settings)
         self.turns = TurnOrchestrator(db, provider, settings, on_turn_completed=self.summaries.schedule)

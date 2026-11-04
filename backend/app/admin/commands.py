@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from app.admin.parser import Command
@@ -17,6 +18,14 @@ from app.engine.operations import OperationContext, OperationOutcome, apply_oper
 from app.engine.time import format_world_time
 from app.persistence.models import Entity, ItemInstance, Turn
 from app.persistence.repositories import CampaignData
+from app.persistence.snapshots import (
+    SnapshotError,
+    export_campaign,
+    list_snapshots,
+    read_snapshot,
+    restore_campaign,
+    write_snapshot,
+)
 
 MAX_TEXT = 600
 
@@ -29,6 +38,8 @@ class AdminError(Exception):
 class AdminContext:
     data: CampaignData
     command: Command
+    owner_id: str = ""
+    data_dir: Path | None = None  # onde ficam os snapshots (data/backups/<campanha>/)
 
 
 @dataclass
@@ -294,6 +305,37 @@ def undo(ctx: AdminContext) -> AdminOutcome:
     last.undone = True
     ctx.data.session.flush()
     return AdminOutcome([f"Desfeito: {last.command}"], changed=True)
+
+
+# ---------------------------------------------------------------- snapshots (D-014)
+
+@command("admin", "snapshot", "Backups desta campanha: create [\"rótulo\"], list, restore <id>.",
+         "/admin snapshot create [\"rótulo\"] | list | restore <id>")
+def snapshot(ctx: AdminContext) -> AdminOutcome:
+    args = ctx.command.args
+    action = args[0].lower() if args else "list"
+    if action == "list":
+        items = list_snapshots(ctx.data_dir, ctx.data.campaign_id)
+        return AdminOutcome([f"{i['id']}  {i['label']}" for i in items] or ["Nenhum snapshot ainda."])
+    if action == "create":
+        label = args[1] if len(args) > 1 else "manual"
+        snapshot_id = write_snapshot(ctx.data_dir, export_campaign(ctx.data.session, ctx.data.campaign_id), label)
+        return AdminOutcome([f"Snapshot criado: {snapshot_id}"])
+    raise AdminError("Use: /admin snapshot create [\"rótulo\"] · /admin snapshot list · /admin snapshot.restore <id>")
+
+
+@command("admin", "snapshot.restore", "Volta a campanha para um snapshot (as outras não mudam).",
+         "/admin snapshot.restore <id>", destructive=True)
+def snapshot_restore(ctx: AdminContext) -> AdminOutcome:
+    if not ctx.command.args:
+        raise AdminError("Use: /admin snapshot.restore <id>  (veja os ids com /admin snapshot list)")
+    try:
+        saved = read_snapshot(ctx.data_dir, ctx.data.campaign_id, ctx.command.args[0])
+        restore_campaign(ctx.data.session, saved, ctx.owner_id, replace_existing=True)
+    except SnapshotError as exc:
+        raise AdminError(str(exc)) from None
+    return AdminOutcome([f"Campanha restaurada para o snapshot {ctx.command.args[0]} ({saved.get('label', '')}).",
+                         "Um snapshot do estado anterior foi guardado antes."], changed=True)
 
 
 # ---------------------------------------------------------------- /debug (somente leitura)

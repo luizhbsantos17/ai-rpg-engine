@@ -100,6 +100,24 @@ def update_campaign_settings(campaign_id: str):
     return services.campaign_settings.update(services.local_user_id, campaign_id, body.experience, body.content)
 
 
+@bp.get("/campaigns/<campaign_id>/export")
+def export_campaign(campaign_id: str):
+    """Baixa a campanha inteira como arquivo JSON (guardar, levar para outro computador, importar)."""
+    services = get_services()
+    snapshot = services.campaigns.export(services.local_user_id, campaign_id)
+    filename = f"campanha-{campaign_id[:8]}.json"
+    return snapshot, 200, {"Content-Disposition": f'attachment; filename="{filename}"'}
+
+
+@bp.post("/campaigns/import")
+def import_campaign():
+    services = get_services()
+    snapshot = request.get_json(silent=True)
+    if not isinstance(snapshot, dict):
+        return {"error": {"code": 400, "name": "invalid_input", "message": "Envie o arquivo JSON da campanha."}}, 400
+    return {"campaign": services.campaigns.import_(services.local_user_id, snapshot)}, 201
+
+
 @bp.delete("/campaigns/<campaign_id>")
 def delete_campaign(campaign_id: str):
     services = get_services()

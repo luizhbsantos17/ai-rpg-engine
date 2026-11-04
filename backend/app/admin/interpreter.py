@@ -8,6 +8,7 @@ do motor com origem "admin" (mesma validação e o mesmo log de eventos da IA).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from app.admin.commands import COMMANDS, AdminContext, AdminError
@@ -17,6 +18,7 @@ from app.admin.targets import AdminTargetError
 from app.persistence.db import Database
 from app.persistence.models import AdminAudit
 from app.persistence.repositories import CampaignData, CampaignRepository
+from app.persistence.snapshots import export_campaign, write_snapshot
 from app.services.errors import NotFoundError
 
 
@@ -40,9 +42,18 @@ def canonical(command: Command) -> str:
 
 
 class AdminInterpreter:
-    def __init__(self, db: Database, sessions: AdminSessions):
+    def __init__(self, db: Database, sessions: AdminSessions, data_dir: Path):
         self.db = db
         self.sessions = sessions
+        self.data_dir = data_dir
+
+    def _safety_snapshot(self, owner_id: str, campaign_id: str, verb: str) -> None:
+        """Antes de qualquer comando destrutivo: cópia de segurança da campanha (D-014)."""
+        with self.db.transaction() as session:
+            if CampaignRepository(session, owner_id).get(campaign_id) is None:
+                raise NotFoundError("Campanha não encontrada.")
+            snapshot = export_campaign(session, campaign_id)
+        write_snapshot(self.data_dir, snapshot, f"antes-de-{verb}")
 
     def execute(self, owner_id: str, campaign_id: str, token: str | None, text: str) -> AdminResult:
         self.sessions.check(token)  # AdminAccessError se não houver sessão
@@ -62,6 +73,7 @@ class AdminInterpreter:
                     f"{command.name} é destrutivo: {spec.description}",
                     f"Para confirmar, repita o comando com --confirm {new_code} (vale por 2 minutos).",
                 ], confirmation_code=new_code)
+            self._safety_snapshot(owner_id, campaign_id, command.verb)
 
         try:
             # Erro no meio do comando sai do "with": a transação inteira é desfeita (nada pela metade).
@@ -69,7 +81,8 @@ class AdminInterpreter:
                 if CampaignRepository(session, owner_id).get(campaign_id) is None:
                     raise NotFoundError("Campanha não encontrada.")
                 data = CampaignData(session, campaign_id)
-                outcome = spec.handler(AdminContext(data=data, command=command))
+                outcome = spec.handler(AdminContext(data=data, command=command, owner_id=owner_id,
+                                                    data_dir=self.data_dir))
                 if spec.audited:
                     data.admin_audit.add(AdminAudit(
                         command=canonical(command), result="\n".join(outcome.lines)[:4000],
