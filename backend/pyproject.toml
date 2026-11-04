@@ -1,0 +1,31 @@
+# Configuração do backend (dependências, versão do Python e do pytest).
+# Instalação (dentro de backend/):  .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-rpg-engine-backend"
+version = "0.1.0"
+description = "Backend do AI RPG Engine: API, motor de RPG, orquestração de IA e persistência."
+requires-python = ">=3.12"
+# Dependências de execução entram aqui conforme cada subtarefa precisar delas
+# (Flask na subtarefa 2, SQLAlchemy/Alembic na 3...).
+dependencies = []
+
+[project.optional-dependencies]
+# Ferramentas usadas só no desenvolvimento.
+dev = [
+    "pytest>=8",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers -m 'not external'"
+markers = [
+    "external: chama um provedor de IA real (internet/custo); não roda por padrão. Use: pytest -m external",
+]

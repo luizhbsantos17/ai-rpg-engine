@@ -13,7 +13,7 @@ ocultação e falsificação de informações · combate híbrido · mundo vivo 
 imagens opcionais · IA local ou externa.
 
 ## Tecnologias
-Python 3.12, Flask, SQLAlchemy, Alembic, SQLite · Vue 3, Vite, Pinia · Ollama e APIs externas.
+Python 3.12+ (desenvolvido com 3.13), Flask, SQLAlchemy, Alembic, SQLite · Vue 3, Vite, Pinia · Ollama e APIs externas.
 
 ## Instalação e execução
 Será escrita na Etapa 1, com os comandos reais testados.

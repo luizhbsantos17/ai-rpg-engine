@@ -51,8 +51,8 @@ Relação é direcional (A → B é diferente de B → A).
 ### Narrativa, memória e cânone
 | Tabela | Campos principais |
 |---|---|
-| `turns` | id (gerado pelo frontend = chave de idempotência), campaign_id, player_input, status, created_at |
-| `messages` | id, campaign_id, turn_id, role (`narration`, `system`, `player`), content, created_at |
+| `turns` | id (gerado pelo frontend = chave de idempotência), campaign_id, number (sequencial por campanha), player_input, status (`processing`/`completed`/`failed`), created_at |
+| `messages` | id, campaign_id, turn_id, seq (ordem), role (`narration`, `system`, `player`), content, created_at |
 | `events` | seq, id, campaign_id, turn_id, type, payload JSON, source (`ai`/`engine`/`admin`/`system`), world_time, created_at |
 | `summaries` | id, campaign_id, scope (`scene`/`session`/`arc`), covers_from_seq, covers_to_seq, content |
 | `npc_memories` | id, campaign_id, npc_id, event_id, content, importance, world_time |
@@ -73,8 +73,12 @@ Busca de texto: tabelas virtuais FTS5 sobre `events`, `summaries`, `npc_memories
 
 ## Persistência e recuperação
 - SQLite em modo WAL (mais seguro contra corrupção ao fechar o programa).
-- Cada turno = uma transação. Falha no meio desfaz tudo.
-- Snapshots: cópia do arquivo da campanha em `data/backups/`, automática a cada N turnos e antes de comandos destrutivos.
+- A aplicação dos resultados de um turno = uma transação. Falha no meio desfaz tudo.
+  Chamadas à IA ficam fora de transações (D-012).
+- Ordem de turnos e mensagens por `turns.number` e `messages.seq`, nunca por horário (D-015).
+- Snapshots: exportação JSON da campanha em `data/backups/`, automática a cada N turnos e antes
+  de comandos destrutivos. Restaurar afeta só aquela campanha (D-014).
+- Backup geral: cópia do arquivo do banco inteiro (todas as campanhas), feita pelo usuário ou pelo programa.
 - Exportar campanha = arquivo JSON com todas as tabelas filtradas por `campaign_id` + versão do esquema.
 
 ## Migrações

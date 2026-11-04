@@ -56,7 +56,7 @@ Definições rápidas:
 
 | Camada | Escolha | Motivo curto |
 |---|---|---|
-| Backend | Python 3.12 + Flask | Mesmo ecossistema que o dono do projeto já estuda; maduro e simples |
+| Backend | Python 3.12+ (usando 3.13) + Flask | Mesmo ecossistema que o dono do projeto já estuda; maduro e simples |
 | Validação de dados | Pydantic v2 | Valida as operações propostas pela IA com esquemas (regras de formato) |
 | Acesso ao banco | SQLAlchemy 2 + Alembic | Permite trocar SQLite por PostgreSQL sem reescrever; Alembic versiona o esquema |
 | Banco local | SQLite (modo WAL) com FTS5 | Zero instalação; FTS5 dá busca de texto nas memórias |
@@ -70,6 +70,8 @@ Docker é opcional nesta fase (facilita a hospedagem futura, mas complica a inst
 ---
 
 ## 4. Estrutura de diretórios planejada
+
+Este é o mapa completo. Cada pasta só é criada quando recebe código (D-016).
 
 ```
 ai-rpg-engine/
@@ -206,8 +208,13 @@ Valores numéricos usam `Decimal` em texto no banco para não estourar limites.
 10. Passo de simulação do mundo (NPCs, eventos agendados) conforme intensidade configurada
 ```
 
-Nas fases iniciais, os passos 4 e 8 podem ser **uma única chamada** à IA (mais barato).
-A arquitetura permite separá-los depois.
+Na Etapa 1 (sem motor de regras ainda) há só a chamada de narração. A partir da Etapa 2,
+o passo 4 (intérprete, JSON) e o passo 8 (narradora, streaming) são chamadas separadas,
+e a narração sempre vem depois dos resultados reais (DECISIONS D-013).
+
+**Transações curtas** (D-012): nenhuma chamada à IA acontece com transação do banco aberta.
+O turno é registrado como `processing`, a IA é chamada, e só o passo 7 (aplicação) é a
+transação "tudo ou nada". Turnos interrompidos viram `failed` ao reabrir e podem ser repetidos.
 
 **Idempotência** (fazer a mesma coisa duas vezes não duplica o efeito): cada turno tem um
 identificador único gerado pelo frontend. Se a requisição for repetida por falha de rede,

@@ -47,7 +47,11 @@ valida, processa e persiste tudo. A especificação completa está em `docs/SPEC
 - Implementar etapa por etapa (Parte 23 da SPEC). Cada etapa termina executável e testada.
 
 ## Comandos (atualizar quando forem criados)
-- Backend, testes: `cd backend && pytest`
+Ambiente do dono: Windows 11, PowerShell. O ambiente virtual fica em `backend/.venv`
+(criado com `py -3.13 -m venv .venv`); usar o Python dele diretamente, sem "ativar".
+- Backend, instalar dependências: `cd backend; .\.venv\Scripts\python.exe -m pip install -e ".[dev]"`
+- Backend, testes: `cd backend; .\.venv\Scripts\python.exe -m pytest`
+- Testes com provedores reais (custo/internet): `... -m pytest -m external`
 - Backend, servidor: `cd backend && flask --app app run --debug`
 - Frontend: `cd frontend && npm run dev`
 - Migrações: `cd backend && alembic upgrade head`

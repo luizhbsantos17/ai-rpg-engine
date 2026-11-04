@@ -28,7 +28,7 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
 - Decisão: aleatoriedade só pelo módulo `engine/dice`, com seed registrada em `dice_rolls`.
 - Motivo: auditoria e reprodução (SPEC 7.2); impede a IA de escolher resultados convenientes.
 
-### D-006 — Intérprete e narrador começam na mesma chamada
+### D-006 — Intérprete e narrador começam na mesma chamada (SUBSTITUÍDA por D-013)
 - Decisão: na Etapa 1–2, uma chamada à IA devolve operações + narração provisória; após o motor processar, uma segunda chamada curta ajusta a narração ao resultado real dos testes.
 - Motivo: custo e simplicidade. A arquitetura mantém os papéis separados para dividir depois.
 
@@ -48,3 +48,34 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
 ### D-010 — Recorte da Etapa 1
 - Decisão: a Etapa 1 entrega só o ciclo mínimo (criar campanha → turno com IA → salvar → reabrir e continuar), com interface simples, antes de qualquer painel avançado.
 - Motivo: SPEC Parte 23; escopo total é muito grande e precisa de uma base comprovada.
+
+### D-011 — Python 3.13 (compatível com 3.12+)
+- Contexto: o computador do dono já tem Python 3.13.3 instalado; a arquitetura previa 3.12.
+- Decisão: usar o 3.13 já instalado; `pyproject.toml` exige `>=3.12`.
+- Alternativas: instalar o 3.12 (trabalho extra, sem ganho).
+- Motivo: Flask, SQLAlchemy 2, Alembic e Pydantic 2 suportam 3.13; evita uma instalação para iniciante.
+
+### D-012 — Chamadas à IA nunca acontecem dentro de uma transação do banco
+- Contexto: DATABASE.md dizia "cada turno = uma transação". Com IA local em CPU, uma chamada pode levar minutos; no SQLite, uma transação de escrita aberta bloqueia todas as outras gravações nesse tempo.
+- Decisão: o turno usa transações curtas. (1) registra o turno com status `processing` e confirma; (2) chama a IA sem transação aberta; (3) aplica operações + eventos + narração em UMA transação. O que precisa ser "tudo ou nada" (a aplicação dos resultados) continua sendo uma transação só.
+- Turnos que ficarem em `processing` porque o programa fechou no meio viram `failed` ao reabrir e podem ser repetidos com o mesmo `turn_id`.
+- Motivo: evita travamentos e mantém a garantia de não gravar resultado pela metade.
+
+### D-013 — Interpretar, resolver e só então narrar (substitui D-006)
+- Contexto: D-006 previa uma narração "provisória" antes do motor rolar os dados, ajustada depois. Isso faz a IA narrar resultados que ainda não existem, e o jogador veria o texto mudar.
+- Decisão: Etapa 1 (ainda sem motor de regras): uma chamada só, de narração, com texto em tempo real. Etapa 2 em diante: chamada 1 = intérprete (JSON curto, sem streaming) → motor valida e rola → chamada 2 = narradora (streaming) com os resultados reais.
+- Motivo: mesmo número de chamadas que D-006, mas segue a ordem da SPEC 17.5 (a IA narra depois de receber os resultados).
+
+### D-014 — Backups por campanha via exportação, não cópia do arquivo do banco
+- Contexto: todas as campanhas ficam no mesmo arquivo SQLite. Copiar e restaurar o arquivo inteiro para desfazer algo em UMA campanha voltaria no tempo TODAS as outras (perda de dados).
+- Decisão: snapshot = exportação JSON da campanha (o mesmo formato de "Exportar campanha"); restaurar = apagar as linhas daquela campanha e importar o snapshot, numa transação. Cópia do arquivo inteiro fica só como backup geral do programa.
+- Alternativas: um arquivo SQLite por campanha (isola bem, mas complica migrações e a futura troca por PostgreSQL).
+- Motivo: isolamento entre campanhas (SPEC 2.1) e compatível com PostgreSQL.
+
+### D-015 — Ordem explícita de turnos e mensagens
+- Decisão: `turns.number` (sequencial por campanha, único junto com `campaign_id`) e `messages.seq`. A ordem nunca depende de `created_at`.
+- Motivo: dois registros no mesmo instante teriam ordem indefinida; a retomada exata (SPEC 15) exige ordem garantida.
+
+### D-016 — Pastas do backend criadas quando recebem código
+- Decisão: a estrutura do ARCHITECTURE.md §4 é o mapa; cada pasta é criada na subtarefa que coloca código nela, não antes.
+- Motivo: pastas vazias parecem funcionalidade pronta (SPEC 1.3, princípio 3).
