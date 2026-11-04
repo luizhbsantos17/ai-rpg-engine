@@ -1,19 +1,22 @@
 # PROJECT_STATUS
 
-Última atualização: 2026-11-03 — Etapa 1, subtarefa 1 concluída.
+Última atualização: 2026-11-03 — Etapa 1, subtarefa 2 concluída.
 
 ## Resumo
 | Etapa | Status |
 |---|---|
 | 0 — Planejamento e arquitetura | concluída; arquitetura revisada contra a SPEC (D-011 a D-016) |
-| 1 — Fundação | em andamento: subtarefa 1 de 10 concluída |
+| 1 — Fundação | em andamento: subtarefas 1 e 2 de 10 concluídas |
 | 2 a 7 | não iniciadas |
 
 ## O que existe
 - Documentação completa em `docs/` (SPEC colada pelo usuário).
 - Repositório Git no ramo `main`.
-- `backend/`: `pyproject.toml`, pacote `app/` (só a versão), ambiente virtual `backend/.venv`
-  (Python 3.13.3, fora do Git), pytest 9.2.0 configurado com o marcador `external`.
+- `backend/`: `pyproject.toml`, ambiente virtual `backend/.venv` (Python 3.13.3, fora do Git),
+  pytest 9.2.0 com o marcador `external`.
+- `backend/app/config.py`: lê `.env` + variáveis de ambiente, valida valores (Flask 3.1.3, python-dotenv 1.2.4).
+- `backend/app/__init__.py`: fábrica `create_app`; `app/api/`: rota `GET /api/health` e erros em JSON.
+- `.env` local do usuário criado a partir do exemplo, com chave secreta aleatória (fora do Git).
 
 ## Ambiente do usuário (verificado em 2026-11-03)
 | Item | Encontrado | Situação |
@@ -35,13 +38,13 @@
 - [ ] Pesquisar modelos e provedores atuais e preencher `docs/AI_PROVIDERS.md` com fonte e data
   (fazer junto com a subtarefa 5; considerar que o hardware só roda modelos locais pequenos).
 
-## Próxima tarefa: Etapa 1, subtarefa 2 — `config.py` + fábrica Flask + `/api/health`
+## Próxima tarefa: Etapa 1, subtarefa 3 — SQLAlchemy + Alembic + primeira migração
 Critério de conclusão (SPEC Parte 23): criar uma campanha, interagir com a IA, salvar,
 fechar o programa, reabrir e continuar exatamente do mesmo ponto.
 
 Subtarefas, nesta ordem:
 1. ~~Estrutura de pastas do backend, `pyproject.toml`, ambiente virtual, `pytest` rodando um teste vazio.~~ **Concluída.**
-2. Configuração (`config.py` lendo `.env`) e fábrica da aplicação Flask com rota `/api/health`.
+2. ~~Configuração (`config.py` lendo `.env`) e fábrica da aplicação Flask com rota `/api/health`.~~ **Concluída.**
 3. SQLAlchemy + Alembic + primeira migração: `users`, `campaigns`, `turns`, `messages`, `events`, `ai_requests`.
 4. Repositórios com filtro obrigatório por `campaign_id` + teste de isolamento entre campanhas.
 5. Camada de provedores: `base.py`, `fake.py`, `ollama.py` + testes com o fake.
@@ -74,6 +77,8 @@ Subtarefas, nesta ordem:
 | Data | Comando | Resultado |
 |---|---|---|
 | 2026-11-03 | `cd backend; .\.venv\Scripts\python.exe -m pytest` | 2 passed (Python 3.13.3, pytest 9.2.0) |
+| 2026-11-03 | mesmo comando, após subtarefa 2 | 22 passed |
+| 2026-11-03 | manual: servidor real (`flask --app app run`) + `GET /api/health` | HTTP 200 `{"env":"development","status":"ok","version":"0.1.0"}`; rota inexistente → HTTP 404 em JSON |
 
 ## Problemas conhecidos
 - Disco C: com 0,6 GB livres. Pode travar o Windows e impede instalar o Ollama no local padrão.

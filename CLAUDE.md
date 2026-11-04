@@ -52,6 +52,7 @@ Ambiente do dono: Windows 11, PowerShell. O ambiente virtual fica em `backend/.v
 - Backend, instalar dependências: `cd backend; .\.venv\Scripts\python.exe -m pip install -e ".[dev]"`
 - Backend, testes: `cd backend; .\.venv\Scripts\python.exe -m pytest`
 - Testes com provedores reais (custo/internet): `... -m pytest -m external`
-- Backend, servidor: `cd backend && flask --app app run --debug`
+- Backend, servidor: `cd backend; .\.venv\Scripts\flask.exe --app app run --debug` (abre em http://127.0.0.1:5000; teste: `/api/health`)
+- Configuração: `.env` na RAIZ do projeto (copiado de `.env.example`); lido por `backend/app/config.py`
 - Frontend: `cd frontend && npm run dev`
 - Migrações: `cd backend && alembic upgrade head`

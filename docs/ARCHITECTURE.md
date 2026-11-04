@@ -67,6 +67,16 @@ Definições rápidas:
 
 Docker é opcional nesta fase (facilita a hospedagem futura, mas complica a instalação para iniciante).
 
+### 3.1. Convenções já implementadas
+- **Configuração** (`app/config.py`): variável de ambiente real > `.env` na raiz > padrão.
+  Caminhos relativos são resolvidos a partir da raiz do projeto. Em `production`, valores
+  de exemplo de `APP_SECRET_KEY`/`ADMIN_PASSWORD` são recusados. Segredos não aparecem em logs.
+- **Fábrica da aplicação** (`app/__init__.py: create_app`): recebe as configurações prontas,
+  o que permite aos testes usar pasta de dados temporária e nunca ler o `.env` real.
+- **API**: tudo sob `/api`. Erros sempre em JSON: `{"error": {"code", "name", "message"}}`.
+  Erros inesperados respondem 500 sem detalhes internos (o detalhe vai para o log).
+- O servidor escuta só em `127.0.0.1` (acessível apenas do próprio computador).
+
 ---
 
 ## 4. Estrutura de diretórios planejada
