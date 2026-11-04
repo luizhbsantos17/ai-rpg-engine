@@ -43,7 +43,7 @@ async function remove(campaign) {
     <ul v-else class="campaign-list">
       <li v-for="campaign in store.items" :key="campaign.id" class="panel campaign-card">
         <div class="card-main">
-          <h2>{{ campaign.title }}</h2>
+          <h2>{{ campaign.title }} <span v-if="campaign.status === 'draft'" class="draft-badge">Rascunho</span></h2>
           <p v-if="campaign.genre_tags.length" class="tags">
             <span v-for="tag in campaign.genre_tags" :key="tag" class="tag">{{ tag }}</span>
           </p>
@@ -51,7 +51,10 @@ async function remove(campaign) {
           <p class="muted small">Última atividade: {{ formatDate(campaign.updated_at) }}</p>
         </div>
         <div class="card-actions">
-          <RouterLink :to="`/campanha/${campaign.id}`" class="btn btn-primary">Continuar</RouterLink>
+          <RouterLink v-if="campaign.status === 'draft'" :to="`/nova?draft=${campaign.id}`" class="btn btn-primary">
+            Continuar criação
+          </RouterLink>
+          <RouterLink v-else :to="`/campanha/${campaign.id}`" class="btn btn-primary">Continuar</RouterLink>
           <button type="button" class="btn btn-danger" @click="remove(campaign)">Excluir</button>
         </div>
       </li>
@@ -95,6 +98,18 @@ async function remove(campaign) {
 .card-main h2 {
   color: var(--gold);
   margin-bottom: var(--space-2);
+}
+
+.draft-badge {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 1px var(--space-2);
+  border: 1px dashed var(--line-strong);
+  border-radius: 999px;
+  color: var(--text-muted);
+  vertical-align: middle;
 }
 
 .premise {

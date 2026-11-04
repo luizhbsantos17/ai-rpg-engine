@@ -5,6 +5,19 @@ export const listCampaigns = () => request('GET', '/api/campaigns').then((r) => 
 
 export const createCampaign = (data) => request('POST', '/api/campaigns', data).then((r) => r.campaign)
 
+export const getCampaign = (campaignId) =>
+  request('GET', `/api/campaigns/${campaignId}`).then((r) => r.campaign)
+
+// Gera (ou gera de novo, com draft_id e keep) uma campanha aleatória. Volta um rascunho sem segredos.
+export const generateCampaign = (options) =>
+  request('POST', '/api/campaigns/generate', options).then((r) => r.campaign)
+
+export const updateDraft = (campaignId, changes) =>
+  request('PATCH', `/api/campaigns/${campaignId}`, changes).then((r) => r.campaign)
+
+export const startCampaign = (campaignId) =>
+  request('POST', `/api/campaigns/${campaignId}/start`).then((r) => r.campaign)
+
 export const getHistory = (campaignId) => request('GET', `/api/campaigns/${campaignId}/history`)
 
 // { character: {...} | null, world_time?: "dia 1, 08:00" }
