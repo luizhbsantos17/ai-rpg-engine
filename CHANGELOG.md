@@ -1,6 +1,21 @@
 # CHANGELOG
 
-## [0.1.0] — Etapa 1 (em andamento)
+## [0.2.0-dev] — Etapa 2 (em andamento)
+- Motor: `engine/dice` (sementes registradas e reproduzíveis), `engine/expressions` (fórmulas seguras, Decimal
+  com 100 dígitos), `engine/rules` (definições abertas versionadas), `engine/operations` (18 operações primitivas
+  com validação, savepoint por operação e registro no log).
+- Tabelas: definitions, entities, entity_attributes, entity_skills, item_instances, effects, dice_rolls.
+- Prompt do narrador com regras de formato mais explícitas.
+
+## [0.1.0] — Etapa 1 (concluída)
+- Subtarefa 9: Ollama 0.40.14 portátil + `qwen2.5:1.5b`; teste externo e critério da Etapa 1 verificados com IA real.
+- Subtarefa 10: README com instalação e uso reais; `instalar.cmd`/`iniciar.cmd`; documentação atualizada.
+- Subtarefa 8: teste de fluxo completo com reinício do programa.
+- Subtarefa 7: frontend Vue 3 + Vite (lista, criação, jogo com SSE, falhas repetíveis).
+- Subtarefa 6: orquestrador de turno idempotente; API de campanhas e turnos.
+- Subtarefa 5: provedores (base, fake, ollama).
+- Subtarefa 4: repositórios com filtro obrigatório por campaign_id.
+- Subtarefa 3: SQLAlchemy + Alembic, primeira migração.
 - Subtarefa 2: configuração (`app/config.py`) lendo `.env` com validação; fábrica Flask `create_app`;
   rota `GET /api/health`; erros da API em JSON. 22 testes passando.
 - Subtarefa 1: `backend/pyproject.toml`, pacote `app`, ambiente virtual e pytest com teste mínimo (2 testes passando).
