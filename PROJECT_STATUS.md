@@ -1,12 +1,12 @@
 # PROJECT_STATUS
 
-Última atualização: 2026-11-03 — Etapa 1, subtarefa 2 concluída.
+Última atualização: 2026-11-04 (madrugada, sessão autônoma) — Etapa 1: subtarefas 1–6 e 8 concluídas; 7 (frontend) em andamento.
 
 ## Resumo
 | Etapa | Status |
 |---|---|
 | 0 — Planejamento e arquitetura | concluída; arquitetura revisada contra a SPEC (D-011 a D-016) |
-| 1 — Fundação | em andamento: subtarefas 1 e 2 de 10 concluídas |
+| 1 — Fundação | em andamento: subtarefas 1–6 e 8 concluídas (backend completo e testado); faltam 7, 9 e 10 |
 | 2 a 7 | não iniciadas |
 
 ## O que existe
@@ -17,6 +17,14 @@
 - `backend/app/config.py`: lê `.env` + variáveis de ambiente, valida valores (Flask 3.1.3, python-dotenv 1.2.4).
 - `backend/app/__init__.py`: fábrica `create_app`; `app/api/`: rota `GET /api/health` e erros em JSON.
 - `.env` local do usuário criado a partir do exemplo, com chave secreta aleatória (fora do Git).
+- Banco: SQLAlchemy 2.1.8 + Alembic 1.20.1; migração inicial `backend/alembic/versions/2026_11_03_2328-...`;
+  tabelas `users`, `campaigns`, `campaign_intro`, `turns`, `messages`, `events`, `ai_requests`.
+  O backend aplica as migrações sozinho ao iniciar e cria o usuário local.
+- Repositórios (`app/persistence/repositories/`) com filtro obrigatório por `campaign_id`.
+- Provedores (`app/providers/`): interface com streaming, `FakeProvider` (só testes), `OllamaProvider`.
+- Orquestrador de turno (`app/ai/orchestrator/turns.py`) idempotente, com recuperação de falhas.
+- API: `GET/POST /api/campaigns`, `GET /api/campaigns/<id>`, `GET /api/campaigns/<id>/history`,
+  `DELETE /api/campaigns/<id>` (exige o título), `POST /api/campaigns/<id>/turns` (SSE).
 
 ## Ambiente do usuário (verificado em 2026-11-03)
 | Item | Encontrado | Situação |
@@ -38,19 +46,19 @@
 - [ ] Pesquisar modelos e provedores atuais e preencher `docs/AI_PROVIDERS.md` com fonte e data
   (fazer junto com a subtarefa 5; considerar que o hardware só roda modelos locais pequenos).
 
-## Próxima tarefa: Etapa 1, subtarefa 3 — SQLAlchemy + Alembic + primeira migração
+## Próxima tarefa: Etapa 1, subtarefa 7 — frontend mínimo (Vue 3 + Vite)
 Critério de conclusão (SPEC Parte 23): criar uma campanha, interagir com a IA, salvar,
 fechar o programa, reabrir e continuar exatamente do mesmo ponto.
 
 Subtarefas, nesta ordem:
 1. ~~Estrutura de pastas do backend, `pyproject.toml`, ambiente virtual, `pytest` rodando um teste vazio.~~ **Concluída.**
 2. ~~Configuração (`config.py` lendo `.env`) e fábrica da aplicação Flask com rota `/api/health`.~~ **Concluída.**
-3. SQLAlchemy + Alembic + primeira migração: `users`, `campaigns`, `turns`, `messages`, `events`, `ai_requests`.
-4. Repositórios com filtro obrigatório por `campaign_id` + teste de isolamento entre campanhas.
-5. Camada de provedores: `base.py`, `fake.py`, `ollama.py` + testes com o fake.
-6. Orquestrador mínimo de turno (entrada → contexto simples → IA → mensagem salva), idempotente pelo `turn_id`.
+3. ~~SQLAlchemy + Alembic + primeira migração: `users`, `campaigns`, `turns`, `messages`, `events`, `ai_requests`.~~ **Concluída.**
+4. ~~Repositórios com filtro obrigatório por `campaign_id` + teste de isolamento entre campanhas.~~ **Concluída.**
+5. ~~Camada de provedores: `base.py`, `fake.py`, `ollama.py` + testes com o fake.~~ **Concluída.**
+6. ~~Orquestrador mínimo de turno (entrada → contexto simples → IA → mensagem salva), idempotente pelo `turn_id`.~~ **Concluída.**
 7. Frontend mínimo: lista de campanhas, criar campanha, tela de chat com texto chegando aos poucos.
-8. Teste de fluxo completo: criar → jogar 3 turnos (fake) → reiniciar app → retomar → histórico idêntico.
+8. ~~Teste de fluxo completo: criar → jogar 3 turnos (fake) → reiniciar app → retomar → histórico idêntico.~~ **Concluída.**
 9. Teste manual com Ollama real, registrado aqui com o resultado.
 10. Atualizar todos os documentos e o `README.md` com instruções reais de instalação.
 
@@ -79,6 +87,7 @@ Subtarefas, nesta ordem:
 | 2026-11-03 | `cd backend; .\.venv\Scripts\python.exe -m pytest` | 2 passed (Python 3.13.3, pytest 9.2.0) |
 | 2026-11-03 | mesmo comando, após subtarefa 2 | 22 passed |
 | 2026-11-03 | manual: servidor real (`flask --app app run`) + `GET /api/health` | HTTP 200 `{"env":"development","status":"ok","version":"0.1.0"}`; rota inexistente → HTTP 404 em JSON |
+| 2026-11-04 | `pytest` após subtarefas 3–6 e 8 | 101 passed, 1 deselected (o teste externo do Ollama, que não roda por padrão) |
 
 ## Problemas conhecidos
 - Disco C: com 3,3 GB livres (2026-11-03). Dá para instalar o Node; Ollama e modelos devem ir para o F:.
