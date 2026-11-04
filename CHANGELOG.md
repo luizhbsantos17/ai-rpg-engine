@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.6.0] — Etapa 6 (concluída)
+- Modo administrador e debug: interpretador próprio, sessão por senha, confirmação de destrutivos,
+  auditoria, desfazer; console separado da história; comandos nunca vão para a IA.
+- Snapshots por campanha, restauração sem afetar outras, cópia automática antes de destrutivos e de excluir;
+  exportar e importar campanha (API e botões na lista).
+- Estrutura de imagens opcionais, desligada por padrão.
+
 ## [0.5.0] — Etapa 5 (concluída)
 - Configurações da campanha versionadas: experiência (modelo, criatividade, motor, mundo vivo, avisos, nome da
   janela de sistema) e conteúdo por categoria com regras fixas de segurança; tela de configurações.

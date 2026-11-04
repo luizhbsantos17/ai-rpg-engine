@@ -5,35 +5,33 @@
 ## Resumo
 | Etapa | Status |
 |---|---|
-| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-043) |
+| 0 — Planejamento e arquitetura | concluída (decisões D-001 a D-046) |
 | 1 — Fundação | **concluída** e verificada com Ollama real |
 | 2 — Motor de RPG | **concluída** e verificada com Ollama real |
 | 3 — Narrativa e mundo | **concluída** (teste de campanha simulada com reinício) |
 | 4 — Sistemas avançados | **concluída** (`tests/e2e/test_different_rule_systems.py`) |
 | 5 — Interface completa | **concluída** (testes de componentes; falta o dono olhar a tela) |
-| 6 — Imagens e administração | não iniciada (plano abaixo) |
-| 7 — Qualidade e expansão | não iniciada |
+| 6 — Imagens e administração | **concluída** (imagens: só a estrutura, desligada; gerador real pendente) |
+| 7 — Qualidade e expansão | não iniciada (plano abaixo) |
 
 ## Última tarefa concluída
-Etapa 5: configurações da campanha (experiência × conteúdo, versionadas) + tela; mapa, diário e laços;
-painéis em abas; nome da "janela de sistema" por universo.
+Etapa 6: modo administrador/debug (interpretador, sessão, confirmação, auditoria, desfazer, console),
+snapshots/restauração/exportação/importação por campanha, estrutura de imagens opcionais.
 
-## Próxima tarefa: Etapa 6 — Imagens e administração
-Critério (SPEC Parte 23): os recursos administrativos funcionam independentemente da narrativa normal.
-Subtarefas planejadas (ordem):
-1. **Interpretador de comandos** `/admin` e `/debug` (`app/admin/`): sintaxe de `docs/ADMIN_COMMANDS.md`;
-   só mensagens que COMEÇAM com `/admin` ou `/debug` são comandos; nunca passam pela IA.
-2. **Acesso protegido** por `ADMIN_PASSWORD` (sessão administrativa com expiração), mesmo rodando local.
-3. Comandos de consulta (`/debug show_context`, `show_events`, `inspect_entity`, `inspect_rules`,
-   `inspect_ai_requests`, `validate_world`; `/admin status`, `inspect`).
-4. Comandos de alteração viram operações do motor com origem `admin` (log + `admin_audit` com desfazer);
-   destrutivos exigem confirmação com código.
-5. **Snapshots/backup por campanha** (D-014) e restauração (casos 16 e 17 da SPEC Parte 22).
-6. **Imagens opcionais** (SPEC 13): camada de provedor de imagens desligada por padrão (sem custo).
+## Próxima tarefa: Etapa 7 — Qualidade e expansão
+Critério (SPEC Parte 23): o projeto funciona de maneira consistente, com testes demonstrando os principais fluxos.
+Subtarefas planejadas:
+1. **Verificação de segurança**: entradas, caminhos de arquivo, segredos em logs, modo admin, tamanho de pedidos.
+2. **Teste real de ponta a ponta com o Ollama** de todo o fluxo novo (geração → preparação → turnos → admin →
+   snapshot → reinício), registrando tempos.
+3. **Snapshot automático a cada N turnos** (DATABASE.md) e limpeza de snapshots antigos.
+4. Desempenho com muitos NPCs/eventos (índices, limites de contexto).
+5. Documentação final (README, guia do jogador) e preparação para hospedagem (Dockerfile opcional, D-009).
 
 ## Pendências menores
 - Combate sem ordem de iniciativa dedicada (funciona por testes + dano condicional + efeitos + morte).
 - Equipamento por espaços (mão, armadura...) não existe; itens ficam no inventário.
+- **Troque `ADMIN_PASSWORD` no `.env`**: hoje está com o valor de exemplo (`troque-esta-senha`).
 
 ## O que existe e funciona (com testes)
 - **Backend** (Python 3.13, Flask 3.1, SQLAlchemy 2.1, Alembic 1.20, Pydantic 2.14, httpx):
@@ -64,8 +62,8 @@ Subtarefas planejadas (ordem):
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **288 passed**, 1 deselected (externo) |
-| 2026-11-04 | frontend `npm test` (Vitest) | **39 passed** |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **310 passed**, 1 deselected (externo) |
+| 2026-11-04 | frontend `npm test` (Vitest) | **43 passed** |
 | 2026-11-04 | frontend `npm run build` | ok |
 | 2026-11-04 | `pytest -m external` com Ollama real | **1 passed** |
 | 2026-11-04 | Etapa 1 com IA real: criar → jogar → desligar → religar → continuar | ok |
@@ -88,6 +86,7 @@ Subtarefas planejadas (ordem):
    Ou serviço externo (pode ter custo; exige pesquisa de preços e autorização).
 2. **GPU integrada** no Ollama (`OLLAMA_IGPU_ENABLE=1`): testar se acelera?
 3. Apagar `F:\Tools\downloads` (~1,7 GB de zips já extraídos)? Não apaguei por segurança.
+4. **Gerador de imagens**: deixar desligado, ou escolher um (serviço pago ou modelo local grande).
 
 ## Como testar (passo a passo para o dono)
 1. Dois cliques em `F:\Projetos\AI-RPG-Engine\iniciar.cmd`. Abrem 3 janelas pretas e o navegador.
@@ -103,8 +102,8 @@ Backend: `app/{config.py, persistence, providers, ai, engine, services, api}`, `
 Raiz: `instalar.cmd`, `iniciar.cmd`. Docs: `docs/*.md`.
 
 ## Casos da SPEC Parte 22 cobertos por testes
-1 a 15, 18 a 24, 25 (parcial: dono), 26. Faltam: 16 (operações administrativas — Etapa 6) e
-17 (recuperação de backups — Etapa 6/7).
+todos os 26 (o 25, permissões, cobre dono da campanha e modo administrador;
+multiplayer ainda não existe).
 
 ## Riscos principais
 | Risco | Mitigação |

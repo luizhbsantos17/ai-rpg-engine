@@ -221,3 +221,22 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
   protagonista; personagens conhecidos = `knowledge` do protagonista (falso aparece como confirmado).
   Sentimentos e status dos outros, agendamentos e missões ocultas nunca vão para a interface do jogador.
 - Motivo: SPEC 6.1 e 6.5.
+
+### D-044 — Modo administrador: sessão em memória, confirmação por código, auditoria e desfazer
+- Decisão: login com `ADMIN_PASSWORD` gera um código de sessão (30 min, renova com uso) guardado só na memória
+  do servidor; sem senha no `.env`, o modo fica desligado. Comandos destrutivos pedem `--confirm CÓDIGO`
+  (2 min, só para o mesmo comando). Tudo que executa vai para `admin_audit`; alterações reversíveis guardam
+  as operações inversas para `/admin undo`. Alterações passam pelo pipeline do motor com origem `admin`.
+- Motivo: SPEC 16 (validação pelo backend, confirmação, registro, desfazer, proteção mesmo local).
+
+### D-045 — Snapshots em arquivo, por campanha
+- Decisão: snapshot = exportação JSON da campanha em `data/backups/<campanha>/`, com a revisão do banco
+  (restaurar exige a mesma versão). Automático antes de comandos destrutivos e antes de excluir campanha.
+  A lista de snapshots vem da pasta (não de uma tabela), para a restauração não apagar o próprio índice.
+- Motivo: D-014 + SPEC 15 (backup, restauração, exportação, importação) sem afetar outras campanhas.
+
+### D-046 — Imagens desligadas por padrão
+- Decisão: estrutura completa (provedor, associação a entidades, reaproveitamento por hash do pedido,
+  arquivos em `data/images`), mas só existe o provedor "none" (e "fake" nos testes).
+- Motivo: SPEC 13 (o jogo funciona sem imagens). Geradores reais são pagos ou exigem modelo local grande:
+  dependem de autorização do dono (decisão pendente).

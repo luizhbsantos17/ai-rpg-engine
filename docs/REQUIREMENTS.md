@@ -26,11 +26,11 @@ Status possíveis: `pendente`, `parcial`, `pronto` (só com teste executado).
 | RF-18 | Regras de morte por universo | 7.4 | 4 | pronto |
 | RF-19 | Mecânicas e regras criadas pela IA, validadas | 5.3, 6.4 | 4 | pronto |
 | RF-20 | Interface completa (23 telas/módulos) e mensagens diegéticas | 12 | 5 | parcial (jogo, ficha, inventário, habilidades, missões, conhecidos, mapa, diário, laços, configurações; faltam admin/imagens (Etapa 6) e equipamento por espaço) |
-| RF-21 | Geração opcional de imagens associadas a entidades | 13 | 6 | pendente |
-| RF-22 | Modo administrador e debug com interpretador próprio | 16 | 6 | pendente |
+| RF-21 | Geração opcional de imagens associadas a entidades | 13 | 6 | parcial (estrutura pronta e testada; nenhum gerador real escolhido) |
+| RF-22 | Modo administrador e debug com interpretador próprio | 16 | 6 | pronto |
 | RF-23 | Configurações durante a campanha (experiência × regras × narrativa) | 19 | 5 | pronto |
 | RF-24 | Níveis de maturidade por categoria, limitados pelo provedor | 14, D-007 | 5 | pronto (aviso do provedor local; provedores externos ainda não existem) |
-| RF-25 | Backup, restauração, exportação e importação | 15 | 6–7 | pendente |
+| RF-25 | Backup, restauração, exportação e importação | 15 | 6–7 | pronto |
 
 ## Não funcionais
 | ID | Requisito | SPEC |

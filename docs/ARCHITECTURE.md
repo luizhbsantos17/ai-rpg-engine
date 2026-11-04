@@ -131,6 +131,15 @@ histórico recente; ação atual; e, para o narrador, os resultados reais do mot
 | `app/ai/orchestrator/simulation.py` + `app/ai/prompts/simulation.py` | NPCs relevantes fora de cena e eventos mundiais |
 | `app/services/known.py` | personagens conhecidos (só o que o protagonista sabe) |
 
+### 3.2.4. Módulos das Etapas 5 e 6
+| Módulo | Responsabilidade |
+|---|---|
+| `app/services/campaign_settings.py` | configurações da campanha (experiência × conteúdo), versionadas |
+| `app/services/journal.py` | mapa, diário e laços do protagonista |
+| `app/admin/` | interpretador `/admin` e `/debug`: sintaxe, alvos, sessões, catálogo, auditoria |
+| `app/persistence/snapshots.py` | exportar/restaurar/importar uma campanha (D-014, D-045) |
+| `app/images/` + `app/services/images.py` | imagens opcionais (desligadas por padrão, D-046) |
+
 ### 3.3. API HTTP (Etapa 1)
 | Método e endereço | O que faz |
 |---|---|
@@ -147,6 +156,9 @@ histórico recente; ação atual; e, para o narrador, os resultados reais do mot
 | `GET /api/campaigns/<id>/known` | personagens conhecidos pelo protagonista (falso aparece como confirmado) |
 | `GET /api/campaigns/<id>/journal` | mapa, diário e laços do ponto de vista do protagonista |
 | `GET/PUT /api/campaigns/<id>/settings` | configurações da campanha (experiência e conteúdo), versionadas |
+| `GET /api/campaigns/<id>/export` · `POST /api/campaigns/import` | arquivo da campanha inteira |
+| `POST /api/admin/login` · `POST /api/campaigns/<id>/admin` | modo administrador (ver ADMIN_COMMANDS.md) |
+| `GET /api/images/status` · `POST /api/campaigns/<id>/images` · `GET .../images/<id>` | imagens opcionais |
 | `POST /api/campaigns/<id>/turns` | joga: `{turn_id (UUID do frontend), input}` → stream SSE |
 
 Eventos do stream do turno: `turn` (turno registrado + mensagem do jogador), `mechanics` (avisos
