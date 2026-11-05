@@ -26,7 +26,7 @@ STATUS_DRAFT = "draft"
 STATUS_ACTIVE = "active"
 KEEPABLE = ("title", "premise", "genre_tags")
 GENERATOR_TEMPERATURE = 1.0  # criatividade alta: o padrão é ser bem aleatório (SPEC 3.1)
-GENERATOR_MAX_TOKENS = 900
+GENERATOR_MAX_TOKENS = 1500
 GENERATOR_ROLE = "generator"
 
 

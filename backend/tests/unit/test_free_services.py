@@ -9,7 +9,7 @@ import httpx
 import pytest
 
 from app.config import ConfigError, load_settings
-from app.providers import ChatMessage, GenerationOptions, ProviderResponseError
+from app.providers import ChatMessage, GenerationOptions, ProviderResponseError, ProviderUnavailableError
 from app.providers.free_services import FREE_SERVICES
 from app.providers.openai_compat import OpenAICompatProvider, RateLimitedError
 from app.providers.registry import build_provider, resolve_model
@@ -43,7 +43,7 @@ def test_rate_limit_gives_up_after_a_few_waits():
     p = provider("groq", lambda request: httpx.Response(429, json={"error": "devagar"}))
     with pytest.raises(RateLimitedError):
         p.complete(MESSAGES, GenerationOptions(model="qwen/qwen3.8-27b"))
-    assert p.waits == [5.0, 10.0]
+    assert p.waits == [5.0, 10.0, 15.0]
 
 
 def test_json_falls_back_when_the_model_does_not_accept_the_schema_and_remembers():
@@ -115,3 +115,49 @@ def test_config_requires_the_key_and_blocks_paid_openrouter_models():
     built = build_provider(settings(AI_PROVIDER="groq", GROQ_API_KEY="segredo"))
     assert built.name == "groq" and built.is_paid is False and "segredo" not in repr(built)
     assert "segredo" not in repr(settings(AI_PROVIDER="groq", GROQ_API_KEY="segredo"))
+
+
+def test_busy_model_falls_back_to_the_next_recommended_and_sticks():
+    asked = []
+
+    def handler(request):
+        if request.url.path.endswith("/models"):
+            return httpx.Response(200, json={"data": [{"id": "models/gemini-3.5-flash"},
+                                                      {"id": "models/gemini-3.6-flash"}]})
+        body = json.loads(request.content)
+        asked.append((body["model"], body.get("reasoning_effort")))
+        if body["model"] == "gemini-3.5-flash":
+            return httpx.Response(503, json=[{"error": {"message": "high demand"}}])  # formato do Gemini: lista
+        return ok("A taverna ferve.")
+
+    p = provider("gemini", handler)
+    p.auto_fallback = True
+    model = resolve_model(p, None)
+    assert model == "gemini-3.5-flash"
+    assert p.complete(MESSAGES, GenerationOptions(model=model)).text == "A taverna ferve."
+    assert asked == [("gemini-3.5-flash", "none"), ("gemini-3.5-flash", "none"), ("gemini-3.6-flash", "none")]
+    assert p.waits == [5.0]  # com outro modelo disponível, espera uma vez só
+    assert resolve_model(p, None) == "gemini-3.6-flash"  # passa a usar o que respondeu
+
+
+def test_without_auto_choice_there_is_no_fallback_and_the_error_is_readable():
+    p = provider("gemini", lambda request: httpx.Response(503, json=[{"error": {"message": "high demand"}}]))
+    with pytest.raises(ProviderUnavailableError, match="sobrecarregado.*high demand"):
+        p.complete(MESSAGES, GenerationOptions(model="gemini-3.5-flash"))
+
+
+def test_daily_quota_skips_waiting_and_goes_to_the_next_model():
+    daily = [{"error": {"message": "Generate content requests per day limit exceeded on Free Tier",
+                        "details": [{"@type": "type.googleapis.com/google.rpc.RetryInfo", "retryDelay": "26754s"}]}}]
+
+    def handler(request):
+        if request.url.path.endswith("/models"):
+            return httpx.Response(200, json={"data": [{"id": "gemini-3.5-flash"}, {"id": "gemini-3.6-flash"}]})
+        if json.loads(request.content)["model"] == "gemini-3.5-flash":
+            return httpx.Response(429, json=daily)
+        return ok("ok")
+
+    p = provider("gemini", handler)
+    p.auto_fallback = True
+    assert p.complete(MESSAGES, GenerationOptions(model="gemini-3.5-flash")).text == "ok"
+    assert p.waits == []  # não espera 7 horas nem 5 s à toa

@@ -11,6 +11,8 @@
   habilidades e itens iniciais (já equipados quando faz sentido); regra de progressão no intérprete.
 - Guia do desenvolvedor/administrador: `docs/GUIA_DO_DESENVOLVEDOR.md`.
 - Temporários e caches na pasta do projeto (`.tmp/`, `.cache/`), nada no disco C:.
+- Testado com as chaves gratuitas do dono: Groq e Gemini funcionando; troca automática de modelo quando o
+  escolhido está sobrecarregado ou sem cota; erros do Gemini legíveis; JSON da IA não é mais cortado.
 
 ## [0.8.0] — Depois da Etapa 7
 - Equipamentos: itens com espaço (`slot`) e bônus; `item.equip`/`item.unequip`; um item por espaço; o bônus vale

@@ -31,7 +31,7 @@ from app.providers.registry import generation_options
 logger = logging.getLogger(__name__)
 
 MAX_SIMULATED_NPCS = 10
-SIMULATION_MAX_TOKENS = 600
+SIMULATION_MAX_TOKENS = 1024
 SIMULATION_ROLE = "simulation"
 TIER_RELEVANT = 1
 

@@ -21,7 +21,8 @@ def build_provider(settings: Settings) -> AIProvider:
         from app.providers.openai_compat import OpenAICompatProvider
 
         service = FREE_SERVICES[settings.ai_provider]
-        return OpenAICompatProvider(service.base_url, settings.free_service_api_key, paid=False, service=service)
+        return OpenAICompatProvider(service.base_url, settings.free_service_api_key, paid=False, service=service,
+                                    auto_fallback=not settings.ai_model)
     if settings.ai_provider == "fake":
         from app.providers.fake import FakeProvider
 

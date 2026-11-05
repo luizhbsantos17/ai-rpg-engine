@@ -135,8 +135,20 @@ Cuidados: não cadastrar cartão/faturamento (Gemini, Groq); na OpenRouter o pro
 `:free`. Conteúdo: os três têm regras próprias e podem recusar cenas explícitas (aviso mostrado nas configurações
 da campanha).
 
-Não testado com os serviços reais (sem chave do dono). Testado com servidor simulado: escolha de modelo,
-trava `:free`, espera no 429, troca do modo JSON. Teste real pronto: `pytest -m external` (pula sem chave).
+### Teste real com as chaves gratuitas do dono, 2026-11-04
+| Serviço | Resultado |
+|---|---|
+| **Groq** (`openai/gpt-oss-120b`) | **recomendado**. Jogo completo ok: ficha com 7 atributos (Vida, Mana, Nível, Experiência...), 2 habilidades, itens equipados com bônus; 2ª jogada gastou mana e o motor rolou o teste. Jogada de 7 a 54 s: o limite de 8.000 tokens/min obriga a esperar (o programa espera sozinho). |
+| **Gemini** | Texto muito bom e rápido (2–11 s), mas a cota gratuita é de **20 pedidos por dia POR MODELO** (mensagem oficial do erro 429: `GenerateRequestsPerDayPerProjectPerModel-FreeTier`, limite 20) ≈ 5 jogadas por modelo. `gemini-3.8-flash` deu 503 (alta demanda), `gemini-3.7-flash` sem cota no gratuito, `gemini-2.5-flash` indisponível para contas novas. Sem `reasoning_effort: "none"`, o 3.5 misturou o "pensamento" em inglês no texto ou gastou o limite pensando. |
+| **OpenRouter** | Os Gemma `:free` deram 429 do provedor de origem (congestionados) nas 2 tentativas. |
+
+Correções feitas a partir desses testes: erro do Gemini vem como lista JSON; 502/503/504 são tratados como
+"tente de novo"; troca automática para o próximo modelo recomendado (só com `AI_MODEL` vazio) e uso continuado
+do que respondeu; espera longa (cota diária, `retryDelay` do Gemini) pula direto para o próximo modelo; limite
+por minuto (429 curto) espera até 3 vezes antes de trocar; limites de tokens do intérprete (1.024) e da
+preparação (2.048) aumentados (o Gemini cortava o JSON); laço de companheiro longo é cortado, não recusado.
+
+`pytest -m external` com `AI_PROVIDER=gemini` e `groq`: **2 passed** cada (texto em português + JSON válido).
 
 ## Provedores externos (pagos)
 Não pesquisados. Antes de usar qualquer serviço pago: implementar o controle de gasto, registrar aqui preço e

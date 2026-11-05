@@ -37,6 +37,12 @@ class FreeService:
         return usable[0] if usable else None
 
 
+def _gemini_extra(model: str) -> dict[str, Any]:
+    # Gemini 3 "pensa" por padrão: o pensamento gasta o limite de tokens e, medido em 2026-11-04, chegou a vazar
+    # no texto em inglês. "none" desliga (aceito por 3-flash-preview, 3.1-flash-lite, 3.5, 3.6 e 3.8-flash).
+    return {"reasoning_effort": "none"} if model.startswith("gemini-") else {}
+
+
 def _groq_extra(model: str) -> dict[str, Any]:
     # gpt-oss "pensa" antes de responder e esse pensamento gasta o limite de tokens da resposta.
     return {"reasoning_effort": "low"} if model.startswith("openai/gpt-oss") else {}
@@ -47,9 +53,13 @@ FREE_SERVICES: dict[str, FreeService] = {
         name="gemini", label="Google Gemini (AI Studio)",
         base_url="https://generativelanguage.googleapis.com/v1beta/openai",
         key_env="GEMINI_API_KEY", key_url="https://aistudio.google.com/apikey",
-        preferred_models=("gemini-3.8-flash", "gemini-2.5-flash", "gemini-flash-latest"),
+        # Ordem medida com uma chave gratuita em 2026-11-04: 3.8 estava sobrecarregado (503), 3.7 sem cota no
+        # plano gratuito, 2.5 indisponível para contas novas. Os outros responderam em 3–7 s.
+        preferred_models=("gemini-3.5-flash", "gemini-3.6-flash", "gemini-3-flash-preview", "gemini-3.1-flash-lite",
+                          "gemini-3.8-flash"),
         content_note=("O Gemini tem filtros de segurança próprios: pode recusar conteúdo sexual explícito ou "
                       "violência extrema, mesmo que a campanha permita."),
+        extra_payload=_gemini_extra,
     ),
     "groq": FreeService(
         name="groq", label="Groq",

@@ -38,10 +38,11 @@ logger = logging.getLogger(__name__)
 
 RECENT_HISTORY_FOR_INTERPRETER = 4
 INTERPRETER_TEMPERATURE = 0.3  # regras pedem consistência, não criatividade
-# Limites próprios de tamanho: JSON de operações é curto. Sem isso, modelos pequenos às vezes
-# "disparam" até o limite da narração e o JSON sai cortado (medido com qwen2.5:1.5b em 2026-11-04).
-INTERPRETER_MAX_TOKENS = 512
-SETUP_MAX_TOKENS = 1400  # atributos, habilidades, itens e companheiros
+# Limites próprios de tamanho, independentes do limite da narração (AI_MAX_OUTPUT_TOKENS).
+# Medidos em 2026-11-04: o qwen2.5:1.5b às vezes "dispara" sem fechar o JSON (limite evita esperar demais);
+# o Gemini escreve JSON espaçado e passou de 512 no intérprete e de 1.024 na preparação (JSON cortado).
+INTERPRETER_MAX_TOKENS = 1024
+SETUP_MAX_TOKENS = 2048  # atributos, habilidades, itens e companheiros
 
 
 @dataclass
@@ -101,9 +102,8 @@ class MechanicsPhase:
 
         settings = mechanics.settings or self.settings
         base = replace(generation_options(settings, model), temperature=INTERPRETER_TEMPERATURE)
-        setup_options = replace(base, max_output_tokens=min(base.max_output_tokens or SETUP_MAX_TOKENS, SETUP_MAX_TOKENS))
-        options = replace(base, max_output_tokens=min(base.max_output_tokens or INTERPRETER_MAX_TOKENS,
-                                                      INTERPRETER_MAX_TOKENS))
+        setup_options = replace(base, max_output_tokens=SETUP_MAX_TOKENS)
+        options = replace(base, max_output_tokens=INTERPRETER_MAX_TOKENS)
         summary: dict[str, Any] = {"setup": None, "intent": None, "interpreter_error": None, "outcomes": []}
         outcomes: list[OperationOutcome] = []
 

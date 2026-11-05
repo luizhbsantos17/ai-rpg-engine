@@ -1,6 +1,8 @@
-"""Teste real com o Ollama local: 1ª jogada (preparação da ficha) + "outra versão". Banco separado em .tmp/.
+"""Teste real de uma jogada: 1ª jogada (preparação da ficha) + "outra versão" + uma ação. Banco separado em .tmp/.
 
-Uso (na pasta backend, com o Ollama aberto): .venv/Scripts/python.exe scripts/real_turn_check.py [modelo]
+Uso (na pasta backend): .venv/Scripts/python.exe scripts/real_turn_check.py [provedor] [modelo]
+  provedor: ollama (padrão; precisa do Ollama aberto), gemini, groq ou openrouter (chave lida do .env).
+  modelo vazio = escolha automática.
 """
 
 import sys
@@ -14,14 +16,15 @@ from app import create_app  # noqa: E402
 from app.config import PROJECT_ROOT, load_settings  # noqa: E402
 from app.persistence.migrations import upgrade_to_head  # noqa: E402
 
-model = sys.argv[1] if len(sys.argv) > 1 else "qwen2.5:1.5b"
+provider_name = sys.argv[1] if len(sys.argv) > 1 else "ollama"
+model = sys.argv[2] if len(sys.argv) > 2 else ""
 data_dir = PROJECT_ROOT / ".tmp" / f"real-{uuid.uuid4().hex[:6]}"
 data_dir.mkdir(parents=True)
 url = "sqlite:///" + (data_dir / "rpg.db").as_posix()
 upgrade_to_head(url)
 settings = load_settings(environ={"APP_ENV": "development", "DATA_DIR": str(data_dir), "DATABASE_URL": url,
-                                  "AI_PROVIDER": "ollama", "AI_MODEL": model, "AI_SUMMARY_EVERY": "0",
-                                  "AUTO_SNAPSHOT_EVERY": "0"}, env_file=None)
+                                  "AI_PROVIDER": provider_name, "AI_MODEL": model, "AI_SUMMARY_EVERY": "0",
+                                  "AUTO_SNAPSHOT_EVERY": "0"})  # chaves vêm do .env
 services = create_app(settings).extensions["rpg_engine"]
 user = services.local_user_id
 campaign = services.campaigns.create(user, "A Torre de Vidro",
@@ -38,6 +41,8 @@ def run(events):
         elif name == "MechanicsApplied":
             notices += [m["content"] for m in e.messages]
         last = e
+        if name == "TurnFailed":
+            print("FALHA:", e.message)
     return text, notices, last
 
 
@@ -57,3 +62,9 @@ text2, _, last = run(services.turns.run(services.turns.prepare_regeneration(user
 print(f"== outra versão ({time.monotonic() - start:.0f} s, {type(last).__name__})")
 print(text2)
 print("== textos diferentes:", text1.strip() != text2.strip())
+start = time.monotonic()
+action = "Uso minha magia para iluminar o corredor e procuro alguém por perto."
+text3, notices, last = run(services.turns.run(services.turns.prepare(user, campaign["id"], str(uuid.uuid4()), action)))
+print(f"== 2ª jogada: {action} ({time.monotonic() - start:.0f} s, {type(last).__name__})")
+print("\n".join(notices))
+print(text3)

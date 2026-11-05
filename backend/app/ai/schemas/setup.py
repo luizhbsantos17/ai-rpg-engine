@@ -10,7 +10,7 @@ import re
 import unicodedata
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class SetupAttribute(BaseModel):
@@ -42,6 +42,12 @@ class SetupCompanion(BaseModel):
     goal: str = Field(default="", max_length=500)
     bond: str = Field(default="", max_length=60, description="laço com o protagonista: amigo, rival, desconhecido...")
     attributes: dict[str, int | float | str] = Field(default_factory=dict, description="nome do atributo -> valor")
+
+    @field_validator("bond", mode="before")
+    @classmethod
+    def _short_bond(cls, value):
+        # Modelos maiores descrevem o laço numa frase (medido com gpt-oss-120b): corta em vez de recusar tudo.
+        return value.strip()[:60] if isinstance(value, str) else value
 
 
 class SetupSkill(BaseModel):

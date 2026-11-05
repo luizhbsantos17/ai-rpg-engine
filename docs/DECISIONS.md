@@ -312,6 +312,10 @@ Formato: contexto → decisão → alternativas → motivo. Decisões novas vão
 - Motivo: o dono pediu IA gratuita melhor que a local (o PC não tem GPU dedicada). Limites conferidos em
   2026-11-04 nas páginas oficiais (ver AI_PROVIDERS.md). Sem chave do dono, testado só com servidor simulado;
   o teste real fica pronto em `tests/external/test_free_service_real.py`.
+- Atualização (mesmo dia, com as chaves do dono): Gemini pede `reasoning_effort: "none"`; ordem de modelos
+  medida; troca automática de modelo quando o escolhido está sobrecarregado ou sem cota (só com `AI_MODEL`
+  vazio; 429 curto espera até 3 vezes antes, porque o modelo preferido é melhor); limites de tokens do
+  intérprete/preparação independentes de `AI_MAX_OUTPUT_TOKENS`. Groq recomendado (cota diária maior).
 
 ### D-055 — "Gerar outra versão" da narração
 - Decisão: `POST /api/campaigns/<id>/turns/<turn_id>/regenerate` (SSE) reescreve só o TEXTO da última jogada

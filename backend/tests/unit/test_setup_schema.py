@@ -46,3 +46,14 @@ def test_typical_resource_is_marked_when_ai_forgot():
     s = setup(attributes=[{"name": "Força", "initial_value": 5}, {"name": "Energia", "initial_value": 10}])
     data = {o["key"]: o["data"] for o in s.to_operations() if o["op"] == "definition.create"}
     assert data["energia"]["resource"] is True and data["forca"]["resource"] is False
+
+
+def test_long_companion_bond_is_cut_instead_of_refusing_the_whole_setup():
+    from app.ai.schemas.setup import CampaignSetup
+
+    setup = CampaignSetup.model_validate({
+        "attributes": [{"name": "Vida", "initial_value": 10}], "protagonist": {"name": "Lia"},
+        "starting_location": "Torre",
+        "companions": [{"name": "Bram", "bond": "irmão de criação que jurou protegê-la desde a queda da antiga torre"}],
+    })
+    assert len(setup.companions[0].bond) == 60

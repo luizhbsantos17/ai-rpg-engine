@@ -43,6 +43,10 @@ Abra o `.env` no Bloco de Notas, mude a linha `AI_PROVIDER=` e salve. Depois **f
 | `openrouter` | Internet | só modelos `:free` | `OPENROUTER_API_KEY` |
 | `openai_compat` | Outro servidor (LM Studio...) | depende | `OPENAI_COMPAT_BASE_URL` |
 
+**Recomendado hoje: `groq`** (testado em 04/11/2026: cota de ~1.000 pedidos/dia, ficha e regras funcionando;
+jogadas de 10 a 50 s por causa do limite por minuto). O Gemini escreve muito bem e rápido, mas só dá umas
+5 jogadas por modelo por dia no plano gratuito.
+
 ### Como pegar uma chave gratuita (exemplo: Gemini)
 1. Entre em https://aistudio.google.com/apikey com sua conta Google.
 2. Clique em **Create API key** (Criar chave). Copie o texto que aparecer.

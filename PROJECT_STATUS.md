@@ -15,6 +15,14 @@
 | 7 — Qualidade e expansão | **concluída** (Dockerfile escrito, não testado: sem Docker nesta máquina) |
 
 ## Última tarefa concluída
+**IA gratuita testada de verdade com as chaves do dono** (2026-11-04). `.env` agora com `AI_PROVIDER=groq`
+(mudei de `gemini` para `groq` por ser o que funcionou melhor; as 3 chaves continuam lá).
+- Groq (`gpt-oss-120b`): jogo completo ok — ficha com Vida, Mana, Nível, Experiência e mais; habilidades;
+  itens equipados com bônus; 2ª jogada gastou mana e o motor rolou o teste. 7–54 s por jogada (limite por minuto).
+- Gemini: texto ótimo e rápido, mas 20 pedidos/dia POR MODELO no gratuito (~5 jogadas por modelo).
+- OpenRouter: modelos gratuitos congestionados no teste.
+- Correções vindas desses testes: troca automática de modelo, erros do Gemini, espera inteligente, JSON sem corte.
+
 Pedidos do dono depois de testar (D-054 a D-057):
 - **Disco C:**: temporários dos testes (~270 MB por execução), cache do pip/npm e sobra do teste de desempenho
   saíram do C: (liberados ~390 MB); agora tudo fica em `.tmp/` e `.cache/` no projeto. **Causa principal
@@ -62,12 +70,13 @@ Antes, Etapa 7.4: desempenho com campanha grande (D-049). Medição com `scripts
 Antes: 7.1 (segurança, D-047), 7.2 (teste real ponta a ponta com Ollama), 7.3 (snapshot automático, D-048).
 
 ## Próxima tarefa
-1. **Dono**: liberar espaço no C: (decisão pendente 5) e criar uma chave gratuita do Gemini (passo a passo em
-   `docs/GUIA_DO_DESENVOLVEDOR.md`, seção 2). Com a chave: rodar `pytest -m external` (teste real) e jogar.
-2. Com espaço no C:: testar o `gemma3:4b` local (velocidade e qualidade), com
-   `cd backend; .\.venv\Scripts\python.exe scripts\real_turn_check.py gemma3:4b` (banco separado).
-3. Possíveis melhorias sem decisão do dono: "desfazer a jogada inteira" (novos dados, usando snapshots);
-   ordem de iniciativa no combate; contas de usuário para hospedagem.
+1. **Dono**: jogar com o Groq pela tela (`iniciar.cmd`) e dizer se a história ficou coerente e divertida.
+   Abrir o jogo de novo é obrigatório depois de mexer no `.env`.
+2. Ideia para resolver os limites gratuitos: **combinar serviços** (ex.: narrador no Gemini, intérprete no Groq,
+   ou passar para o outro serviço quando a cota de um acabar). Cada serviço/modelo tem a própria cota.
+3. Liberar espaço no C: (decisão pendente 5) e então testar o `gemma3:4b` local:
+   `cd backend; .\.venv\Scripts\python.exe scripts\real_turn_check.py ollama gemma3:4b`.
+4. Outras melhorias: "desfazer a jogada inteira"; ordem de iniciativa no combate; contas de usuário.
 
 ## Arquivos modificados nesta sessão
 `backend/app/ai/orchestrator/{turns.py, events.py, mechanics.py}`, `backend/app/ai/context/narration.py`,
@@ -118,11 +127,14 @@ DECISIONS.md}`, `CHANGELOG.md`, `PROJECT_STATUS.md`. No `.env` do dono: só fora
 ## Testes executados (resultados reais)
 | Data | O quê | Resultado |
 |---|---|---|
-| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **367 passed**, 5 deselected (externos) |
+| 2026-11-04 | backend `pytest` (unit + integração + fluxo completo) | **371 passed**, 5 deselected (externos) |
 | 2026-11-04 | frontend `npm test` (Vitest) | **48 passed** (uma execução antes caiu por falta de RAM do PC; repetida ok) |
 | 2026-11-04 | `pytest -m external` (Ollama nativo + /v1; serviços gratuitos sem chave) | **3 passed, 2 skipped** |
 | 2026-11-04 | "outra versão" com Ollama real (`qwen2.5:1.5b`), banco separado | ok: troca feita, texto novo diferente; 1ª jogada 77–90 s, outra versão 25 s |
-| 2026-11-04 | serviços Gemini/Groq/OpenRouter de verdade | **não testado** (sem chave do dono) |
+| 2026-11-04 | `pytest -m external` com chaves do dono: Gemini e Groq | **2 passed** cada |
+| 2026-11-04 | jogo real com Groq (`scripts/real_turn_check.py groq`) | ok: ficha completa, mana gasta, teste rolado; 7–54 s/jogada |
+| 2026-11-04 | jogo real com Gemini | narração ok (39 s); preparação cortada (corrigido: limites de tokens); cota diária de 20/modelo esgotou |
+| 2026-11-04 | OpenRouter real | 429 (modelos gratuitos congestionados) |
 | 2026-11-04 | `gemma3:4b` local | **não testado** (baixado; C: com 99 MB livres) |
 | 2026-11-04 | frontend `npm run build` | ok |
 | 2026-11-04 | `pytest -m external` com Ollama real (nativo + formato OpenAI em /v1) | **3 passed** |
@@ -151,8 +163,9 @@ DECISIONS.md}`, `CHANGELOG.md`, `PROJECT_STATUS.md`. No `.env` do dono: só fora
 
 ## Decisões pendentes (dependem do dono)
 0. **Serviços de IA pagos**: bloqueados. Liberar exige controle de gasto, pesquisa de preços e sua autorização.
-1. **Chave de IA gratuita**: criar a chave (Gemini recomendado; passo a passo no guia do desenvolvedor) e
-   colocar no `.env`. Só você pode criar a conta. Lembre: o texto da história vai para o serviço.
+1. **Chaves gratuitas**: feitas (Gemini, Groq, OpenRouter). Confirme nos sites que **nenhum cartão/faturamento**
+   está cadastrado: Google AI Studio (sem "billing" no projeto), Groq (plano Free, sem "Dev Tier"),
+   OpenRouter (sem créditos comprados). Assim nada pode ser cobrado.
 2. **GPU integrada** no Ollama (`OLLAMA_IGPU_ENABLE=1`): testar se acelera?
 3. Apagar `F:\Tools\downloads` (~1,7 GB de zips já extraídos)? Não apaguei por segurança.
 4. **Gerador de imagens**: deixar desligado, ou escolher um.
