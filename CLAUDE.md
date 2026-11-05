@@ -56,5 +56,6 @@ Ambiente do dono: Windows 11, PowerShell. O ambiente virtual fica em `backend/.v
 - Configuração: `.env` na RAIZ do projeto (copiado de `.env.example`); lido por `backend/app/config.py`
 - Frontend: `cd frontend && npm run dev`
 - Migrações: `cd backend && alembic upgrade head`
+- Enviar para o GitHub (repositório privado luizhbsantos17/ai-rpg-engine): `git push` (login do `gh` em `F:Toolsghbingh.exe`)
 - Medir desempenho (campanha grande, IA falsa): `cd backend && python scripts/benchmark_large_campaign.py 500 300`
 - Conferir uma jogada com o Ollama real (banco separado em .tmp/): `cd backend && python scripts/real_turn_check.py gemma3:4b`

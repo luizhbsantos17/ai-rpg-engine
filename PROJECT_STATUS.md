@@ -2,6 +2,8 @@
 
 Última atualização: 2026-11-04 (pedidos do dono depois de testar: outra versão, IA gratuita, ficha, disco C:).
 
+Repositório: https://github.com/luizhbsantos17/ai-rpg-engine (privado; branch `main`).
+
 ## Resumo
 | Etapa | Status |
 |---|---|
